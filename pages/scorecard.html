@@ -793,6 +793,77 @@ function setMode(n) {
 }
 const _m = new URLSearchParams(location.search).get('mode');
 if (_m === '9') setMode(9);
+
+/* ── LIVE ROUND DATA ──
+   If a round was just completed (tc_round_scores present), fill in the
+   real Hole/Par/Score/Net rows instead of leaving the printable template
+   blank. Only Par, Score, and Net are populated — per-shot detail (club,
+   lie, putts) isn't tracked as structured session data in this prototype,
+   so those rows stay blank for manual/print use as before. */
+function applyLiveRoundData() {
+  let round, scores;
+  try { round  = JSON.parse(sessionStorage.getItem('tc_active_round') || 'null'); } catch { round = null; }
+  try { scores = JSON.parse(sessionStorage.getItem('tc_round_scores') || '[]'); } catch { scores = []; }
+  if (!scores.length) return;
+
+  const scoreByHole = {};
+  scores.forEach(s => { scoreByHole[s.hole] = s; });
+
+  function parFor(holeNum) {
+    const hd = round?.holes_data?.find(h => h.number === holeNum);
+    return hd?.par ?? scoreByHole[holeNum]?.par ?? null;
+  }
+  function fmtDiff(d) { return d === 0 ? 'E' : d > 0 ? '+' + d : String(d); }
+
+  function fillCard(card, holeNumbers) {
+    if (!card) return { sum: 0, parSum: 0, anyDone: false };
+    const parRow   = card.querySelector('tr.r-info');
+    const scoreRow = card.querySelector('tr.r-score');
+    const netRow   = card.querySelector('tr.r-net');
+    if (!parRow || !scoreRow || !netRow) return { sum: 0, parSum: 0, anyDone: false };
+
+    let sum = 0, parSum = 0, anyDone = false;
+    holeNumbers.forEach((h, i) => {
+      const par = parFor(h);
+      const rec = scoreByHole[h];
+      const parCell = parRow.children[i + 1];
+      if (parCell && par != null) parCell.textContent = par;
+      if (rec) {
+        anyDone = true;
+        const holePar = par ?? rec.par;
+        sum += rec.strokes;
+        parSum += holePar;
+        const scoreCell = scoreRow.children[i + 1];
+        const netCell = netRow.children[i + 1];
+        if (scoreCell) scoreCell.textContent = rec.strokes;
+        if (netCell) netCell.textContent = fmtDiff(rec.strokes - holePar);
+      }
+    });
+    if (anyDone) {
+      const outIdx = holeNumbers.length + 1;
+      if (scoreRow.children[outIdx]) scoreRow.children[outIdx].textContent = sum;
+      if (netRow.children[outIdx])   netRow.children[outIdx].textContent = fmtDiff(sum - parSum);
+    }
+    return { sum, parSum, anyDone };
+  }
+
+  const front = fillCard(document.getElementById('c-front'), [1,2,3,4,5,6,7,8,9]);
+  const back  = fillCard(document.getElementById('c-back'),  [10,11,12,13,14,15,16,17,18]);
+  fillCard(document.getElementById('c-nine'), [1,2,3,4,5,6,7,8,9]);
+
+  if (front.anyDone || back.anyDone) {
+    const backCard = document.getElementById('c-back');
+    const scoreRow = backCard?.querySelector('tr.r-score');
+    const netRow   = backCard?.querySelector('tr.r-net');
+    const totIdx = 11; // back card columns: lbl, 9 holes, In, Total
+    if (scoreRow?.children[totIdx]) scoreRow.children[totIdx].textContent = front.sum + back.sum;
+    if (netRow?.children[totIdx])   netRow.children[totIdx].textContent = fmtDiff((front.sum + back.sum) - (front.parSum + back.parSum));
+  }
+
+  const urlMode = new URLSearchParams(location.search).get('mode');
+  if (!urlMode && round) setMode(round.holes === 9 ? 9 : 18);
+}
+applyLiveRoundData();
 </script>
 </body>
 </html>

@@ -181,9 +181,7 @@
   <div class="arr">→</div>
   <div class="step on">Rounds</div>
   <div class="arr">→</div>
-  <div class="step" onclick="navigate('s2')">Fairway · H7</div>
-  <div class="arr">→</div>
-  <div class="step" onclick="navigate('h8')">Hole 8</div>
+  <div class="step" onclick="navigate('hole')">Play Hole</div>
 </div>
 
 <div class="phone">
@@ -412,15 +410,27 @@ function stepNext() {
   renderStep();
 }
 
+// Builds the ordered list of hole numbers to play, wrapping 18→1 for
+// non-standard starting holes (e.g. starting on 10 for a 9-hole round
+// plays 10..18; starting on 15 for 18 holes plays 15..18,1..14).
+function buildHoleSequence(startHole, numHoles) {
+  const seq = [];
+  for (let i = 0; i < numHoles; i++) seq.push(((startHole - 1 + i) % 18) + 1);
+  return seq;
+}
+
 async function startRound() {
   const nextBtn = document.getElementById('setup-next-btn');
   if (nextBtn) { nextBtn.textContent = '⛳ Loading…'; nextBtn.disabled = true; }
 
+  const holesCount = sel.holes === 9 ? 9 : sel.holes === 'custom' ? (sel.customHoles || 18) : 18;
   const roundData = {
     course: sel.course,
     tee: (sel.tee?.name || 'white').toLowerCase(),
-    holes: sel.holes === '9' ? 9 : 18,
-    holes_data: null
+    holes: holesCount,
+    holes_data: null,
+    holeSequence: buildHoleSequence(sel.startHole || 1, holesCount),
+    currentHoleIdx: 0
   };
 
   if (sel.course?.lat && sel.course?.lng) {
@@ -431,7 +441,8 @@ async function startRound() {
   }
 
   sessionStorage.setItem('tc_active_round', JSON.stringify(roundData));
-  navigate('s2');
+  sessionStorage.removeItem('tc_round_scores');
+  navigate('hole');
 }
 function canAdvance() {
   const s = steps[stepIdx];
