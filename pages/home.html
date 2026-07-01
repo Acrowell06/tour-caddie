@@ -63,6 +63,10 @@
 .add-widget-btn { margin:8px 12px 0; background:rgba(46,204,113,0.06); border:1px dashed rgba(46,204,113,0.32); border-radius:10px; padding:11px; font-size:12px; font-weight:700; color:rgba(46,204,113,0.75); display:none; align-items:center; justify-content:center; gap:6px; cursor:pointer; flex-shrink:0; user-select:none; }
 .add-widget-btn:active { transform:scale(0.98); }
 
+/* ─── WEATHER CONDITIONS STRIP ─── */
+.wx-strip { display:none; align-items:center; gap:6px; padding:2px 16px 8px; font-size:11px; font-weight:600; color:var(--muted); flex-shrink:0; }
+.wx-strip.show { display:flex; }
+
 /* ─── PGA LEADERBOARD STRIP ─── */
 .pga-strip { position:absolute; left:0; right:0; bottom:54px; z-index:20; border-top:1px solid var(--border); background:var(--bg); }
 .pga-hdr { display:flex; align-items:center; justify-content:space-between; padding:7px 12px 6px; cursor:pointer; user-select:none; }
@@ -120,9 +124,7 @@
   <div class="arr">→</div>
   <div class="step on">Home</div>
   <div class="arr">→</div>
-  <div class="step" onclick="navigate('s2')">Fairway · H7</div>
-  <div class="arr">→</div>
-  <div class="step" onclick="navigate('h8')">Hole 8</div>
+  <div class="step" onclick="navigate('hole')">Play Hole</div>
 </div>
 
 <div class="phone">
@@ -146,6 +148,9 @@
       Edit
     </button>
   </div>
+
+  <!-- Weather conditions strip — hidden until device location + fetch succeed -->
+  <div class="wx-strip" id="wx-strip"></div>
 
   <!-- Scrollable widget area -->
   <div class="hw-scroller">
@@ -491,9 +496,24 @@ function renderLeaderboard() {
     </div>`).join('');
 }
 
+/* ══ WEATHER BANNER ══ */
+function initWeatherBanner() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const wx = await fetchWeather(pos.coords.latitude, pos.coords.longitude);
+    if (!wx) return;
+    const wmo = WMO_CODES[wx.weatherCode] || { text: 'Unknown', icon: '🌡️' };
+    const strip = document.getElementById('wx-strip');
+    if (!strip) return;
+    strip.textContent = `${wmo.icon} ${wx.tempF}° · ${wmo.text} · Wind ${wx.windMph} ${compassLetter(wx.windDirDeg)}`;
+    strip.classList.add('show');
+  }, () => {}, { enableHighAccuracy: false, timeout: 8000 });
+}
+
 /* ══ INIT ══ */
 renderWidgets();
 renderLeaderboard();
+initWeatherBanner();
 </script>
 </body>
 </html>
