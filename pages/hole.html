@@ -215,7 +215,7 @@
   <div id="mark-hole-panel" style="display:none;flex-direction:column;flex:1;">
     <div style="padding:14px 16px 4px;">
       <div id="mh-step-title" style="font-size:16px;font-weight:900;">Mark the Tee</div>
-      <div id="mh-step-sub" style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;">Drag the pin to where you're standing, or tap the map.</div>
+      <div id="mh-step-sub" style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;">Drag the pin to where you're standing.</div>
     </div>
     <div class="spacer"></div>
     <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
@@ -597,12 +597,13 @@ if (NEEDS_GREEN_MARK) markSteps.push('green-front', 'green-center', 'green-back'
 let markIdx = 0;
 const markResults = {};
 let markMarker = null;
+let markUserDragged = false;
 
 const MARK_STEP_INFO = {
-  'tee':          { title: 'Mark the Tee',           sub: "Drag the pin to where you're standing, or tap the map.", btn: 'Confirm Tee' },
-  'green-front':  { title: 'Mark the Green — Front', sub: 'Drag the pin to the front edge of the green.',           btn: 'Confirm Front' },
-  'green-center': { title: 'Mark the Green — Center',sub: 'Drag the pin to the middle of the green.',               btn: 'Confirm Center' },
-  'green-back':   { title: 'Mark the Green — Back',  sub: 'Drag the pin to the back edge of the green.',            btn: 'Confirm Back' }
+  'tee':          { title: 'Mark the Tee',           sub: "Drag the pin to where you're standing.",       btn: 'Confirm Tee' },
+  'green-front':  { title: 'Mark the Green — Front', sub: 'Drag the pin to the front edge of the green.', btn: 'Confirm Front' },
+  'green-center': { title: 'Mark the Green — Center',sub: 'Drag the pin to the middle of the green.',     btn: 'Confirm Center' },
+  'green-back':   { title: 'Mark the Green — Back',  sub: 'Drag the pin to the back edge of the green.',  btn: 'Confirm Back' }
 };
 
 function mhShouldMark() { return markSteps.length > 0; }
@@ -628,6 +629,7 @@ function mhPlacePin(ll) {
     }),
     draggable: true
   }).addTo(lmap);
+  markMarker.on('dragstart', () => { markUserDragged = true; });
   lmap.setView([ll.lat, ll.lng], 18);
 }
 
@@ -637,9 +639,12 @@ function mhPlacePinForStep(step) {
   // Tee step: if we truly have no tee data anywhere (not even a course
   // center), prefer the device's live position over the NO_DATA_LL
   // placeholder as soon as it resolves — same geolocation options already
-  // used elsewhere in this file for consistency.
+  // used elsewhere in this file for consistency. Skipped if the golfer
+  // already dragged the pin into place before this resolves, so a late
+  // GPS fix can never silently overwrite a real user action.
   if (step === 'tee' && NO_TEE_DATA && navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
+      if (markUserDragged) return;
       mhPlacePin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
     }, null, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
   }
@@ -653,6 +658,7 @@ function mhRenderStep() {
   document.getElementById('mh-step-sub').textContent = info.sub;
   document.getElementById('mh-confirm-btn').textContent = isLast ? 'Confirm & Play Hole' : info.btn;
   hSetView('hole');
+  markUserDragged = false;
   mhPlacePinForStep(step);
 }
 
