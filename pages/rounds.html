@@ -337,6 +337,7 @@
 
 <p class="pg-note">Tap <strong style="color:var(--green);">Start Round</strong> to walk through the full setup flow</p>
 
+<script src="tc-course.js"></script>
 <script src="tc-utils.js"></script>
 <script>
 /* ══ STATE ══ */
@@ -361,19 +362,13 @@ const OTHER_STEPS = ['course','game-type','friends'];
 let steps   = MY_SCORE_STEPS;
 let stepIdx = 0;
 
-/* ══ MOCK DATA ══ */
-const COURSES = [
-  { name:'Riviera CC',           location:'Pacific Palisades, CA', dist:null, fav:true  },
-  { name:'Pebble Beach',         location:'Pebble Beach, CA',      dist:null, fav:true  },
-  { name:'Augusta National',     location:'Augusta, GA',           dist:null, fav:false },
-  { name:'TPC Sawgrass',         location:'Ponte Vedra Beach, FL', dist:null, fav:false },
-  { name:'Torrey Pines (South)', location:'La Jolla, CA',          dist:null, fav:true  },
-  { name:'Bethpage Black',       location:'Farmingdale, NY',       dist:null, fav:false },
-];
-const NEARBY = [
-  { name:'Riviera CC',           location:'Pacific Palisades, CA', dist:'2.1 mi', fav:true  },
-  { name:'Bel-Air CC',           location:'Los Angeles, CA',       dist:'3.8 mi', fav:false },
-  { name:'Los Angeles CC',       location:'Los Angeles, CA',       dist:'4.4 mi', fav:false },
+const COURSES_FAV = [
+  { name:'Riviera CC',           location:'Pacific Palisades, CA', lat:34.0462, lng:-118.5090, fav:true  },
+  { name:'Pebble Beach',         location:'Pebble Beach, CA',      lat:36.5686, lng:-121.9489, fav:true  },
+  { name:'Torrey Pines (South)', location:'La Jolla, CA',          lat:32.8983, lng:-117.2517, fav:true  },
+  { name:'Augusta National',     location:'Augusta, GA',           lat:33.5021, lng:-82.0202,  fav:false },
+  { name:'TPC Sawgrass',         location:'Ponte Vedra Beach, FL', lat:30.1975, lng:-81.3965,  fav:false },
+  { name:'Bethpage Black',       location:'Farmingdale, NY',       lat:40.7282, lng:-73.4562,  fav:false },
 ];
 const TEES = [
   { name:'Black',  color:'#1a1a2e', yds:7322, rating:76.1, slope:145 },
@@ -408,9 +403,35 @@ function stepBack() {
 }
 function stepNext() {
   if (!canAdvance()) return;
-  if (stepIdx === steps.length - 1) { closeSetup(); navigate('s2'); return; }
+  if (stepIdx === steps.length - 1) {
+    closeSetup();
+    startRound();
+    return;
+  }
   stepIdx++;
   renderStep();
+}
+
+async function startRound() {
+  const nextBtn = document.getElementById('setup-next-btn');
+  if (nextBtn) { nextBtn.textContent = '⛳ Loading…'; nextBtn.disabled = true; }
+
+  const roundData = {
+    course: sel.course,
+    tee: (sel.tee || 'white').toLowerCase(),
+    holes: sel.holes === '9' ? 9 : 18,
+    holes_data: null
+  };
+
+  if (sel.course?.lat && sel.course?.lng) {
+    try {
+      const data = await TcCourse.loadNear(sel.course.lat, sel.course.lng);
+      if (data) roundData.holes_data = data.holes;
+    } catch {}
+  }
+
+  sessionStorage.setItem('tc_active_round', JSON.stringify(roundData));
+  navigate('s2');
 }
 function canAdvance() {
   const s = steps[stepIdx];
@@ -489,7 +510,7 @@ function renderNext() {
 function renderCourse(body) {
   body.innerHTML = `
     <div class="setup-step-title">Find Course</div>
-    <div class="setup-step-sub">Search, select a favorite, or use nearby courses</div>
+    <div class="setup-step-sub">Search by name, pick a favorite, or detect nearby</div>
     <div class="ctabs" id="ctabs">
       <div class="ctab on" onclick="switchCourseTab('search',this)">Search</div>
       <div class="ctab"    onclick="switchCourseTab('favorites',this)">Favorites</div>
@@ -512,19 +533,60 @@ function renderCourseTab(tab) {
   const cont = document.getElementById('course-content');
   if (!cont) return;
   if (tab === 'search') {
-    cont.innerHTML = `<input class="course-search-inp" id="course-inp" placeholder="🔍  Search courses…" oninput="filterCourses(this.value)">
+    cont.innerHTML = `<input class="course-search-inp" id="course-inp" placeholder="🔍  Search courses…">
       <div id="course-list"></div>`;
-    renderCourseList(COURSES, document.getElementById('course-list'));
+    renderCourseList(COURSES_FAV, document.getElementById('course-list'));
+    const inp = document.getElementById('course-inp');
+    let debounce;
+    inp.addEventListener('input', () => {
+      clearTimeout(debounce);
+      const val = inp.value.trim();
+      if (!val) { renderCourseList(COURSES_FAV, document.getElementById('course-list')); return; }
+      debounce = setTimeout(async () => {
+        const list = document.getElementById('course-list');
+        if (!list) return;
+        list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--muted);">Searching…</div>';
+        try {
+          const results = await TcCourse.searchByName(val);
+          if (!results.length) {
+            list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">No courses found</div>';
+          } else {
+            renderCourseList(results.map(r => ({ ...r, location: '' })), list);
+          }
+        } catch {
+          list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">Search unavailable</div>';
+          renderCourseList(COURSES_FAV, list);
+        }
+      }, 600);
+    });
   } else if (tab === 'favorites') {
     cont.innerHTML = '<div id="course-list"></div>';
-    renderCourseList(COURSES.filter(c => c.fav), document.getElementById('course-list'));
+    renderCourseList(COURSES_FAV.filter(c => c.fav), document.getElementById('course-list'));
   } else {
-    cont.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📍 Sorted by distance from your location</div><div id="course-list"></div>`;
-    renderCourseList(NEARBY, document.getElementById('course-list'), true);
+    cont.innerHTML = `
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📍 Detecting nearby courses…</div>
+      <div id="course-list"><div style="padding:12px;font-size:11px;color:var(--dim);">Checking location…</div></div>`;
+    navigator.geolocation?.getCurrentPosition(async pos => {
+      const list = document.getElementById('course-list');
+      if (!list) return;
+      try {
+        const courses = await TcCourse.nearbyCourses(pos.coords.latitude, pos.coords.longitude);
+        if (!courses.length) {
+          list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">No courses detected nearby</div>';
+        } else {
+          renderCourseList(courses.map(c => ({ ...c, location: c.dist })), list);
+        }
+      } catch {
+        list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">Location unavailable</div>';
+      }
+    }, () => {
+      const list = document.getElementById('course-list');
+      if (list) list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">Location permission denied</div>';
+    }, { enableHighAccuracy: false, timeout: 8000 });
   }
 }
 
-function renderCourseList(list, container, nearby) {
+function renderCourseList(list, container) {
   container.innerHTML = '';
   list.forEach(c => {
     const row = document.createElement('div');
@@ -534,9 +596,9 @@ function renderCourseList(list, container, nearby) {
       <div class="cr-icon">⛳</div>
       <div class="cr-info">
         <div class="cr-name">${c.name}</div>
-        <div class="cr-sub">${c.location}</div>
+        <div class="cr-sub">${c.location || ''}</div>
       </div>
-      <div class="cr-right ${c.fav ? 'fav' : ''}">${nearby ? c.dist : (c.fav ? '★' : '')}</div>
+      <div class="cr-right ${c.fav ? 'fav' : ''}">${c.fav ? '★' : ''}</div>
       <div class="cr-check">✓</div>`;
     row.onclick = () => {
       sel.course = c;
@@ -546,14 +608,6 @@ function renderCourseList(list, container, nearby) {
     };
     container.appendChild(row);
   });
-}
-
-function filterCourses(val) {
-  const filtered = val.trim()
-    ? COURSES.filter(c => c.name.toLowerCase().includes(val.toLowerCase()) || c.location.toLowerCase().includes(val.toLowerCase()))
-    : COURSES;
-  const list = document.getElementById('course-list');
-  if (list) renderCourseList(filtered, list);
 }
 
 /* ── STEP: GAME TYPE ── */
