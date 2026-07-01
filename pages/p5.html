@@ -434,7 +434,7 @@ const _round    = (() => { try { return JSON.parse(sessionStorage.getItem('tc_ac
 const _holeData = _round?.holes_data?.find(h => h.number === 9) ?? null;
 const _tee      = _round?.tee ?? 'white';
 
-let TEE_LL      = _holeData?.tees?.[_tee]     ?? { lat: 34.0440, lng: -118.5125 };
+let TEE_LL      = _holeData?.tees?.[_tee]     ?? (_round?.course?.lat ? { lat: _round.course.lat, lng: _round.course.lng } : { lat: 34.0440, lng: -118.5125 });
 const GREEN_CTR = _holeData?.green?.center     ?? { lat: 34.0467, lng: -118.5086 };
 const GREEN_FRT = _holeData?.green?.front      ?? { lat: 34.0465, lng: -118.5086 };
 const GREEN_BCK = _holeData?.green?.back       ?? { lat: 34.0469, lng: -118.5086 };
@@ -509,7 +509,8 @@ function p5StopLiveGPS() {
 }
 
 const lmap = L.map('p5-leaflet', {
-  center: [(TEE_LL.lat + GREEN_CTR.lat)/2, (TEE_LL.lng + GREEN_CTR.lng)/2], zoom: 17,
+  center: DEGRADED ? [TEE_LL.lat, TEE_LL.lng] : [(TEE_LL.lat + GREEN_CTR.lat)/2, (TEE_LL.lng + GREEN_CTR.lng)/2],
+  zoom: DEGRADED ? 16 : 18,
   zoomControl: false, attributionControl: false
 });
 L.tileLayer(
