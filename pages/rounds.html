@@ -426,7 +426,7 @@ async function startRound() {
   if (sel.course?.lat && sel.course?.lng) {
     try {
       const data = await TcCourse.loadNear(sel.course.lat, sel.course.lng);
-      if (data) roundData.holes_data = data.holes;
+      if (data) roundData.holes_data = data.holes ?? null;
     } catch {}
   }
 
@@ -586,6 +586,10 @@ function renderCourseTab(tab) {
   }
 }
 
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function renderCourseList(list, container) {
   container.innerHTML = '';
   list.forEach(c => {
@@ -595,8 +599,8 @@ function renderCourseList(list, container) {
     row.innerHTML = `
       <div class="cr-icon">⛳</div>
       <div class="cr-info">
-        <div class="cr-name">${c.name}</div>
-        <div class="cr-sub">${c.location || ''}</div>
+        <div class="cr-name">${escHtml(c.name)}</div>
+        <div class="cr-sub">${escHtml(c.location || '')}</div>
       </div>
       <div class="cr-right ${c.fav ? 'fav' : ''}">${c.fav ? '★' : ''}</div>
       <div class="cr-check">✓</div>`;
