@@ -718,7 +718,7 @@ function renderRoundDetails(body) {
 
   body.innerHTML = `
     <div class="rd-sec">Tee Selection</div>
-    <div class="rd-sec-sub">${sel.course ? sel.course.name : ''}</div>
+    <div class="rd-sec-sub">${sel.course ? escHtml(sel.course.name) : ''}</div>
     <div id="rd-tee-list"></div>
 
     <div class="rd-sec" style="margin-top:18px;">Starting Hole</div>
