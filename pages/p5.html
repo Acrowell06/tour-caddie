@@ -453,7 +453,12 @@ if (DEGRADED) {
   if (fcbStrip) fcbStrip.parentNode.insertBefore(banner, fcbStrip);
 }
 
-function haversineYds(a, b) { return TcCourse.haversineYds(a, b); }
+function haversineYds(a, b) {
+  const R = 6378137, r = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s)) / 0.9144;
+}
 function haversineFt(a, b) { return haversineYds(a, b) * 3; }
 
 function greenSVGToLatLng(gx, gy) {
@@ -469,7 +474,7 @@ function greenSVGToLatLng(gx, gy) {
 function latLngToSumSVG(ll) {
   const teeS  = { x: 85,  y: 234 };
   const greenS = { x: 208, y: 24  };
-  const t = Math.min(1, TcCourse.haversineYds(TEE_LL, ll) / TcCourse.haversineYds(TEE_LL, GREEN_CTR));
+  const t = Math.min(1, haversineYds(TEE_LL, ll) / haversineYds(TEE_LL, GREEN_CTR));
   return { x: teeS.x + (greenS.x - teeS.x) * t, y: teeS.y + (greenS.y - teeS.y) * t };
 }
 
@@ -478,9 +483,9 @@ function updateDistanceBar(ll) {
   const c = document.getElementById('p5-fcb-center');
   const b = document.getElementById('p5-fcb-back');
   if (!f) return;
-  f.textContent = Math.max(1, Math.round(TcCourse.haversineYds(ll, GREEN_FRT)));
-  c.textContent = Math.max(1, Math.round(TcCourse.haversineYds(ll, GREEN_CTR)));
-  b.textContent = Math.max(1, Math.round(TcCourse.haversineYds(ll, GREEN_BCK)));
+  f.textContent = Math.max(1, Math.round(haversineYds(ll, GREEN_FRT)));
+  c.textContent = Math.max(1, Math.round(haversineYds(ll, GREEN_CTR)));
+  b.textContent = Math.max(1, Math.round(haversineYds(ll, GREEN_BCK)));
 }
 
 /* ── LIVE GPS WATCH ── */
