@@ -24,6 +24,10 @@ window.TcCourse = (() => {
     try { localStorage.setItem('tc_course_' + geoKey, JSON.stringify({ ts: Date.now(), data })); } catch {}
   }
 
+  function geoKeyFor(lat, lng) {
+    return `${lat.toFixed(3)}_${lng.toFixed(3)}`;
+  }
+
   function centroid(pts) {
     return {
       lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length,
@@ -188,7 +192,7 @@ window.TcCourse = (() => {
 
   async function loadNear(lat, lng) {
     try {
-      const geoKey = `${lat.toFixed(3)}_${lng.toFixed(3)}`;
+      const geoKey = geoKeyFor(lat, lng);
       const cached = getCache(geoKey);
       if (cached) return cached;
       // Some courses tag golf=hole as a relation with tee/green members (parseOverpass);
@@ -207,6 +211,32 @@ window.TcCourse = (() => {
       setCache(geoKey, result);
       return result;
     } catch { return null; }
+  }
+
+  // Merges a manually-marked tee and/or green into the cached course entry
+  // for geoKey, in the exact same shape loadNear()/parseOverpass() already
+  // produce, so nothing downstream needs to know a hole's data came from a
+  // user's own pin drop instead of OpenStreetMap. Creates a stub hole entry
+  // if this hole wasn't in the cache at all (e.g. the course had zero OSM
+  // coverage for it).
+  function saveManualHole(geoKey, holeNumber, patch) {
+    if (!geoKey || !holeNumber) return;
+    try {
+      const cached = getCache(geoKey) || { holes: [], geoKey };
+      let hole = cached.holes.find(h => h.number === holeNumber);
+      if (!hole) {
+        hole = { number: holeNumber, par: null, handicap: null, tees: {}, green: null };
+        cached.holes.push(hole);
+        cached.holes.sort((a, b) => a.number - b.number);
+      }
+      if (patch.teeColor && patch.teeLL) {
+        hole.tees = { ...hole.tees, [patch.teeColor]: patch.teeLL };
+      }
+      if (patch.green) {
+        hole.green = patch.green;
+      }
+      setCache(geoKey, cached);
+    } catch {}
   }
 
   async function searchByName(query) {
@@ -239,5 +269,5 @@ window.TcCourse = (() => {
     } catch { return []; }
   }
 
-  return { loadNear, searchByName, nearbyCourses, haversineYds, getCache, setCache, parseOverpass, parseOverpassWays };
+  return { loadNear, searchByName, nearbyCourses, haversineYds, getCache, setCache, parseOverpass, parseOverpassWays, geoKeyFor, saveManualHole };
 })();
