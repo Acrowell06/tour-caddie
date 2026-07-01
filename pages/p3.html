@@ -405,19 +405,34 @@
 
 <p class="pg-note">Par 3 — Mark Shot · drag GPS pin · club picker · Hole Out → Summary → Par 5</p>
 
+<script src="tc-course.js"></script>
 <script src="tc-utils.js"></script>
 <script>
-const H2_TEE         = { lat: 34.0455, lng: -118.5112 };
-const H2_GREEN       = { lat: 34.0465, lng: -118.5098 };
-const H2_GREEN_FRONT = { lat: 34.0463, lng: -118.5098 };
-const H2_GREEN_BACK  = { lat: 34.0467, lng: -118.5098 };
+/* ── GPS REFERENCE POINTS — loaded from active round, fallback to Riviera H2 ── */
+const _round    = (() => { try { return JSON.parse(sessionStorage.getItem('tc_active_round') || 'null'); } catch { return null; } })();
+const _holeData = _round?.holes_data?.find(h => h.number === 2) ?? null;
+const _tee      = _round?.tee ?? 'white';
 
-function haversineYds(a, b) {
-  const R = 6378137, rad = Math.PI / 180;
-  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
-  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLng/2)**2;
-  return 2 * R * Math.asin(Math.sqrt(s)) / 0.9144;
+const TEE_LL    = _holeData?.tees?.[_tee]     ?? { lat: 34.0455, lng: -118.5112 };
+const GREEN_CTR = _holeData?.green?.center     ?? { lat: 34.0465, lng: -118.5098 };
+const GREEN_FRT = _holeData?.green?.front      ?? { lat: 34.0463, lng: -118.5098 };
+const GREEN_BCK = _holeData?.green?.back       ?? { lat: 34.0467, lng: -118.5098 };
+const DEGRADED  = !_holeData?.green;
+
+/* ── DEGRADED MODE INIT ── */
+if (DEGRADED) {
+  ['p3-fcb-front','p3-fcb-center','p3-fcb-back'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  const banner = document.createElement('div');
+  banner.className = 'no-course-banner';
+  banner.textContent = 'No course data — shot tracking only';
+  const fcbStrip = document.querySelector('.fcb-strip');
+  if (fcbStrip) fcbStrip.parentNode.insertBefore(banner, fcbStrip);
 }
+
+function haversineYds(a, b) { return TcCourse.haversineYds(a, b); }
 function haversineFt(a, b) { return haversineYds(a, b) * 3; }
 
 function greenSVGToLatLng(gx, gy) {
@@ -425,13 +440,13 @@ function greenSVGToLatLng(gx, gy) {
   const dEast  = (gx - 160) * ftPerPx;
   const dSouth = (gy - 100) * ftPerPx;
   return {
-    lat: H2_GREEN.lat - dSouth * 0.3048 / 111320,
-    lng: H2_GREEN.lng + dEast  * 0.3048 / (111320 * Math.cos(H2_GREEN.lat * Math.PI / 180))
+    lat: GREEN_CTR.lat - dSouth * 0.3048 / 111320,
+    lng: GREEN_CTR.lng + dEast  * 0.3048 / (111320 * Math.cos(GREEN_CTR.lat * Math.PI / 180))
   };
 }
 
 function latLngToSumSVG(ll) {
-  const t = Math.min(1, haversineYds(H2_TEE, ll) / haversineYds(H2_TEE, H2_GREEN));
+  const t = Math.min(1, TcCourse.haversineYds(TEE_LL, ll) / TcCourse.haversineYds(TEE_LL, GREEN_CTR));
   return { x: 155 + (150 - 155) * t, y: 234 + (22 - 234) * t };
 }
 
@@ -440,13 +455,33 @@ function updateDistanceBar(ll) {
   const c = document.getElementById('p3-fcb-center');
   const b = document.getElementById('p3-fcb-back');
   if (!f) return;
-  f.textContent = Math.max(1, Math.round(haversineYds(ll, H2_GREEN_FRONT)));
-  c.textContent = Math.max(1, Math.round(haversineYds(ll, H2_GREEN)));
-  b.textContent = Math.max(1, Math.round(haversineYds(ll, H2_GREEN_BACK)));
+  f.textContent = Math.max(1, Math.round(TcCourse.haversineYds(ll, GREEN_FRT)));
+  c.textContent = Math.max(1, Math.round(TcCourse.haversineYds(ll, GREEN_CTR)));
+  b.textContent = Math.max(1, Math.round(TcCourse.haversineYds(ll, GREEN_BCK)));
+}
+
+/* ── LIVE GPS WATCH ── */
+let p3WatchId = null;
+let p3GreenSuggestShown = false;
+
+function p3StartLiveGPS() {
+  if (!navigator.geolocation || DEGRADED || p3WatchId !== null) return;
+  p3WatchId = navigator.geolocation.watchPosition(pos => {
+    const ll = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    updateDistanceBar(ll);
+    if (!p3GreenSuggestShown && TcCourse.haversineYds(ll, GREEN_CTR) < 50) {
+      p3GreenSuggestShown = true;
+      showToast('p3-toast', '🟢 Near the green — switch to Green View?', 4000);
+    }
+  }, null, { enableHighAccuracy: true, maximumAge: 3000 });
+}
+
+function p3StopLiveGPS() {
+  if (p3WatchId !== null) { navigator.geolocation.clearWatch(p3WatchId); p3WatchId = null; }
 }
 
 const lmap = L.map('p3-leaflet', {
-  center: [34.0460, -118.5105], zoom: 18,
+  center: [(TEE_LL.lat + GREEN_CTR.lat)/2, (TEE_LL.lng + GREEN_CTR.lng)/2], zoom: 18,
   zoomControl: false, attributionControl: false
 });
 L.tileLayer(
@@ -454,7 +489,7 @@ L.tileLayer(
   { maxZoom: 19 }
 ).addTo(lmap);
 
-L.marker([H2_TEE.lat, H2_TEE.lng], {
+L.marker([TEE_LL.lat, TEE_LL.lng], {
   icon: L.divIcon({
     html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
     iconSize: [20, 20], iconAnchor: [10, 10], className: ''
@@ -462,7 +497,7 @@ L.marker([H2_TEE.lat, H2_TEE.lng], {
   interactive: false
 }).addTo(lmap);
 
-const p3FlagMarker = L.marker([H2_GREEN.lat, H2_GREEN.lng], {
+const p3FlagMarker = L.marker([GREEN_CTR.lat, GREEN_CTR.lng], {
   icon: L.divIcon({
     html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgba(255,255,255,0.9);"></div><div style="background:#E74C3C;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:white;white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
     iconSize: [80, 40], iconAnchor: [1, 0], className: ''
@@ -480,7 +515,7 @@ function makeShotIcon(num, holed) {
 }
 
 let p3PendingMarker = null;
-let p3PendingLatLng = { lat: H2_TEE.lat + 0.0004, lng: H2_TEE.lng + 0.0004 };
+let p3PendingLatLng = { lat: TEE_LL.lat + 0.0004, lng: TEE_LL.lng + 0.0004 };
 
 function makePendingIcon(num) {
   return L.divIcon({
@@ -518,7 +553,7 @@ lmap.on('click', e => {
 
 function refreshHolePill() {
   const prev = p3LoggedShots.at(-1);
-  const fromLL = prev?.latlng ?? H2_TEE;
+  const fromLL = prev?.latlng ?? TEE_LL;
   const yds = Math.max(1, Math.round(haversineYds(fromLL, p3PendingLatLng)));
   const pill = document.getElementById('p3-dpill');
   if (pill) pill.textContent = prev ? `↑ ${yds} yds` : `↑ ${yds} yds to pin · 7i`;
@@ -573,8 +608,8 @@ function updateGreenDragReference() {
     p3GreenDragCfg.originalText = '🟢 Drag to place';
     p3GreenDragCfg.onMove = null;
   } else {
-    const prevLL = p3LoggedShots.at(-1)?.latlng ?? H2_TEE;
-    const approxYds = Math.max(1, Math.round(haversineYds(prevLL, H2_GREEN)));
+    const prevLL = p3LoggedShots.at(-1)?.latlng ?? TEE_LL;
+    const approxYds = Math.max(1, Math.round(TcCourse.haversineYds(prevLL, GREEN_CTR)));
     p3GreenDragCfg.pinX = 160; p3GreenDragCfg.pinY = 100;
     p3GreenDragCfg.scale = 10 / (37 * 3);
     p3GreenDragCfg.format = () => `🟢 ~${approxYds} yds`;
@@ -619,6 +654,7 @@ function p3CancelGPS() {
 
 function p3ConfirmGPS() {
   p3ShotCount++;
+  if (p3ShotCount === 1) p3StartLiveGPS();
   let ydsLabel = '';
 
   if (p3ViewMode === 'green') {
@@ -628,7 +664,7 @@ function p3ConfirmGPS() {
       ? addShotLine('p3-green-svg', prev.x, prev.y, pos.x, pos.y) : null;
     const el = addShotMarker('p3-green-svg', pos.x, pos.y, p3ShotCount);
     const shotLL = greenSVGToLatLng(pos.x, pos.y);
-    const fromLL = prev?.latlng ?? H2_TEE;
+    const fromLL = prev?.latlng ?? TEE_LL;
     const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [shotLL.lat, shotLL.lng]],
       { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
     const leafletMarker = L.marker([shotLL.lat, shotLL.lng],
@@ -648,7 +684,7 @@ function p3ConfirmGPS() {
   } else {
     const ll     = p3PendingLatLng;
     const prev   = p3LoggedShots.at(-1) ?? null;
-    const fromLL = prev?.latlng ?? H2_TEE;
+    const fromLL = prev?.latlng ?? TEE_LL;
     const yds    = Math.max(1, Math.round(haversineYds(fromLL, ll)));
     ydsLabel     = yds >= 10 ? `${yds} yds` : `${Math.round(yds * 3)} ft`;
     const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [ll.lat, ll.lng]],
@@ -742,7 +778,7 @@ function autoSetTog(rowIdx, togIdx, colorCls) {
 // Par 3: row 0 = GIR row (no FIR row)
 function autoDetectGIR(shot) {
   if (shot.svgId === 'p3-leaflet') {
-    if (haversineYds(shot.latlng, H2_GREEN) <= 18) { autoSetTog(0, 0, 't-g'); return 'GIR'; }
+    if (TcCourse.haversineYds(shot.latlng, GREEN_CTR) <= 18) { autoSetTog(0, 0, 't-g'); return 'GIR'; }
     autoSetTog(0, 1, 't-r'); return 'GIR-Miss';
   }
   const dx = (shot.x - 160) / 120, dy = (shot.y - 100) / 110;
@@ -785,7 +821,7 @@ function confirmClubP3() {
       if (cur && cur.svgId === 'p3-green-svg') {
         dist = `${Math.max(1, Math.round(px2(cur.x, cur.y, 160, 100) * (10 / 37)))} ft`;
       } else if (cur && cur.latlng) {
-        dist = `${Math.max(1, Math.round(haversineFt(cur.latlng, H2_GREEN)))} ft`;
+        dist = `${Math.max(1, Math.round(haversineFt(cur.latlng, GREEN_CTR)))} ft`;
       } else if (dist.endsWith('yds')) {
         dist = `${Math.round(parseFloat(dist) * 3)} ft`;
       }
@@ -825,19 +861,20 @@ function p3HoleOut() {
   if (document.getElementById('p3-gpsbar').classList.contains('show')) return;
   if (p3ViewMode !== 'green') return;
 
+  p3StopLiveGPS();
   p3ShotCount++;
   const prev = p3LoggedShots.at(-1) ?? null;
   const line = prev?.svgId === 'p3-green-svg'
     ? addShotLine('p3-green-svg', prev.x, prev.y, 160, 100) : null;
   const markerEl = addShotMarker('p3-green-svg', 160, 100, p3ShotCount);
-  const fromLL = prev?.latlng ?? H2_TEE;
-  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [H2_GREEN.lat, H2_GREEN.lng]],
+  const fromLL = prev?.latlng ?? TEE_LL;
+  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [GREEN_CTR.lat, GREEN_CTR.lng]],
     { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
-  const leafletMarker = L.marker([H2_GREEN.lat, H2_GREEN.lng],
+  const leafletMarker = L.marker([GREEN_CTR.lat, GREEN_CTR.lng],
     { icon: makeShotIcon(p3ShotCount, true) }).addTo(lmap);
 
   p3LoggedShots.push({ el: markerEl, line, leafletMarker, leafletLine,
-                       latlng: H2_GREEN, x: 160, y: 100, svgId: 'p3-green-svg', holed: true });
+                       latlng: GREEN_CTR, x: 160, y: 100, svgId: 'p3-green-svg', holed: true });
   p3ShotLog.push({ num: p3ShotCount, club: 'Putter', yds: 'MADE ⛳', holed: true });
   renderShotLogP3();
 
@@ -866,21 +903,22 @@ function p3HoleOutFromMap() {
   if (p3LoggedShots.length === 0) return;
   if (p3LoggedShots.some(s => s.holed)) return;
 
+  p3StopLiveGPS();
   p3ShotCount++;
   const prev = p3LoggedShots.at(-1);
-  const fromLL = prev.latlng ?? H2_TEE;
+  const fromLL = prev.latlng ?? TEE_LL;
 
-  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [H2_GREEN.lat, H2_GREEN.lng]],
+  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [GREEN_CTR.lat, GREEN_CTR.lng]],
     { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
-  const leafletMarker = L.marker([H2_GREEN.lat, H2_GREEN.lng],
+  const leafletMarker = L.marker([GREEN_CTR.lat, GREEN_CTR.lng],
     { icon: makeShotIcon(p3ShotCount, true) }).addTo(lmap);
 
-  const distYds = Math.max(1, Math.round(haversineYds(fromLL, H2_GREEN)));
+  const distYds = Math.max(1, Math.round(haversineYds(fromLL, GREEN_CTR)));
   const distLabel = prev.svgId === 'p3-green-svg'
-    ? `${Math.max(1, Math.round(haversineFt(fromLL, H2_GREEN)))} ft`
+    ? `${Math.max(1, Math.round(haversineFt(fromLL, GREEN_CTR)))} ft`
     : distYds < 10 ? `${Math.round(distYds * 3)} ft` : `${distYds} yds`;
 
-  p3LoggedShots.push({ leafletMarker, leafletLine, latlng: H2_GREEN,
+  p3LoggedShots.push({ leafletMarker, leafletLine, latlng: GREEN_CTR,
                        x: 150, y: 22, svgId: 'p3-leaflet', holed: true });
   p3ShotLog.push({ num: p3ShotCount, club: 'Putter', yds: `MADE ⛳ · ${distLabel}`, holed: true });
   renderShotLogP3();
