@@ -583,6 +583,141 @@ L.tileLayer(
   { maxZoom: 19 }
 ).addTo(lmap);
 
+/* ── MANUAL TEE/GREEN MARKING ──
+   Shown instead of the normal shot-tracking UI whenever this hole is
+   missing a real tee (for the tee color being played) or a real green.
+   Only asks for whichever piece is actually missing. */
+const NEEDS_TEE_MARK   = DEGRADED && !HAS_REAL_TEE;
+const NEEDS_GREEN_MARK = DEGRADED && !_holeData?.green;
+
+const markSteps = [];
+if (NEEDS_TEE_MARK)   markSteps.push('tee');
+if (NEEDS_GREEN_MARK) markSteps.push('green-front', 'green-center', 'green-back');
+
+let markIdx = 0;
+const markResults = {};
+let markMarker = null;
+
+const MARK_STEP_INFO = {
+  'tee':          { title: 'Mark the Tee',           sub: "Drag the pin to where you're standing, or tap the map.", btn: 'Confirm Tee' },
+  'green-front':  { title: 'Mark the Green — Front', sub: 'Drag the pin to the front edge of the green.',           btn: 'Confirm Front' },
+  'green-center': { title: 'Mark the Green — Center',sub: 'Drag the pin to the middle of the green.',               btn: 'Confirm Center' },
+  'green-back':   { title: 'Mark the Green — Back',  sub: 'Drag the pin to the back edge of the green.',            btn: 'Confirm Back' }
+};
+
+function mhShouldMark() { return markSteps.length > 0; }
+
+function mhDefaultPositionFor(step) {
+  if (step === 'tee') return TEE_LL;
+  // Green steps default to a small offset behind the tee (or the previously
+  // placed green point), matching the same fallback spacing used elsewhere
+  // in this file for synthetic green positions — just a starting point the
+  // golfer drags into the real spot.
+  const base = markResults['green-center'] || markResults['tee'] || TEE_LL;
+  if (step === 'green-front')  return { lat: base.lat + 0.00135, lng: base.lng };
+  if (step === 'green-center') return { lat: base.lat + 0.00150, lng: base.lng };
+  return { lat: base.lat + 0.00165, lng: base.lng }; // green-back
+}
+
+function mhPlacePin(ll) {
+  if (markMarker) lmap.removeLayer(markMarker);
+  markMarker = L.marker([ll.lat, ll.lng], {
+    icon: L.divIcon({
+      html: '<div style="background:rgba(241,196,15,0.25);border:2px solid #F1C40F;width:26px;height:26px;border-radius:50%;"></div>',
+      iconSize: [26, 26], iconAnchor: [13, 13], className: ''
+    }),
+    draggable: true
+  }).addTo(lmap);
+  lmap.setView([ll.lat, ll.lng], 18);
+}
+
+function mhPlacePinForStep(step) {
+  const fallback = mhDefaultPositionFor(step);
+  mhPlacePin(fallback);
+  // Tee step: if we truly have no tee data anywhere (not even a course
+  // center), prefer the device's live position over the NO_DATA_LL
+  // placeholder as soon as it resolves — same geolocation options already
+  // used elsewhere in this file for consistency.
+  if (step === 'tee' && NO_TEE_DATA && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      mhPlacePin({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    }, null, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+  }
+}
+
+function mhRenderStep() {
+  const step = markSteps[markIdx];
+  const info = MARK_STEP_INFO[step];
+  const isLast = markIdx === markSteps.length - 1;
+  document.getElementById('mh-step-title').textContent = info.title;
+  document.getElementById('mh-step-sub').textContent = info.sub;
+  document.getElementById('mh-confirm-btn').textContent = isLast ? 'Confirm & Play Hole' : info.btn;
+  hSetView('hole');
+  mhPlacePinForStep(step);
+}
+
+function mhShowPanel() {
+  document.querySelectorAll('.normal-tracking-ui').forEach(el => { el.style.display = 'none'; });
+  document.getElementById('mark-hole-panel').style.display = 'flex';
+  markIdx = 0;
+  mhRenderStep();
+}
+
+function mhHidePanel() {
+  if (markMarker) { lmap.removeLayer(markMarker); markMarker = null; }
+  document.getElementById('mark-hole-panel').style.display = 'none';
+  document.querySelectorAll('.normal-tracking-ui').forEach(el => { el.style.display = ''; });
+}
+
+function mhConfirmStep() {
+  const step = markSteps[markIdx];
+  markResults[step] = markMarker.getLatLng();
+  markIdx++;
+  if (markIdx >= markSteps.length) { mhFinish(); return; }
+  mhRenderStep();
+}
+
+function mhSkip() {
+  mhHidePanel();
+}
+
+function mhFinish() {
+  const patch = {};
+  if (markResults['tee']) {
+    patch.teeColor = _tee;
+    patch.teeLL = { lat: markResults['tee'].lat, lng: markResults['tee'].lng };
+  }
+  if (markResults['green-center']) {
+    patch.green = {
+      front:  { lat: markResults['green-front'].lat,  lng: markResults['green-front'].lng },
+      center: { lat: markResults['green-center'].lat, lng: markResults['green-center'].lng },
+      back:   { lat: markResults['green-back'].lat,   lng: markResults['green-back'].lng }
+    };
+  }
+
+  if (_round?.geoKey) {
+    TcCourse.saveManualHole(_round.geoKey, _holeNum, patch);
+  }
+
+  // Reflect the mark in the current round immediately too, so the reload
+  // below sees it without needing a fresh TcCourse.loadNear() round-trip.
+  if (_round) {
+    const holesData = _round.holes_data ? [..._round.holes_data] : [];
+    let entry = holesData.find(h => h.number === _holeNum);
+    if (!entry) {
+      entry = { number: _holeNum, par: PAR, handicap: HDCP, tees: {}, green: null };
+      holesData.push(entry);
+      holesData.sort((a, b) => a.number - b.number);
+    }
+    if (patch.teeColor) entry.tees = { ...entry.tees, [patch.teeColor]: patch.teeLL };
+    if (patch.green) entry.green = patch.green;
+    _round.holes_data = holesData;
+    sessionStorage.setItem('tc_active_round', JSON.stringify(_round));
+  }
+
+  location.reload();
+}
+
 // Static tee marker
 const hTeeMarker = L.marker([TEE_LL.lat, TEE_LL.lng], {
   icon: L.divIcon({
@@ -1389,6 +1524,12 @@ updateScoreBar();
 /* ── INIT ── */
 buildScorecard();
 renderShotLog();
+
+// Triggers the manual tee/green marking flow (defined above) in place of the
+// normal tracking UI, if this hole is missing real data for it. Placed here,
+// at the bottom of the script, so everything it touches (e.g. hSetView's
+// hViewMode) is already initialized.
+if (mhShouldMark()) mhShowPanel();
 </script>
 </body>
 </html>
