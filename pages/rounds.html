@@ -434,6 +434,7 @@ async function startRound() {
   };
 
   if (sel.course?.lat && sel.course?.lng) {
+    roundData.geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
     try {
       const data = await TcCourse.loadNear(sel.course.lat, sel.course.lng);
       if (data) roundData.holes_data = data.holes ?? null;
