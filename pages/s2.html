@@ -461,7 +461,7 @@ const _round    = (() => { try { return JSON.parse(sessionStorage.getItem('tc_ac
 const _holeData = _round?.holes_data?.find(h => h.number === 7) ?? null;
 const _tee      = _round?.tee ?? 'white';
 
-const TEE_LL    = _holeData?.tees?.[_tee]     ?? { lat: 34.0462, lng: -118.5090 };
+let TEE_LL      = _holeData?.tees?.[_tee]     ?? { lat: 34.0462, lng: -118.5090 };
 const GREEN_CTR = _holeData?.green?.center     ?? { lat: 34.0496, lng: -118.5085 };
 const GREEN_FRT = _holeData?.green?.front      ?? { lat: 34.0493, lng: -118.5085 };
 const GREEN_BCK = _holeData?.green?.back       ?? { lat: 34.0499, lng: -118.5085 };
@@ -528,7 +528,7 @@ L.tileLayer(
 ).addTo(lmap);
 
 // Static tee marker
-L.marker([TEE_LL.lat, TEE_LL.lng], {
+const s2TeeMarker = L.marker([TEE_LL.lat, TEE_LL.lng], {
   icon: L.divIcon({
     html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
     iconSize: [20, 20], iconAnchor: [10, 10], className: ''
@@ -558,6 +558,15 @@ function makeShotIcon(num, holed) {
 // Pending (draggable) shot marker
 let s2PendingMarker = null;
 let s2PendingLatLng = { lat: TEE_LL.lat + 0.0007, lng: TEE_LL.lng };
+
+if (DEGRADED && navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(pos => {
+    TEE_LL = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    s2TeeMarker.setLatLng([TEE_LL.lat, TEE_LL.lng]);
+    s2PendingLatLng = { lat: TEE_LL.lat + 0.0007, lng: TEE_LL.lng };
+    lmap.setView([TEE_LL.lat, TEE_LL.lng], 18);
+  }, null, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+}
 
 function makePendingIcon(num) {
   return L.divIcon({
