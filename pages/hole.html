@@ -134,7 +134,7 @@
   </div>
 
   <!-- Undo bar -->
-  <div class="undo-bar">
+  <div class="undo-bar normal-tracking-ui">
     <span class="undo-ctx" id="h-undo-ctx">No shots logged yet</span>
     <div class="undo-btn dim" id="h-undo-btn" onclick="undoLastHole()">↩ Undo Shot</div>
   </div>
@@ -174,22 +174,22 @@
       </g>
     </svg>
 
-    <div class="map-view-toggle">
+    <div class="map-view-toggle normal-tracking-ui">
       <div class="mvt-btn active" id="h-view-hole" onclick="hSetView('hole')">⛳ Hole</div>
       <div class="mvt-btn" id="h-view-green" onclick="hSetView('green')">🟢 Green</div>
     </div>
-    <div class="dpill" id="h-dpill">📍 Mark your tee shot</div>
-    <div class="mbtns">
+    <div class="dpill normal-tracking-ui" id="h-dpill">📍 Mark your tee shot</div>
+    <div class="mbtns normal-tracking-ui">
       <div class="mbtn mbtn-g" id="h-markbtn" onclick="hMark()">📍 Mark Shot</div>
     </div>
-    <div class="mchips">
+    <div class="mchips normal-tracking-ui">
       <div class="mc"><div class="mc-lbl">HOLE</div><div class="mc-val" id="mc-hole-num">—</div></div>
       <div class="mc"><div class="mc-lbl">PAR</div><div class="mc-val" id="mc-par-num">—</div></div>
       <div class="mc"><div class="mc-lbl">SHOT</div><div class="mc-val" id="h-shot-chip" style="color:var(--green)">1</div></div>
     </div>
     <!-- Wind indicator (HTML overlay — stays fixed, not in SVG). Hidden by
          default; initWindDial() reveals it once live wind data resolves. -->
-    <div class="wind-ov" id="h-wind-ov" style="display:none;">
+    <div class="wind-ov normal-tracking-ui" id="h-wind-ov" style="display:none;">
       <svg width="34" height="34" viewBox="-17 -17 34 34" style="display:block;">
         <!-- Dial background -->
         <circle r="16" fill="rgba(10,10,15,0.88)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
@@ -210,8 +210,22 @@
     </div>
   </div>
 
+  <!-- Mark This Hole panel — shown instead of the shot-tracking UI below
+       whenever mhShouldMark() is true (wired up in the next task) -->
+  <div id="mark-hole-panel" style="display:none;flex-direction:column;flex:1;">
+    <div style="padding:14px 16px 4px;">
+      <div id="mh-step-title" style="font-size:16px;font-weight:900;">Mark the Tee</div>
+      <div id="mh-step-sub" style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;">Drag the pin to where you're standing, or tap the map.</div>
+    </div>
+    <div class="spacer"></div>
+    <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
+      <button class="cta cta-gold" id="mh-confirm-btn" onclick="mhConfirmStep()">Confirm Tee</button>
+      <div style="text-align:center;font-size:12px;color:var(--dim);cursor:pointer;" onclick="mhSkip()">Skip — just track shots</div>
+    </div>
+  </div>
+
   <!-- F/C/B distance strip -->
-  <div class="fcb-strip">
+  <div class="fcb-strip normal-tracking-ui">
     <div class="fcb-cell">
       <div class="fcb-lbl">Front</div>
       <div class="fcb-val" id="h-fcb-front">—</div>
@@ -231,7 +245,7 @@
   </div>
 
   <!-- GPS bar -->
-  <div class="gps-bar" id="h-gpsbar">
+  <div class="gps-bar normal-tracking-ui" id="h-gpsbar">
     <div class="gps-bar-inner">
       <div class="gps-bar-top">
         <div class="gps-dot"></div>
@@ -250,12 +264,12 @@
   </div>
 
   <!-- Shot log -->
-  <div class="shot-log" id="h-shot-log">
+  <div class="shot-log normal-tracking-ui" id="h-shot-log">
     <span class="shot-log-empty">No shots logged yet</span>
   </div>
 
   <!-- Toggles — FIR row only rendered for par 4/5 (par 3 has no fairway stage) -->
-  <div class="tsec">
+  <div class="tsec normal-tracking-ui">
     <div class="tgl" id="tgl-fir">Tee Shot / Fairway</div>
     <div class="trow" id="trow-fir">
       <div class="tog t-g" onclick="tt(this)">✓ FIR</div>
@@ -272,8 +286,8 @@
     </div>
   </div>
 
-  <div class="spacer"></div>
-  <button class="cta cta-gold" onclick="showSheet()">🚩 Hole Out → Summary</button>
+  <div class="spacer normal-tracking-ui"></div>
+  <button class="cta cta-gold normal-tracking-ui" onclick="showSheet()">🚩 Hole Out → Summary</button>
 </div><!-- /page -->
 
 <!-- Toast -->
