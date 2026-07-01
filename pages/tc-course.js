@@ -24,6 +24,106 @@ window.TcCourse = (() => {
     try { localStorage.setItem('tc_course_' + geoKey, JSON.stringify({ ts: Date.now(), data })); } catch {}
   }
 
+  function centroid(pts) {
+    return {
+      lat: pts.reduce((s, p) => s + p.lat, 0) / pts.length,
+      lng: pts.reduce((s, p) => s + p.lng, 0) / pts.length
+    };
+  }
+
+  // Reasonable tee-to-green yardage bounds per par, used to reject
+  // implausible tee/green matches rather than confidently show a wrong number.
+  const PAR_YARDAGE_RANGE = { 3: [80, 280], 4: [200, 560], 5: [380, 700] };
+
+  // Fallback for courses that tag golf=hole as a standalone way (common in
+  // OSM) instead of a relation with tee/green members. There's no explicit
+  // link between a hole way and its tee/green ways in this scheme, so each
+  // hole is matched to its nearest tee and green by proximity to the hole
+  // way's two endpoints (trying both endpoint orientations). Holes are
+  // resolved in order of match confidence and claim their tee/green so two
+  // holes can't be silently matched to the same feature, and any match that
+  // produces an implausible yardage for the hole's stated par is discarded
+  // (green set to null) instead of shown.
+  function parseOverpassWays(json) {
+    const nodeMap = {};
+    for (const el of json.elements) if (el.type === 'node') nodeMap[el.id] = { lat: el.lat, lng: el.lon };
+
+    const holeWays = [], teeWays = [], greenWays = [];
+    for (const el of json.elements) {
+      if (el.type !== 'way' || !el.tags?.golf) continue;
+      const pts = (el.nodes || []).map(id => nodeMap[id]).filter(Boolean);
+      if (!pts.length) continue;
+      if (el.tags.golf === 'hole') {
+        const num = parseInt(el.tags.ref);
+        if (num >= 1 && num <= 18) {
+          holeWays.push({ num, par: parseInt(el.tags.par) || null, handicap: parseInt(el.tags.handicap) || null, pts });
+        }
+      } else if (el.tags.golf === 'tee') {
+        teeWays.push({ centroid: centroid(pts) });
+      } else if (el.tags.golf === 'green') {
+        greenWays.push({ pts, centroid: centroid(pts) });
+      }
+    }
+    if (!holeWays.length) return [];
+
+    function nearest(list, ll, claimed) {
+      let best = null, bestD = Infinity;
+      for (const item of list) {
+        if (claimed && claimed.has(item)) continue;
+        const d = haversineYds(ll, item.centroid);
+        if (d < bestD) { bestD = d; best = item; }
+      }
+      return best ? { item: best, dist: bestD } : null;
+    }
+
+    // First pass (no claiming yet): find each hole's best orientation and
+    // confidence score, so the most confident holes get first pick below.
+    const prelim = holeWays.map(h => {
+      const a = h.pts[0], b = h.pts[h.pts.length - 1];
+      const teeAtA = nearest(teeWays, a), teeAtB = nearest(teeWays, b);
+      const greenAtA = nearest(greenWays, a), greenAtB = nearest(greenWays, b);
+      const costForward  = (teeAtA?.dist ?? Infinity) + (greenAtB?.dist ?? Infinity);
+      const costBackward = (teeAtB?.dist ?? Infinity) + (greenAtA?.dist ?? Infinity);
+      const forward = costForward <= costBackward;
+      return { h, teeEnd: forward ? a : b, greenEnd: forward ? b : a, cost: forward ? costForward : costBackward };
+    }).sort((x, y) => x.cost - y.cost);
+
+    const claimedTees = new Set(), claimedGreens = new Set();
+
+    const holes = prelim.map(({ h, teeEnd, greenEnd }) => {
+      const teePick = nearest(teeWays, teeEnd, claimedTees);
+      const greenPick = nearest(greenWays, greenEnd, claimedGreens);
+      if (teePick) claimedTees.add(teePick.item);
+      if (greenPick) claimedGreens.add(greenPick.item);
+
+      const tees = {};
+      if (teePick) {
+        for (const k of ['tips', 'gold', 'blue', 'white', 'red']) tees[k] = teePick.item.centroid;
+      }
+      let green = null;
+      if (greenPick) {
+        const gw = greenPick.item;
+        const ref = teePick?.item.centroid ?? gw.centroid;
+        let front = gw.pts[0], back = gw.pts[0], minD = Infinity, maxD = -Infinity;
+        for (const p of gw.pts) {
+          const d = haversineYds(ref, p);
+          if (d < minD) { minD = d; front = p; }
+          if (d > maxD) { maxD = d; back = p; }
+        }
+        green = { center: gw.centroid, front, back };
+
+        const range = h.par && PAR_YARDAGE_RANGE[h.par];
+        if (range && teePick) {
+          const yds = haversineYds(teePick.item.centroid, green.center);
+          if (yds < range[0] || yds > range[1]) green = null;
+        }
+      }
+      return { number: h.num, par: h.par, handicap: h.handicap, tees, green };
+    });
+
+    return holes.sort((a, b) => a.number - b.number);
+  }
+
   function parseOverpass(json) {
     const nodeMap = {}, wayMap = {};
     for (const el of json.elements) {
@@ -91,9 +191,17 @@ window.TcCourse = (() => {
       const geoKey = `${lat.toFixed(3)}_${lng.toFixed(3)}`;
       const cached = getCache(geoKey);
       if (cached) return cached;
-      const q = `[out:json][timeout:25];(relation["golf"="hole"](around:1000,${lat},${lng}););out body;>;out skel qt;`;
+      // Some courses tag golf=hole as a relation with tee/green members (parseOverpass);
+      // others tag it as a standalone way with tee/green as separate unlinked ways
+      // (parseOverpassWays). Fetch both shapes in one query and try both parsers.
+      // 1500m, not 1000m: an 18-hole course can legitimately have holes
+      // 1-1.5km from whatever single point Nominatim/OSM reports as the
+      // course's location (e.g. the clubhouse), so a tighter radius silently
+      // clips real, correctly-mapped holes.
+      const q = `[out:json][timeout:25];(relation["golf"="hole"](around:1500,${lat},${lng});way["golf"="hole"](around:1500,${lat},${lng});way["golf"="tee"](around:1500,${lat},${lng});way["golf"="green"](around:1500,${lat},${lng}););out body;>;out skel qt;`;
       const json = await fetchOverpass(q);
-      const holes = parseOverpass(json);
+      let holes = parseOverpass(json);
+      if (!holes.length) holes = parseOverpassWays(json);
       if (!holes.length) return null;
       const result = { holes, geoKey };
       setCache(geoKey, result);
@@ -131,5 +239,5 @@ window.TcCourse = (() => {
     } catch { return []; }
   }
 
-  return { loadNear, searchByName, nearbyCourses, haversineYds, getCache, setCache, parseOverpass };
+  return { loadNear, searchByName, nearbyCourses, haversineYds, getCache, setCache, parseOverpass, parseOverpassWays };
 })();
