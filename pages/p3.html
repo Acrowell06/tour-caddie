@@ -104,17 +104,17 @@
   <div class="hole-nav">
     <div class="hn-arr" onclick="navigate('s2')">← H1</div>
     <div class="hn-center">
-      <div class="hn-course">Riviera CC</div>
+      <div class="hn-course" id="hn-course-name">Riviera CC</div>
       <div class="hn-info">Hole 2 of 18 · Par 3 · Hdcp 15</div>
     </div>
     <div class="hn-card-btn" onclick="openScorecard()">📋</div>
   </div>
 
   <div class="sb">
-    <div class="sb-l"><div class="stp neg">−1</div><div class="sth">THRU 1 HOLE</div></div>
+    <div class="sb-l"><div class="stp evn" id="score-to-par">E</div><div class="sth" id="score-thru">ROUND IN PROGRESS</div></div>
     <div class="sdv"></div>
     <div class="sb-r">
-      <div class="shl">HOLE 2 · PAR 3 · 165 YDS</div>
+      <div class="shl" id="p3-hole-info">HOLE 2 · PAR 3 · 165 YDS</div>
       <div class="shd">Shot <span id="p3-shot-num" style="color:var(--green);font-weight:800;">1</span></div>
     </div>
   </div>
@@ -326,7 +326,7 @@
     <div class="adlbl">Stats</div>
     <div class="chips" id="p3-sum-stats-chips"></div>
 
-    <button class="cfm" onclick="navigate('p5')">Confirm · Next Hole (Par 5) →</button>
+    <button class="cfm" onclick="p3SaveAndNext()">Confirm · Next Hole (Par 5) →</button>
   </div>
 </div>
 
@@ -1102,6 +1102,45 @@ function buildScorecard() {
 
 function openScorecard()  { document.getElementById('p3-scov').classList.add('open'); }
 function closeScorecardP3() { document.getElementById('p3-scov').classList.remove('open'); }
+
+/* ── SCORE BAR ── */
+function updateScoreBar() {
+  const scores = (() => { try { return JSON.parse(sessionStorage.getItem('tc_round_scores') || '[]'); } catch { return []; } })();
+  const n = scores.length;
+  const diff = scores.reduce((s, r) => s + (r.strokes - r.par), 0);
+  const stpEl = document.getElementById('score-to-par');
+  const sthEl = document.getElementById('score-thru');
+  if (!stpEl || !sthEl) return;
+  if (n === 0) {
+    stpEl.textContent = 'E'; stpEl.className = 'stp evn';
+    sthEl.textContent = 'ROUND IN PROGRESS';
+  } else {
+    stpEl.textContent = diff === 0 ? 'E' : diff > 0 ? `+${diff}` : `−${Math.abs(diff)}`;
+    stpEl.className = 'stp ' + (diff < 0 ? 'neg' : diff > 0 ? 'pos' : 'evn');
+    sthEl.textContent = `THRU ${n} HOLE${n === 1 ? '' : 'S'}`;
+  }
+}
+
+function p3SaveAndNext() {
+  const scores = (() => { try { return JSON.parse(sessionStorage.getItem('tc_round_scores') || '[]'); } catch { return []; } })();
+  const updated = scores.filter(s => s.hole !== 2);
+  updated.push({ hole: 2, par: 3, strokes: p3ShotCount });
+  sessionStorage.setItem('tc_round_scores', JSON.stringify(updated));
+  navigate('p5');
+}
+
+/* ── LIVE HEADER DATA ── */
+(function initHeader() {
+  const courseEl = document.getElementById('hn-course-name');
+  if (courseEl && _round?.course?.name) courseEl.textContent = _round.course.name;
+
+  const yds = DEGRADED ? null : Math.round(haversineYds(TEE_LL, GREEN_CTR));
+  const par = _holeData?.par ?? 3;
+  const infoEl = document.getElementById('p3-hole-info');
+  if (infoEl) infoEl.textContent = `HOLE 2 · PAR ${par}` + (yds ? ` · ${yds} YDS` : '');
+})();
+
+updateScoreBar();
 
 buildScorecard();
 renderShotLogP3();
