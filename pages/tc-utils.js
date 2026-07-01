@@ -1,7 +1,7 @@
 /* ===== TOUR CADDIE — SHARED UTILITIES ===== */
 
-const ORDER = ['login','home','rounds','stats','courses','profile','scanner','s2','p3','p5'];
-const PAGES = { login:'login.html', home:'home.html', rounds:'rounds.html', stats:'stats.html', courses:'courses.html', profile:'profile.html', scanner:'scanner.html', s2:'s2.html', p3:'p3.html', p5:'p5.html' };
+const ORDER = ['login','home','rounds','stats','courses','profile','scanner','hole'];
+const PAGES = { login:'login.html', home:'home.html', rounds:'rounds.html', stats:'stats.html', courses:'courses.html', profile:'profile.html', scanner:'scanner.html', hole:'hole.html' };
 
 function navigate(key) {
   const cur = document.body.dataset.page;
@@ -290,4 +290,101 @@ function addTapToPlace(svgId, gpsBarId, getDragFn) {
     getDragFn().setPosition(p.x, p.y);
     e.preventDefault();
   });
+}
+
+/* ── WEATHER (Open-Meteo — free, no API key) ── */
+const WX_CACHE_TTL = 15 * 60 * 1000;
+
+const WMO_CODES = {
+  0:  { text: 'Clear',              icon: '☀️' },
+  1:  { text: 'Mainly Clear',       icon: '🌤️' },
+  2:  { text: 'Partly Cloudy',      icon: '⛅' },
+  3:  { text: 'Overcast',           icon: '☁️' },
+  45: { text: 'Fog',                icon: '🌫️' },
+  48: { text: 'Fog',                icon: '🌫️' },
+  51: { text: 'Light Drizzle',      icon: '🌦️' },
+  53: { text: 'Drizzle',            icon: '🌦️' },
+  55: { text: 'Heavy Drizzle',      icon: '🌦️' },
+  56: { text: 'Freezing Drizzle',   icon: '🌦️' },
+  57: { text: 'Freezing Drizzle',   icon: '🌦️' },
+  61: { text: 'Light Rain',         icon: '🌧️' },
+  63: { text: 'Rain',               icon: '🌧️' },
+  65: { text: 'Heavy Rain',         icon: '🌧️' },
+  66: { text: 'Freezing Rain',      icon: '🌧️' },
+  67: { text: 'Freezing Rain',      icon: '🌧️' },
+  71: { text: 'Light Snow',         icon: '🌨️' },
+  73: { text: 'Snow',               icon: '🌨️' },
+  75: { text: 'Heavy Snow',         icon: '🌨️' },
+  77: { text: 'Snow Grains',        icon: '🌨️' },
+  80: { text: 'Rain Showers',       icon: '🌦️' },
+  81: { text: 'Rain Showers',       icon: '🌦️' },
+  82: { text: 'Heavy Rain Showers', icon: '🌦️' },
+  85: { text: 'Snow Showers',       icon: '🌨️' },
+  86: { text: 'Snow Showers',       icon: '🌨️' },
+  95: { text: 'Thunderstorm',       icon: '⛈️' },
+  96: { text: 'Thunderstorm/Hail',  icon: '⛈️' },
+  99: { text: 'Thunderstorm/Hail',  icon: '⛈️' },
+};
+
+function getWeatherCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > WX_CACHE_TTL) { localStorage.removeItem(key); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function setWeatherCache(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
+async function fetchWeather(lat, lng) {
+  const key = 'tc_wx_' + lat.toFixed(2) + '_' + lng.toFixed(2);
+  const cached = getWeatherCache(key);
+  if (cached) return cached;
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const json = await r.json();
+    if (!json.current) return null;
+    const data = {
+      tempF:       Math.round(json.current.temperature_2m),
+      weatherCode: json.current.weather_code,
+      windMph:     Math.round(json.current.wind_speed_10m),
+      windDirDeg:  json.current.wind_direction_10m
+    };
+    setWeatherCache(key, data);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+// Great-circle initial bearing (degrees, 0-360) from point a to point b.
+function bearingDeg(a, b) {
+  const r = Math.PI / 180;
+  const phi1 = a.lat * r, phi2 = b.lat * r;
+  const dLambda = (b.lng - a.lng) * r;
+  const y = Math.sin(dLambda) * Math.cos(phi2);
+  const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLambda);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+// 8-point compass letter for a true-north-relative bearing in degrees.
+function compassLetter(deg) {
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+}
+
+// Caddie-style descriptor for wind direction relative to the hole's playing
+// direction (0deg = wind blowing from the target toward the tee = headwind).
+function windBucketLabel(relativeAngle) {
+  const a = ((relativeAngle % 360) + 360) % 360;
+  if (a >= 315 || a < 45)  return 'INTO';
+  if (a >= 45  && a < 135) return 'R→L';
+  if (a >= 135 && a < 225) return 'HELPING';
+  return 'L→R';
 }
