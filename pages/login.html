@@ -129,7 +129,14 @@
     try {
       if (mode === 'signup') {
         const name = document.getElementById('lg-name').value.trim();
-        await TcAuth.signUp(email, password, name);
+        const result = await TcAuth.signUp(email, password, name);
+        if (!result.session) {
+          // Email confirmation is pending — there's no active session yet,
+          // so don't navigate to a page that will just bounce back here.
+          showError('Check your email to confirm your account, then sign in.');
+          toggleMode(); // back to sign-in mode, ready for them once confirmed
+          return;
+        }
       } else {
         await TcAuth.signInWithPassword(email, password);
       }
