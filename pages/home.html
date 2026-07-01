@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Home</title>
+<link rel="stylesheet" href="tc.css">
+<style>
+/* ─── SCROLLABLE CONTENT AREA ─── */
+.hw-scroller { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; display:flex; flex-direction:column; min-height:0; padding-bottom:36px; }
+.hw-scroller::-webkit-scrollbar { display:none; }
+
+/* ─── WIDGET GRID ─── */
+.widget-grid { display:flex; flex-wrap:wrap; gap:8px; padding:4px 12px 0; }
+
+/* ─── WIDGET WRAP ─── */
+.w-wrap { flex-shrink:0; }
+.w-full { flex:0 0 100%; }
+.w-half { flex:0 0 calc(50% - 4px); }
+
+/* ─── CARD ─── */
+.w-card { display:flex; border-radius:12px; width:100%; min-height:88px; overflow:hidden; background:var(--surface); border:1px solid var(--border); transition:border-radius 0.15s; }
+.edit-mode .w-card { border-radius:12px 12px 0 0; }
+
+/* ─── SLOTS ─── */
+.w-slot { flex:1; min-width:0; padding:10px 10px 10px; position:relative; border-left:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; justify-content:space-between; }
+.w-slot:first-child { border-left:none; }
+
+/* Value: small tile has biggest number, large (3 cols) smallest — fills card height */
+.w-large  .w-val { font-size:21px; font-weight:900; letter-spacing:-0.3px; line-height:1; }
+.w-medium .w-val { font-size:26px; font-weight:900; letter-spacing:-0.6px; line-height:1; }
+.w-small  .w-val { font-size:34px; font-weight:900; letter-spacing:-1px;   line-height:1; }
+
+/* flex-shrink:0 on all three so space-between distributes the gap, not shrinks them */
+.w-lbl      { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; }
+.w-val      { white-space:nowrap; flex-shrink:0; }
+.w-sub-row  { display:flex; flex-wrap:wrap; gap:4px; align-items:baseline; flex-shrink:0; min-height:11px; }
+.w-trend    { font-size:9px; font-weight:700; white-space:nowrap; }
+.w-sub      { font-size:8.5px; color:var(--muted); white-space:nowrap; }
+.w-empty-val{ font-size:20px; color:var(--dim); }
+
+/* ─── SLOT OVERLAY (edit mode) ─── */
+.slot-ov { display:none; position:absolute; inset:0; z-index:5; cursor:pointer; }
+.slot-ov::before { content:''; position:absolute; inset:0; background:rgba(46,204,113,0.05); transition:background 0.1s; }
+.slot-ov::after  { position:absolute; top:5px; right:5px; font-size:8.5px; font-weight:700; padding:2px 5px; border-radius:4px; line-height:1.3; }
+.slot-ov.filled::after { content:'edit';  color:rgba(46,204,113,0.85); background:rgba(46,204,113,0.13); }
+.slot-ov.empty::after  { content:'＋ add'; color:rgba(46,204,113,0.9);  background:rgba(46,204,113,0.15); }
+.slot-ov:active::before { background:rgba(46,204,113,0.14); }
+.edit-mode .slot-ov { display:block; }
+
+/* ─── EDIT BAR ─── */
+.w-edit-bar { display:none; background:rgba(8,8,14,0.96); border:1px solid rgba(255,255,255,0.08); border-top:none; border-radius:0 0 12px 12px; padding:5px 8px; align-items:center; justify-content:space-between; gap:6px; }
+.edit-mode .w-edit-bar { display:flex; }
+
+.w-remove { background:rgba(231,76,60,0.10); border:1px solid rgba(231,76,60,0.28); border-radius:6px; padding:3px 9px; font-size:10px; font-weight:700; color:var(--red); cursor:pointer; user-select:none; }
+.w-remove:active { opacity:0.7; }
+
+.w-sizes { display:flex; gap:3px; }
+.w-sz { padding:3px 9px; border-radius:5px; font-size:10px; font-weight:700; color:var(--dim); background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); cursor:pointer; user-select:none; transition:all 0.12s; }
+.w-sz.on { background:rgba(46,204,113,0.14); border-color:rgba(46,204,113,0.4); color:var(--green); }
+
+/* ─── ADD WIDGET BUTTON ─── */
+.add-widget-btn { margin:8px 12px 0; background:rgba(46,204,113,0.06); border:1px dashed rgba(46,204,113,0.32); border-radius:10px; padding:11px; font-size:12px; font-weight:700; color:rgba(46,204,113,0.75); display:none; align-items:center; justify-content:center; gap:6px; cursor:pointer; flex-shrink:0; user-select:none; }
+.add-widget-btn:active { transform:scale(0.98); }
+
+/* ─── PGA LEADERBOARD STRIP ─── */
+.pga-strip { position:absolute; left:0; right:0; bottom:54px; z-index:20; border-top:1px solid var(--border); background:var(--bg); }
+.pga-hdr { display:flex; align-items:center; justify-content:space-between; padding:7px 12px 6px; cursor:pointer; user-select:none; }
+.pga-hdr:active { opacity:0.75; }
+.pga-ttl { font-size:11px; font-weight:800; color:#fff; letter-spacing:-0.1px; text-decoration:none; cursor:pointer; }
+.pga-right { display:flex; align-items:center; gap:6px; }
+.pga-live { font-size:8px; font-weight:900; letter-spacing:1px; color:#0A0A0F; background:#2ECC71; padding:2px 5px; border-radius:3px; cursor:pointer; user-select:none; }
+.pga-live:active { opacity:0.75; }
+.pga-tip { position:absolute; left:14px; right:14px; bottom:88px; background:rgba(10,10,15,0.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:9px 14px; font-size:11px; font-weight:600; color:rgba(255,255,255,0.7); text-align:center; z-index:50; opacity:0; pointer-events:none; transition:opacity 0.35s; line-height:1.5; }
+.pga-round { font-size:9px; font-weight:700; color:var(--muted); }
+.pga-chev { font-size:9px; color:var(--muted); transition:transform 0.25s; display:inline-block; }
+.pga-rows { overflow-x:auto; scrollbar-width:none; display:flex; flex-direction:column; padding:0 8px 7px; gap:1px;
+  max-height:200px; overflow:hidden; transition:max-height 0.3s cubic-bezier(0.4,0,0.2,1), padding 0.3s; }
+.pga-rows::-webkit-scrollbar { display:none; }
+.pga-strip.collapsed .pga-rows { max-height:0; padding-bottom:0; }
+.pga-strip.collapsed .pga-chev { transform:rotate(180deg); }
+.pga-row { display:flex; align-items:center; padding:4px 4px; gap:0; border-radius:6px; }
+.pga-row:active { background:rgba(255,255,255,0.04); }
+.pga-pos  { font-size:10px; font-weight:700; color:var(--muted); width:22px; flex-shrink:0; }
+.pga-name { font-size:11px; font-weight:700; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pga-thru { font-size:9px; font-weight:600; color:#fff; width:38px; text-align:right; flex-shrink:0; }
+.pga-today{ font-size:9px; font-weight:700; width:30px; text-align:right; flex-shrink:0; }
+.pga-tot  { font-size:11px; font-weight:900; width:30px; text-align:right; flex-shrink:0; }
+.c-under { color:#E74C3C; }
+.c-over  { color:#4A90D9; }
+.c-even  { color:#fff; }
+
+/* ─── PICKER LIST ─── */
+.picker-list { max-height:248px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; scrollbar-width:none; margin-bottom:8px; }
+.picker-list::-webkit-scrollbar { display:none; }
+
+.picker-item { display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:10px; background:var(--surface2); border:1px solid var(--border); cursor:pointer; transition:background 0.1s; }
+.picker-item:active { background:rgba(46,204,113,0.08); }
+.pi-info { flex:1; min-width:0; }
+.pi-name { font-size:12px; font-weight:700; }
+.pi-sub  { font-size:10px; color:var(--muted); margin-top:1px; }
+.pi-badge { font-size:12px; font-weight:700; color:var(--green); flex-shrink:0; }
+
+/* ─── SIZE OPTION TILES (in add-widget sheet) ─── */
+.size-opt { display:flex; flex-direction:column; gap:3px; padding:11px 14px; border-radius:10px; background:var(--surface2); border:1px solid var(--border); cursor:pointer; transition:all 0.12s; user-select:none; }
+.size-opt:active { background:rgba(46,204,113,0.08); border-color:rgba(46,204,113,0.35); }
+.so-name { font-size:13px; font-weight:800; }
+.so-desc { font-size:10px; color:var(--muted); margin-top:1px; }
+.so-dots { display:flex; gap:4px; margin-top:7px; }
+.so-dot  { flex:1; height:22px; background:rgba(255,255,255,0.07); border-radius:5px; border:1px solid rgba(255,255,255,0.07); }
+</style>
+</head>
+<body data-page="home">
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+
+<div class="flow">
+  <div class="step" onclick="navigate('login')">Sign In</div>
+  <div class="arr">→</div>
+  <div class="step on">Home</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('s2')">Fairway · H7</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('h8')">Hole 8</div>
+</div>
+
+<div class="phone">
+<div class="wrap" id="wrap">
+
+<!-- overflow-y:hidden so the tab bar stays fixed; hw-scroller handles scrolling -->
+<div class="page" style="overflow-y:hidden;position:relative;">
+
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- Header -->
+  <div style="padding:6px 16px 4px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>
+      <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.8px;margin-bottom:1px;">GOOD MORNING</div>
+      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px;">John Doe</div>
+    </div>
+    <button id="edit-btn" onclick="toggleEdit()"
+      style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.22);border-radius:8px;
+             padding:5px 13px;font-size:11px;font-weight:700;color:var(--green);cursor:pointer;
+             font-family:Inter,sans-serif;transition:all 0.15s;margin-bottom:2px;">
+      Edit
+    </button>
+  </div>
+
+  <!-- Scrollable widget area -->
+  <div class="hw-scroller">
+    <div class="widget-grid" id="widget-grid"></div>
+    <div class="add-widget-btn" id="add-btn" onclick="openAddPicker()">＋ Add Widget</div>
+    <button class="cta cta-g" id="start-round" onclick="openRoundChoice(() => { const w=document.getElementById('wrap'); w.style.animation='slideOutLeft 0.34s cubic-bezier(0.4,0,0.2,1) forwards'; setTimeout(()=>{ window.location.href='rounds.html?start=1&dir=fwd'; },320); })"
+      style="margin:8px 12px 4px;font-size:14px;flex-shrink:0;">⛳ Start Round</button>
+    <div style="height:6px;flex-shrink:0;"></div>
+  </div>
+
+  <!-- PGA Tour Live Leaderboard -->
+  <div class="pga-strip collapsed" id="pga-strip">
+    <div class="pga-hdr" onclick="toggleLeaderboard()">
+      <span class="pga-ttl">The Travelers Championship</span>
+      <div class="pga-right">
+        <span class="pga-live" onclick="openPGA();event.stopPropagation();">LIVE</span>
+        <span class="pga-round">R4 · Hole 16</span>
+        <span class="pga-chev">▲</span>
+      </div>
+    </div>
+    <div class="pga-rows" id="pga-rows"></div>
+  </div>
+
+  <!-- Tab Bar (stays at bottom because page is flex column with overflow:hidden) -->
+  <div class="tbar" style="flex-shrink:0;">
+    <div class="tbi active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tbi-lbl">Home</span>
+    </div>
+    <div class="tbi" onclick="navigate('rounds')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tbi-lbl">Rounds</span>
+    </div>
+    <div class="tbi" onclick="navigate('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="tbi-lbl">Stats</span>
+    </div>
+    <div class="tbi" onclick="navigate('courses')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      <span class="tbi-lbl">Courses</span>
+    </div>
+    <div class="tbi" onclick="navigate('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tbi-lbl">Profile</span>
+    </div>
+  </div>
+
+  <!-- Floating tip above leaderboard -->
+  <div class="pga-tip" id="pga-tip">Tap <strong style="color:#fff;">LIVE</strong> to navigate to the PGA Tour app or website</div>
+
+</div><!-- /page -->
+
+<!-- Picker Sheet — direct child of .wrap so it overlays everything -->
+<div class="sheet-ov" id="picker-ov">
+  <div class="sheet-bd" onclick="closePicker()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl" id="picker-ttl">Choose Stat</div>
+      <div class="sh-undo" onclick="closePicker()">✕ Close</div>
+    </div>
+    <div class="sh-sub" id="picker-sub">Tap any stat to assign it to this slot</div>
+    <div class="picker-list" id="picker-list"></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+</div><!-- /phone -->
+
+<p class="pg-note">Tap <strong style="color:var(--green);">Edit</strong> · tap any slot to swap stat · S = 1 stat · M = 2 · L = 3 · any combo</p>
+
+<script src="tc-utils.js"></script>
+<script>
+/* ══ STAT CATALOGUE ══ */
+const STATS = {
+  'handicap':   { name:'Handicap Index',   label:'HANDICAP',    value:'+1.8',  vc:'g', trend:'▼ 0.3',  tc:'g', sub:'WHS · Jun 27' },
+  'last-round': { name:'Last Round',        label:'LAST ROUND',  value:'−2',    vc:'g', trend:null,     tc:'g', sub:'70 · Riviera' },
+  'season':     { name:'2026 Season',       label:'2025 SEASON', value:'12',    vc:'w', trend:null,     tc:'n', sub:'rounds'       },
+  'scoring':    { name:'Scoring Average',   label:'SCR AVG',     value:'+0.4',  vc:'w', trend:'▼ 0.1',  tc:'g', sub:'to par'       },
+  'low-round':  { name:'Low Round',         label:'LOW ROUND',   value:'−5',    vc:'g', trend:null,     tc:'g', sub:'65 gross'     },
+  'fir':        { name:'Fairways Hit %',    label:'FIR %',       value:'67%',   vc:'w', trend:'▲ 4%',   tc:'g', sub:null           },
+  'gir':        { name:'Greens in Reg.',    label:'GIR %',       value:'62%',   vc:'w', trend:'▼ 2%',   tc:'r', sub:null           },
+  'prox':       { name:'GIR Proximity',     label:'GIR PROX',    value:'18.4',  vc:'w', trend:null,     tc:'n', sub:'ft avg'       },
+  'driving':    { name:'Driving Distance',  label:'DRIVE AVG',   value:'284',   vc:'w', trend:null,     tc:'n', sub:'yds'          },
+  'scrambling': { name:'Scrambling %',      label:'SCRAMBLING',  value:'58%',   vc:'w', trend:'▲ 3%',   tc:'g', sub:null           },
+  'sand-save':  { name:'Sand Save %',       label:'SAND SAVE',   value:'54%',   vc:'w', trend:'▲ 5%',   tc:'g', sub:null           },
+  'putts':      { name:'Putts per GIR',     label:'PUTTS/GIR',   value:'1.74',  vc:'w', trend:'▲ 0.04', tc:'r', sub:null           },
+  '1putt':      { name:'1-Putt %',          label:'1-PUTT %',    value:'32%',   vc:'w', trend:'▲ 2%',   tc:'g', sub:null           },
+  '3putt':      { name:'3-Putt %',          label:'3-PUTT %',    value:'4%',    vc:'w', trend:'▼ 1%',   tc:'g', sub:null           },
+  'sg-total':   { name:'SG: Total',         label:'SG TOTAL',    value:'+1.1',  vc:'g', trend:'▲ 0.2',  tc:'g', sub:null           },
+  'sg-ott':     { name:'SG: Off the Tee',   label:'SG OTT',      value:'+0.4',  vc:'g', trend:'▲ 0.1',  tc:'g', sub:null           },
+  'sg-app':     { name:'SG: Approach',      label:'SG APP',      value:'+0.6',  vc:'g', trend:'▲ 0.2',  tc:'g', sub:null           },
+  'sg-atg':     { name:'SG: Around Green',  label:'SG ATG',      value:'−0.2',  vc:'r', trend:'▼ 0.1',  tc:'r', sub:null           },
+  'sg-putt':    { name:'SG: Putting',       label:'SG PUTT',     value:'+0.3',  vc:'g', trend:'▲ 0.1',  tc:'g', sub:null           },
+};
+
+/* ══ CONSTANTS ══ */
+const SIZE_SLOTS = { small:1, medium:2, large:3 };
+
+/* ══ WIDGET STATE ══
+   Each widget: { id, size, slots[] }
+   slots[i] is a stat key (string) or null (empty/unassigned) */
+let widgetConfig = [
+  { id:'w0', size:'large',  slots:['handicap',  'scoring',  'last-round'] },
+  { id:'w1', size:'medium', slots:['fir',       'gir'      ] },
+  { id:'w2', size:'large',  slots:['sg-total',  'sg-ott',   'sg-app'   ] },
+  { id:'w3', size:'small',  slots:['putts'] },
+];
+let nextId   = 4;
+let editMode = false;
+let editSlot = null; // { widgetId, slotIdx } — set when slot picker is open
+
+/* ══ DOM HELPER ══ */
+function el(tag, cls, text, style) {
+  const d = document.createElement(tag || 'div');
+  if (cls)       d.className = cls;
+  if (text != null) d.textContent = text;
+  if (style)     d.style.cssText = style;
+  return d;
+}
+
+/* ══ BUILD ONE SLOT ══ */
+function buildSlot(w, idx) {
+  const key  = w.slots[idx];
+  const slot = el('div', 'w-slot');
+
+  if (key && STATS[key]) {
+    const s  = STATS[key];
+    const vc = s.vc === 'g' ? 'var(--green)' : s.vc === 'r' ? 'var(--red)' : '#fff';
+    slot.appendChild(el('div', 'w-lbl', s.label));
+    slot.appendChild(el('div', 'w-val', s.value, 'color:' + vc));
+    // Always render sub-row (even empty) — space-between needs 3 anchors to fill height
+    const row = el('div', 'w-sub-row');
+    if (s.trend) {
+      const tc = s.tc === 'g' ? 'var(--green)' : s.tc === 'r' ? 'var(--red)' : 'var(--muted)';
+      row.appendChild(el('span', 'w-trend', s.trend, 'color:' + tc));
+    }
+    if (s.sub) row.appendChild(el('span', 'w-sub', s.sub));
+    slot.appendChild(row);
+  } else {
+    slot.appendChild(el('div', 'w-lbl', 'EMPTY'));
+    slot.appendChild(el('div', 'w-empty-val', '−'));
+    slot.appendChild(el('div', 'w-sub-row')); // empty anchor for space-between
+  }
+
+  // Tap overlay: shown only in edit mode via CSS (.edit-mode .slot-ov)
+  const ov = el('div', 'slot-ov ' + (key ? 'filled' : 'empty'));
+  ov.onclick = () => openSlotPicker(w.id, idx);
+  slot.appendChild(ov);
+  return slot;
+}
+
+/* ══ RENDER ══ */
+function renderWidgets() {
+  const grid = document.getElementById('widget-grid');
+  grid.innerHTML = '';
+  grid.className = editMode ? 'widget-grid edit-mode' : 'widget-grid';
+
+  widgetConfig.forEach(w => {
+    const wrap = el('div', 'w-wrap ' + (w.size === 'small' ? 'w-half' : 'w-full'));
+
+    // Card containing N slots
+    const card = el('div', 'w-card w-' + w.size);
+    for (let i = 0; i < SIZE_SLOTS[w.size]; i++) card.appendChild(buildSlot(w, i));
+    wrap.appendChild(card);
+
+    // Edit bar (CSS: display:none → display:flex when .edit-mode is on grid)
+    const bar = el('div', 'w-edit-bar');
+    const rm  = el('div', 'w-remove', '− Remove');
+    rm.onclick = () => { widgetConfig = widgetConfig.filter(x => x.id !== w.id); renderWidgets(); };
+    const szs = el('div', 'w-sizes');
+    ['small','medium','large'].forEach(s => {
+      const lbl = { small:'S', medium:'M', large:'L' }[s];
+      const sb  = el('div', 'w-sz' + (w.size === s ? ' on' : ''), lbl);
+      sb.onclick = () => changeSize(w.id, s);
+      szs.appendChild(sb);
+    });
+    bar.appendChild(rm);
+    bar.appendChild(szs);
+    wrap.appendChild(bar);
+
+    grid.appendChild(wrap);
+  });
+}
+
+/* ══ RESIZE WIDGET ══ */
+function changeSize(id, newSize) {
+  const w = widgetConfig.find(x => x.id === id);
+  if (!w || w.size === newSize) return;
+  const n   = SIZE_SLOTS[newSize];
+  const old = w.slots.slice();
+  // Grow: pad with nulls. Shrink: trim from end.
+  w.slots = n > old.length
+    ? [...old, ...Array(n - old.length).fill(null)]
+    : old.slice(0, n);
+  w.size = newSize;
+  renderWidgets();
+}
+
+/* ══ EDIT MODE ══ */
+function toggleEdit() {
+  editMode = !editMode;
+  const btn = document.getElementById('edit-btn');
+  btn.textContent        = editMode ? 'Done' : 'Edit';
+  btn.style.background   = editMode ? 'rgba(46,204,113,0.18)' : 'rgba(46,204,113,0.08)';
+  btn.style.borderColor  = editMode ? 'rgba(46,204,113,0.5)'  : 'rgba(46,204,113,0.22)';
+  document.getElementById('add-btn').style.display     = editMode ? 'flex' : 'none';
+  document.getElementById('start-round').style.display = editMode ? 'none' : '';
+  renderWidgets();
+}
+
+/* ══ SLOT PICKER — choose which stat fills a slot ══ */
+function openSlotPicker(widgetId, slotIdx) {
+  editSlot = { widgetId, slotIdx };
+  document.getElementById('picker-ttl').textContent = 'Choose Stat';
+  document.getElementById('picker-sub').textContent = 'Tap any stat to assign it to this slot';
+
+  const list = document.getElementById('picker-list');
+  list.innerHTML = '';
+
+  Object.entries(STATS).forEach(([key, s]) => {
+    const item = el('div', 'picker-item');
+    const info = el('div', 'pi-info');
+    const sub  = [s.label, s.trend, s.sub].filter(Boolean).join(' · ');
+    info.appendChild(el('div', 'pi-name', s.name));
+    info.appendChild(el('div', 'pi-sub', sub));
+    item.appendChild(info);
+    item.appendChild(el('span', 'pi-badge', '＋'));
+    item.onclick = () => {
+      const ww = widgetConfig.find(x => x.id === editSlot.widgetId);
+      if (ww) ww.slots[editSlot.slotIdx] = key;
+      closePicker();
+      renderWidgets();
+    };
+    list.appendChild(item);
+  });
+
+  document.getElementById('picker-ov').classList.add('open');
+}
+
+/* ══ ADD WIDGET PICKER — choose size, then tap slots to fill ══ */
+function openAddPicker() {
+  editSlot = null;
+  document.getElementById('picker-ttl').textContent = 'Add Widget';
+  document.getElementById('picker-sub').textContent = 'Choose a size — then tap each slot to assign stats';
+
+  const list = document.getElementById('picker-list');
+  list.innerHTML = '';
+
+  [
+    { size:'small',  label:'Small',  desc:'1 stat · half-width tile'           },
+    { size:'medium', label:'Medium', desc:'2 stats side by side · full width'  },
+    { size:'large',  label:'Large',  desc:'3 stats side by side · full width'  },
+  ].forEach(opt => {
+    const item = el('div', 'size-opt');
+    item.appendChild(el('div', 'so-name', opt.label));
+    item.appendChild(el('div', 'so-desc', opt.desc));
+    const dots = el('div', 'so-dots');
+    for (let i = 0; i < SIZE_SLOTS[opt.size]; i++) dots.appendChild(el('div', 'so-dot'));
+    item.appendChild(dots);
+    item.onclick = () => {
+      widgetConfig.push({ id:'w'+nextId++, size:opt.size, slots:Array(SIZE_SLOTS[opt.size]).fill(null) });
+      closePicker();
+      renderWidgets();
+    };
+    list.appendChild(item);
+  });
+
+  document.getElementById('picker-ov').classList.add('open');
+}
+
+function closePicker() {
+  document.getElementById('picker-ov').classList.remove('open');
+}
+
+/* ══ PGA TOGGLE ══ */
+let _pgaTipTimer = null;
+function toggleLeaderboard() {
+  const strip = document.getElementById('pga-strip');
+  const tip   = document.getElementById('pga-tip');
+  const collapsing = !strip.classList.contains('collapsed');
+  strip.classList.toggle('collapsed');
+  clearTimeout(_pgaTipTimer);
+  if (!collapsing) {
+    tip.style.opacity = '1';
+    _pgaTipTimer = setTimeout(() => { tip.style.opacity = '0'; }, 3000);
+  } else {
+    tip.style.opacity = '0';
+  }
+}
+
+/* ══ PGA DEEP LINK ══ */
+function openPGA() {
+  const appUrl = 'pgatour://leaderboard';
+  const webUrl = 'https://www.pgatour.com/leaderboard';
+
+  // If the app opens, the page goes hidden — cancel the web fallback
+  const cancel = () => clearTimeout(timer);
+  document.addEventListener('visibilitychange', cancel, { once: true });
+  window.addEventListener('pagehide', cancel, { once: true });
+
+  // Fallback: if page is still visible after 750ms, app isn't installed
+  const timer = setTimeout(() => {
+    document.removeEventListener('visibilitychange', cancel);
+    window.removeEventListener('pagehide', cancel);
+    window.open(webUrl, '_blank');
+  }, 750);
+
+  window.location.href = appUrl;
+}
+
+/* ══ PGA LEADERBOARD ══ */
+const PGA_LEADERS = [
+  { pos:'1',  name:'Scottie Scheffler',  tot:-18, today:-6, thru:16   },
+  { pos:'2',  name:'Collin Morikawa',    tot:-16, today:-4, thru:16   },
+  { pos:'3',  name:'Jon Rahm',           tot:-15, today:-5, thru:'F'  },
+  { pos:'T4', name:'Rory McIlroy',       tot:-14, today:-3, thru:16   },
+  { pos:'T4', name:'Xander Schauffele',  tot:-14, today:-2, thru:'F'  },
+  { pos:'T6', name:'Patrick Cantlay',    tot:-13, today:-4, thru:'F'  },
+  { pos:'T6', name:'Tommy Fleetwood',    tot:-13, today:-1, thru:16   },
+];
+
+function fmtScore(n) {
+  if (n === 0) return '<span class="c-even">E</span>';
+  return n < 0 ? `<span class="c-even">${n}</span>` : `<span class="c-even">+${n}</span>`;
+}
+
+function fmtToday(n) {
+  if (n === 0) return '<span class="c-even">E</span>';
+  return n < 0 ? `<span class="c-under">${n}</span>` : `<span class="c-over">+${n}</span>`;
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('pga-rows');
+  if (!el) return;
+  el.innerHTML = PGA_LEADERS.map(p => `
+    <div class="pga-row">
+      <div class="pga-pos">${p.pos}</div>
+      <div class="pga-name">${p.name}</div>
+      <div class="pga-thru">${p.thru === 'F' ? 'F' : `Thru ${p.thru}`}</div>
+      <div class="pga-today">${fmtToday(p.today)}</div>
+      <div class="pga-tot">${fmtScore(p.tot)}</div>
+    </div>`).join('');
+}
+
+/* ══ INIT ══ */
+renderWidgets();
+renderLeaderboard();
+</script>
+</body>
+</html>

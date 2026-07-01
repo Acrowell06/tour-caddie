@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Hole 2 (Par 3)</title>
+<link rel="stylesheet" href="tc.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+.hole-nav { display:flex; align-items:center; justify-content:space-between; padding:5px 12px 4px; flex-shrink:0; background:var(--surface); border-bottom:1px solid var(--border); }
+.hn-arr { padding:5px 10px; border-radius:7px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; }
+.hn-center { text-align:center; flex:1; padding:0 8px; }
+.hn-course { font-size:11px; font-weight:800; }
+.hn-info { font-size:9px; color:var(--dim); margin-top:1px; }
+.hn-card-btn { padding:5px 9px; border-radius:7px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:14px; cursor:pointer; line-height:1; }
+.fcb-strip { display:flex; background:var(--surface2); border-bottom:1px solid var(--border); flex-shrink:0; }
+.fcb-cell { flex:1; padding:5px 4px; text-align:center; border-right:1px solid var(--border); }
+.fcb-cell:last-child { border-right:none; }
+.fcb-lbl { font-size:7px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); }
+.fcb-val { font-size:13px; font-weight:900; line-height:1.3; }
+.fcb-cell.ctr .fcb-val { color:var(--green); }
+.fcb-cell.my .fcb-val { font-size:11px; color:var(--muted); }
+.shot-log { display:flex; gap:5px; padding:5px 12px; overflow-x:auto; flex-shrink:0; min-height:30px; scrollbar-width:none; align-items:center; }
+.shot-log::-webkit-scrollbar { display:none; }
+.shot-log-empty { font-size:10px; color:var(--dim); }
+.sl-chip { flex-shrink:0; font-size:10px; font-weight:700; white-space:nowrap; background:rgba(46,204,113,0.07); border:1px solid rgba(46,204,113,0.25); border-radius:5px; padding:3px 8px; color:var(--green); }
+.club-ov { position:absolute; inset:0; z-index:80; pointer-events:none; }
+.club-ov.open { pointer-events:all; }
+.club-bd { position:absolute; inset:0; background:rgba(0,0,0,0); transition:background 0.25s; }
+.club-ov.open .club-bd { background:rgba(0,0,0,0.55); }
+.club-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--bg); border-radius:18px 18px 0 0; border-top:1px solid var(--border); transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.4,0,0.2,1); padding-bottom:22px; }
+.club-ov.open .club-sheet { transform:translateY(0); }
+.club-handle { width:36px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; margin:10px auto 0; }
+.club-ttl-row { display:flex; align-items:baseline; justify-content:space-between; padding:8px 14px 10px; }
+.club-ttl { font-size:13px; font-weight:800; }
+.club-sub { font-size:10px; color:var(--muted); }
+.club-skip-btn { font-size:11px; font-weight:700; color:var(--dim); padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid var(--border); cursor:pointer; }
+.club-grp { padding:0 12px 7px; }
+.club-grp-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
+.club-btns { display:flex; gap:5px; flex-wrap:wrap; }
+.cbtn { padding:7px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; font-size:11px; font-weight:700; color:rgba(255,255,255,0.7); cursor:pointer; }
+.cbtn.sel { background:rgba(46,204,113,0.12); border-color:#2ECC71; color:#2ECC71; }
+.cbtn:active { transform:scale(0.93); }
+.club-skip-full { margin:6px 12px 0; padding:9px; text-align:center; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:9px; font-size:11px; font-weight:700; color:var(--dim); cursor:pointer; }
+#p3-dpill { bottom: 48px; }
+.wind-ov { position:absolute; top:44px; left:10px; display:flex; flex-direction:column; align-items:center; gap:2px; pointer-events:none; z-index:20; }
+.wind-spd { font-size:9px; font-weight:800; color:var(--gold); letter-spacing:0.3px; text-shadow:0 1px 3px rgba(0,0,0,0.9); }
+.scov { position:absolute; inset:0; z-index:90; background:var(--bg); display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+.scov.open { transform:translateY(0); }
+.scov-hdr { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.scov-back { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.scov-ttl { font-size:13px; font-weight:800; flex:1; }
+.scov-score { font-size:13px; font-weight:900; color:var(--green); }
+.scov-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:10px 12px 16px; }
+.scov-body::-webkit-scrollbar { display:none; }
+.scov-sec { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); padding:8px 0 5px; }
+.sct { width:100%; border-collapse:collapse; }
+.sct th { font-size:8px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--dim); padding:4px 6px; text-align:center; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02); }
+.sct td { font-size:11px; font-weight:700; padding:7px 6px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.03); }
+.sct tr.now td { background:rgba(46,204,113,0.08); }
+.sct tr.now td:first-child { border-left:2px solid var(--green); }
+.sct tr.tot td { font-weight:900; border-top:1px solid var(--border); background:rgba(255,255,255,0.03); }
+.sc-bd { color:var(--green); }
+.sc-par { color:rgba(255,255,255,0.65); }
+.sc-bo { color:#E67E22; }
+.sc-db { color:var(--red); }
+.sc-na { color:rgba(255,255,255,0.2); }
+.sum-map-wrap { padding:6px 10px 4px; }
+.sum-map-wrap svg { width:100%; height:130px; border-radius:10px; display:block; }
+.sum-shots { display:flex; gap:5px; padding:0 10px 6px; overflow-x:auto; scrollbar-width:none; }
+.sum-shots::-webkit-scrollbar { display:none; }
+.sum-score-row { display:flex; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:0; }
+.sum-score-cell { flex:1; padding:8px 4px; text-align:center; border-right:1px solid var(--border); }
+.sum-score-cell:last-child { border-right:none; }
+.sum-score-lbl { font-size:7px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+.sum-score-val { font-size:18px; font-weight:900; }
+.chip-y { background:rgba(241,196,15,0.1); border-color:rgba(241,196,15,0.35); color:#F1C40F; }
+</style>
+</head>
+<body data-page="p3">
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+
+<div class="flow">
+  <div class="step" onclick="navigate('login')">Sign In</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('home')">Home</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('s2')">Par 4 · H7</div>
+  <div class="arr">→</div>
+  <div class="step on">Par 3 · H2</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('p5')">Par 5 · H9</div>
+</div>
+
+<div class="phone">
+<div class="wrap" id="wrap">
+
+<div class="page" style="overflow-y:hidden;">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <div class="hole-nav">
+    <div class="hn-arr" onclick="navigate('s2')">← H1</div>
+    <div class="hn-center">
+      <div class="hn-course">Riviera CC</div>
+      <div class="hn-info">Hole 2 of 18 · Par 3 · Hdcp 15</div>
+    </div>
+    <div class="hn-card-btn" onclick="openScorecard()">📋</div>
+  </div>
+
+  <div class="sb">
+    <div class="sb-l"><div class="stp neg">−1</div><div class="sth">THRU 1 HOLE</div></div>
+    <div class="sdv"></div>
+    <div class="sb-r">
+      <div class="shl">HOLE 2 · PAR 3 · 165 YDS</div>
+      <div class="shd">Shot <span id="p3-shot-num" style="color:var(--green);font-weight:800;">1</span></div>
+    </div>
+  </div>
+
+  <div class="undo-bar">
+    <span class="undo-ctx" id="p3-undo-ctx">No shots logged yet</span>
+    <div class="undo-btn dim" id="p3-undo-btn" onclick="undoLastP3()">↩ Undo Shot</div>
+  </div>
+
+  <div class="map" style="height:210px;position:relative;" id="p3-map">
+    <div id="p3-leaflet" style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;"></div>
+
+    <svg viewBox="0 0 320 242" id="p3-green-svg" xmlns="http://www.w3.org/2000/svg"
+         style="display:none;touch-action:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;">
+      <rect width="320" height="242" fill="#060D06"/>
+      <ellipse cx="160" cy="121" rx="148" ry="118" fill="#12361A"/>
+      <ellipse cx="160" cy="121" rx="137" ry="109" fill="#1A5820"/>
+      <ellipse cx="160" cy="121" rx="127" ry="101" fill="#1D6523" opacity="0.8"/>
+      <ellipse cx="160" cy="100" rx="112" ry="106" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="3,3"/>
+      <ellipse cx="160" cy="100" rx="74" ry="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3"/>
+      <ellipse cx="160" cy="100" rx="37" ry="35" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="235" y="103" font-size="8" fill="rgba(255,255,255,0.2)" font-weight="600">20 ft</text>
+      <text x="197" y="103" font-size="8" fill="rgba(255,255,255,0.25)" font-weight="600">10 ft</text>
+      <ellipse cx="60" cy="85" rx="22" ry="13" fill="#2A2510" opacity="0.7"/>
+      <text x="60" y="89" text-anchor="middle" font-size="7" fill="rgba(200,180,80,0.4)">bunker</text>
+      <circle cx="160" cy="100" r="5.5" fill="#0A0A0F" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+      <line x1="160" y1="100" x2="160" y2="63" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/>
+      <polygon points="160,63 175,71 160,79" fill="#E74C3C"/>
+      <circle id="p3-cup-ring" cx="160" cy="100" r="22" fill="rgba(46,204,113,0.05)" stroke="rgba(46,204,113,0.25)" stroke-width="1.5" stroke-dasharray="4,3" style="cursor:pointer;"/>
+      <text x="160" y="131" text-anchor="middle" font-size="8" fill="rgba(46,204,113,0.45)" font-weight="700" pointer-events="none">⛳ hole out</text>
+      <g id="p3-gpen" style="opacity:0;pointer-events:none;" class="draggable-marker">
+        <circle cx="160" cy="145" r="18" fill="rgba(241,196,15,0.08)"/>
+        <circle cx="160" cy="145" r="11" fill="rgba(241,196,15,0.25)" stroke="rgba(241,196,15,0.9)" stroke-width="2"/>
+        <text id="p3-gpen-num" x="160" y="149" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+        <text id="p3-gylbl" x="174" y="146" font-size="10" fill="rgba(241,196,15,1)" font-weight="800"
+              paint-order="stroke" stroke="rgba(10,10,15,0.95)" stroke-width="3.5" stroke-linejoin="round">18 ft</text>
+      </g>
+    </svg>
+
+    <div class="map-view-toggle">
+      <div class="mvt-btn active" id="p3-view-hole" onclick="p3SetView('hole')">⛳ Hole</div>
+      <div class="mvt-btn" id="p3-view-green" onclick="p3SetView('green')">🟢 Green</div>
+    </div>
+    <div class="dpill" id="p3-dpill">📍 Mark your tee shot</div>
+    <div class="mbtns">
+      <div class="mbtn mbtn-g" id="p3-markbtn" onclick="p3Mark()">📍 Mark Shot</div>
+    </div>
+    <div class="mchips">
+      <div class="mc"><div class="mc-lbl">HOLE</div><div class="mc-val">2</div></div>
+      <div class="mc"><div class="mc-lbl">PAR</div><div class="mc-val">3</div></div>
+      <div class="mc"><div class="mc-lbl">SHOT</div><div class="mc-val" id="p3-shot-chip" style="color:var(--green)">1</div></div>
+    </div>
+    <div class="wind-ov">
+      <svg width="34" height="34" viewBox="-17 -17 34 34" style="display:block;">
+        <circle r="16" fill="rgba(10,10,15,0.88)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <line x1="0" y1="-16" x2="0" y2="-13" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="16"  y1="0" x2="13"  y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="0"  y1="16" x2="0"  y2="13" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="-16" y1="0" x2="-13" y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <text x="0"   y="-9"  text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.55)" font-weight="700">N</text>
+        <text x="9.5" y="3.5" text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.3)"  font-weight="700">E</text>
+        <text x="0"   y="13"  text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.3)"  font-weight="700">S</text>
+        <text x="-9.5" y="3.5" text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.3)" font-weight="700">W</text>
+        <g transform="rotate(45)">
+          <line x1="0" y1="5" x2="0" y2="-8" stroke="rgba(241,196,15,0.95)" stroke-width="2" stroke-linecap="round"/>
+          <polygon points="0,-12 -3,-7 3,-7" fill="rgba(241,196,15,0.95)"/>
+          <line x1="-3" y1="5" x2="3" y2="5" stroke="rgba(241,196,15,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <div class="wind-spd">11 mph</div>
+    </div>
+  </div>
+
+  <div class="fcb-strip">
+    <div class="fcb-cell">
+      <div class="fcb-lbl">Front</div>
+      <div class="fcb-val" id="p3-fcb-front">153</div>
+    </div>
+    <div class="fcb-cell ctr">
+      <div class="fcb-lbl">Center ▾</div>
+      <div class="fcb-val" id="p3-fcb-center">165</div>
+    </div>
+    <div class="fcb-cell">
+      <div class="fcb-lbl">Back</div>
+      <div class="fcb-val" id="p3-fcb-back">177</div>
+    </div>
+    <div class="fcb-cell my">
+      <div class="fcb-lbl">7i avg</div>
+      <div class="fcb-val">165 yds</div>
+    </div>
+  </div>
+
+  <div class="gps-bar" id="p3-gpsbar">
+    <div class="gps-bar-inner">
+      <div class="gps-bar-top">
+        <div class="gps-dot"></div>
+        <div class="gps-lbl" id="p3-gps-lbl">GPS Placed — Shot 1</div>
+        <div class="gps-acc">±3 yds accuracy</div>
+      </div>
+      <div class="gps-bar-hint">
+        <strong>Drag the yellow marker</strong> to fine-tune if GPS is off.<br>
+        Tap Confirm when position looks right.
+      </div>
+      <div class="gps-actions">
+        <button class="gps-cancel" onclick="p3CancelGPS()">↩ Re-place</button>
+        <button class="gps-confirm" onclick="p3ConfirmGPS()">✓ Confirm Shot</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shot-log" id="p3-shot-log">
+    <span class="shot-log-empty">No shots logged yet</span>
+  </div>
+
+  <!-- Par 3: no FIR row — tee shot goes directly toward green -->
+  <div class="tsec">
+    <div class="tgl">Tee Shot / Approach</div>
+    <div class="trow">
+      <div class="tog" onclick="tt(this)">GIR</div>
+      <div class="tog" onclick="tt(this)">Missed</div>
+      <div class="tog" onclick="tt(this)">Bunker</div>
+      <div class="tog t-r" onclick="tt(this)">Water</div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+  <button class="cta cta-gold" onclick="showSheetP3()">🚩 Hole Out → Summary</button>
+</div>
+
+<div class="toast" id="p3-toast"></div>
+
+<div class="sheet-ov" id="p3-sheet-ov">
+  <div class="sheet-bd" onclick="hideSheetP3()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Hole 2 — Summary</div>
+      <div class="sh-undo" onclick="hideSheetP3()">↩ Edit</div>
+    </div>
+
+    <div class="sum-map-wrap">
+      <svg viewBox="0 0 320 242" id="p3-sum-svg" xmlns="http://www.w3.org/2000/svg">
+        <!-- Par 3 — compact terrain, tee at bottom, green at top -->
+        <rect width="320" height="242" fill="#0C1A0C"/>
+        <!-- Trees left -->
+        <ellipse cx="60"  cy="220" rx="42" ry="20" fill="#0A1609"/>
+        <ellipse cx="50"  cy="175" rx="38" ry="22" fill="#0B1B0A"/>
+        <ellipse cx="62"  cy="130" rx="34" ry="19" fill="#0A1609"/>
+        <ellipse cx="55"  cy="85"  rx="36" ry="20" fill="#0B1A0A"/>
+        <ellipse cx="65"  cy="45"  rx="28" ry="16" fill="#0A1609"/>
+        <!-- Trees right -->
+        <ellipse cx="260" cy="215" rx="38" ry="20" fill="#0A1609"/>
+        <ellipse cx="265" cy="170" rx="34" ry="20" fill="#0B1B0A"/>
+        <ellipse cx="258" cy="125" rx="36" ry="20" fill="#0A1609"/>
+        <ellipse cx="262" cy="80"  rx="30" ry="17" fill="#0B1A0A"/>
+        <ellipse cx="255" cy="40"  rx="25" ry="14" fill="#0A1609"/>
+        <!-- Fringe (wider for par 3 — bigger green relative to length) -->
+        <path d="M118 235 C114 190 112 145 116 98 C120 58 135 30 150 18 L170 18 C185 30 198 58 200 98 C202 145 200 190 196 235 Z" fill="#183818"/>
+        <!-- Par 3 fairway (shorter, slightly wider) -->
+        <path d="M130 235 C128 190 127 145 130 98 C133 58 140 34 150 20 L170 20 C180 34 185 58 186 98 C185 145 182 190 180 235 Z" fill="#286428"/>
+        <!-- Bunker left of green -->
+        <ellipse cx="112" cy="55" rx="18" ry="10" fill="#7A6428"/>
+        <!-- Bunker right of green -->
+        <ellipse cx="204" cy="60" rx="15" ry="9" fill="#7A6428"/>
+        <!-- Green -->
+        <ellipse cx="155" cy="22" rx="22" ry="15" fill="#1A7A1A"/>
+        <ellipse cx="155" cy="22" rx="17" ry="11" fill="#22A022" opacity="0.9"/>
+        <line x1="155" y1="22" x2="155" y2="5" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+        <polygon points="155,5 167,11 155,17" fill="#E74C3C"/>
+        <!-- Tee box -->
+        <rect x="146" y="230" width="18" height="9" rx="4" fill="#2A3A1A"/>
+        <circle cx="155" cy="234" r="7" fill="rgba(10,10,15,0.85)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <text x="155" y="238" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.55)" font-weight="700">T</text>
+      </svg>
+    </div>
+
+    <div class="sum-shots" id="p3-sum-shots"></div>
+
+    <div class="sum-score-row">
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">SCORE</div>
+        <div class="sum-score-val" id="p3-sum-score">—</div>
+      </div>
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">PAR</div>
+        <div class="sum-score-val">3</div>
+      </div>
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">+/−</div>
+        <div class="sum-score-val" id="p3-sum-diff">—</div>
+      </div>
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">PUTTS</div>
+        <div class="sum-score-val" id="p3-sum-putts-disp">—</div>
+      </div>
+    </div>
+
+    <div class="pcrow" style="margin-top:8px;">
+      <div>
+        <div class="pclbl">Adjust Putts</div>
+        <div class="pc">
+          <div class="pcbtn" onclick="adjP3(-1)">−</div>
+          <div class="pcval" id="p3-pcval">0</div>
+          <div class="pcbtn" onclick="adjP3(1)">+</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="adlbl">Stats</div>
+    <div class="chips" id="p3-sum-stats-chips"></div>
+
+    <button class="cfm" onclick="navigate('p5')">Confirm · Next Hole (Par 5) →</button>
+  </div>
+</div>
+
+<div class="club-ov" id="p3-club-ov">
+  <div class="club-bd" onclick="skipClubP3()"></div>
+  <div class="club-sheet">
+    <div class="club-handle"></div>
+    <div class="club-ttl-row">
+      <div>
+        <div class="club-ttl">Which club?</div>
+        <div class="club-sub" id="p3-club-shot-label">Shot 1 confirmed</div>
+      </div>
+      <div class="club-skip-btn" onclick="skipClubP3()">Skip</div>
+    </div>
+    <div class="club-grp" id="p3-club-sec-woods">
+      <div class="club-grp-lbl">Woods / Hybrids</div>
+      <div class="club-btns">
+        <div class="cbtn" onclick="selectClubP3(this,'3W')">3W</div>
+        <div class="cbtn" onclick="selectClubP3(this,'5W')">5W</div>
+        <div class="cbtn" onclick="selectClubP3(this,'3H')">3H</div>
+        <div class="cbtn" onclick="selectClubP3(this,'4H')">4H</div>
+      </div>
+    </div>
+    <div class="club-grp" id="p3-club-sec-irons">
+      <div class="club-grp-lbl">Irons</div>
+      <div class="club-btns">
+        <div class="cbtn" onclick="selectClubP3(this,'4i')">4i</div>
+        <div class="cbtn" onclick="selectClubP3(this,'5i')">5i</div>
+        <div class="cbtn" onclick="selectClubP3(this,'6i')">6i</div>
+        <div class="cbtn" onclick="selectClubP3(this,'7i')">7i</div>
+        <div class="cbtn" onclick="selectClubP3(this,'8i')">8i</div>
+        <div class="cbtn" onclick="selectClubP3(this,'9i')">9i</div>
+      </div>
+    </div>
+    <div class="club-grp" id="p3-club-sec-wedges">
+      <div class="club-grp-lbl">Wedges</div>
+      <div class="club-btns">
+        <div class="cbtn" onclick="selectClubP3(this,'PW')">PW</div>
+        <div class="cbtn" onclick="selectClubP3(this,'48°')">48°</div>
+        <div class="cbtn" onclick="selectClubP3(this,'52°')">52°</div>
+        <div class="cbtn" onclick="selectClubP3(this,'56°')">56°</div>
+        <div class="cbtn" onclick="selectClubP3(this,'60°')">60°</div>
+      </div>
+    </div>
+    <div class="club-grp" id="p3-club-sec-putter" style="display:none;">
+      <div class="club-grp-lbl">Putter</div>
+      <div class="club-btns">
+        <div class="cbtn" style="flex:1;text-align:center;padding:12px;" onclick="selectClubP3(this,'Putter')">🏌️ Putter</div>
+      </div>
+    </div>
+    <div class="club-skip-full" onclick="skipClubP3()">Don't log a club for this shot</div>
+  </div>
+</div>
+
+<div class="scov" id="p3-scov">
+  <div class="scov-hdr">
+    <button class="scov-back" onclick="closeScorecardP3()">← Back</button>
+    <div class="scov-ttl">Riviera CC · Round</div>
+    <div class="scov-score">−1</div>
+  </div>
+  <div class="scov-body">
+    <div class="scov-sec">Front Nine</div>
+    <table class="sct">
+      <thead><tr><th>HOLE</th><th>PAR</th><th>HDCP</th><th>SCORE</th><th>+/−</th></tr></thead>
+      <tbody id="p3-scov-front"></tbody>
+    </table>
+    <div class="scov-sec">Back Nine</div>
+    <table class="sct">
+      <thead><tr><th>HOLE</th><th>PAR</th><th>HDCP</th><th>SCORE</th><th>+/−</th></tr></thead>
+      <tbody id="p3-scov-back"></tbody>
+    </table>
+  </div>
+</div>
+
+</div></div>
+
+<p class="pg-note">Par 3 — Mark Shot · drag GPS pin · club picker · Hole Out → Summary → Par 5</p>
+
+<script src="tc-utils.js"></script>
+<script>
+const H2_TEE         = { lat: 34.0455, lng: -118.5112 };
+const H2_GREEN       = { lat: 34.0465, lng: -118.5098 };
+const H2_GREEN_FRONT = { lat: 34.0463, lng: -118.5098 };
+const H2_GREEN_BACK  = { lat: 34.0467, lng: -118.5098 };
+
+function haversineYds(a, b) {
+  const R = 6378137, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s)) / 0.9144;
+}
+function haversineFt(a, b) { return haversineYds(a, b) * 3; }
+
+function greenSVGToLatLng(gx, gy) {
+  const ftPerPx = 10 / 37;
+  const dEast  = (gx - 160) * ftPerPx;
+  const dSouth = (gy - 100) * ftPerPx;
+  return {
+    lat: H2_GREEN.lat - dSouth * 0.3048 / 111320,
+    lng: H2_GREEN.lng + dEast  * 0.3048 / (111320 * Math.cos(H2_GREEN.lat * Math.PI / 180))
+  };
+}
+
+function latLngToSumSVG(ll) {
+  const t = Math.min(1, haversineYds(H2_TEE, ll) / haversineYds(H2_TEE, H2_GREEN));
+  return { x: 155 + (150 - 155) * t, y: 234 + (22 - 234) * t };
+}
+
+function updateDistanceBar(ll) {
+  const f = document.getElementById('p3-fcb-front');
+  const c = document.getElementById('p3-fcb-center');
+  const b = document.getElementById('p3-fcb-back');
+  if (!f) return;
+  f.textContent = Math.max(1, Math.round(haversineYds(ll, H2_GREEN_FRONT)));
+  c.textContent = Math.max(1, Math.round(haversineYds(ll, H2_GREEN)));
+  b.textContent = Math.max(1, Math.round(haversineYds(ll, H2_GREEN_BACK)));
+}
+
+const lmap = L.map('p3-leaflet', {
+  center: [34.0460, -118.5105], zoom: 18,
+  zoomControl: false, attributionControl: false
+});
+L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { maxZoom: 19 }
+).addTo(lmap);
+
+L.marker([H2_TEE.lat, H2_TEE.lng], {
+  icon: L.divIcon({
+    html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+  }),
+  interactive: false
+}).addTo(lmap);
+
+const p3FlagMarker = L.marker([H2_GREEN.lat, H2_GREEN.lng], {
+  icon: L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgba(255,255,255,0.9);"></div><div style="background:#E74C3C;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:white;white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
+    iconSize: [80, 40], iconAnchor: [1, 0], className: ''
+  })
+}).addTo(lmap);
+p3FlagMarker.on('click', p3HoleOutFromMap);
+
+function makeShotIcon(num, holed) {
+  const bg = holed ? 'rgba(241,196,15,0.3)' : 'rgba(46,204,113,0.2)';
+  const bd = holed ? 'rgba(241,196,15,0.9)' : 'rgba(46,204,113,0.7)';
+  return L.divIcon({
+    html: `<div style="background:${bg};border:2px solid ${bd};width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${holed?'11':'10'}px;font-weight:800;color:white;font-family:Inter,sans-serif;">${holed ? '⛳' : num}</div>`,
+    iconSize: [22, 22], iconAnchor: [11, 11], className: ''
+  });
+}
+
+let p3PendingMarker = null;
+let p3PendingLatLng = { lat: H2_TEE.lat + 0.0004, lng: H2_TEE.lng + 0.0004 };
+
+function makePendingIcon(num) {
+  return L.divIcon({
+    html: `<div style="background:rgba(241,196,15,0.2);border:2px solid #F1C40F;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;font-family:Inter,sans-serif;">${num}</div>`,
+    iconSize: [26, 26], iconAnchor: [13, 13], className: ''
+  });
+}
+
+function placePendingAt(ll) {
+  p3PendingLatLng = ll;
+  if (!p3PendingMarker) {
+    p3PendingMarker = L.marker(ll, { icon: makePendingIcon(p3ShotCount + 1), draggable: true }).addTo(lmap);
+    p3PendingMarker.on('drag', e => {
+      p3PendingLatLng = e.target.getLatLng();
+      refreshHolePill();
+      updateDistanceBar(p3PendingLatLng);
+    });
+  } else {
+    p3PendingMarker.setLatLng(ll);
+    p3PendingMarker.setIcon(makePendingIcon(p3ShotCount + 1));
+  }
+  refreshHolePill();
+  updateDistanceBar(ll);
+}
+
+function removePendingMarker() {
+  if (p3PendingMarker) { lmap.removeLayer(p3PendingMarker); p3PendingMarker = null; }
+}
+
+lmap.on('click', e => {
+  if (!document.getElementById('p3-gpsbar').classList.contains('show')) return;
+  if (p3ViewMode !== 'hole') return;
+  placePendingAt(e.latlng);
+});
+
+function refreshHolePill() {
+  const prev = p3LoggedShots.at(-1);
+  const fromLL = prev?.latlng ?? H2_TEE;
+  const yds = Math.max(1, Math.round(haversineYds(fromLL, p3PendingLatLng)));
+  const pill = document.getElementById('p3-dpill');
+  if (pill) pill.textContent = prev ? `↑ ${yds} yds` : `↑ ${yds} yds to pin · 7i`;
+}
+
+const p3GreenDragCfg = {
+  baseX: 160, baseY: 145, pinX: 160, pinY: 235,
+  scale: 10 / (37 * 3),
+  pillId: 'p3-dpill', format: v => `🟢 ${v} yds`,
+  originalText: '🟢 On Green — drag to place',
+  labelId: 'p3-gylbl', labelFormat: v => `${v} yds`
+};
+const p3GreenDrag = makeDraggable('p3-gpen', 'p3-green-svg', p3GreenDragCfg);
+
+makePannable('p3-green-svg', 'p3-gpsbar');
+addTapToPlace('p3-green-svg', 'p3-gpsbar', () => p3GreenDrag);
+
+document.getElementById('p3-cup-ring').addEventListener('pointerdown', e => {
+  e.stopPropagation(); e.preventDefault(); p3HoleOut();
+});
+
+let p3ViewMode = 'hole';
+function p3SetView(mode) {
+  p3ViewMode = mode;
+  document.getElementById('p3-view-hole').classList.toggle('active', mode === 'hole');
+  document.getElementById('p3-view-green').classList.toggle('active', mode === 'green');
+  document.getElementById('p3-leaflet').style.display   = mode === 'hole'  ? '' : 'none';
+  document.getElementById('p3-green-svg').style.display = mode === 'green' ? '' : 'none';
+  if (mode === 'hole') lmap.invalidateSize();
+  if (mode === 'green') {
+    const n = document.getElementById('p3-gpen-num');
+    if (n) n.textContent = p3ShotCount + 1;
+  }
+  p3CancelGPS();
+}
+
+let p3ShotCount = 0;
+const p3LoggedShots = [];
+const p3ShotLog = [];
+
+function greenToSumSVG(gx, gy) {
+  return { x: 150 + (gx - 160) * (19 / 74), y: 22 + (gy - 100) * (13 / 70) };
+}
+
+function updateGreenDragReference() {
+  const prevGreen = [...p3LoggedShots].reverse().find(s => s.svgId === 'p3-green-svg');
+  if (prevGreen) {
+    p3GreenDragCfg.pinX = prevGreen.x; p3GreenDragCfg.pinY = prevGreen.y;
+    p3GreenDragCfg.scale = 10 / (37 * 3);
+    p3GreenDragCfg.format = v => `🟢 ${v} yds from last ball`;
+    p3GreenDragCfg.labelFormat = v => `${v} yds`;
+    p3GreenDragCfg.originalText = '🟢 Drag to place';
+    p3GreenDragCfg.onMove = null;
+  } else {
+    const prevLL = p3LoggedShots.at(-1)?.latlng ?? H2_TEE;
+    const approxYds = Math.max(1, Math.round(haversineYds(prevLL, H2_GREEN)));
+    p3GreenDragCfg.pinX = 160; p3GreenDragCfg.pinY = 100;
+    p3GreenDragCfg.scale = 10 / (37 * 3);
+    p3GreenDragCfg.format = () => `🟢 ~${approxYds} yds`;
+    p3GreenDragCfg.labelFormat = () => `~${approxYds}`;
+    p3GreenDragCfg.originalText = `🟢 ~${approxYds} yds`;
+    p3GreenDragCfg.onMove = (gx, gy) => {
+      const yds = Math.max(1, Math.round(haversineYds(prevLL, greenSVGToLatLng(gx, gy))));
+      const pill = document.getElementById('p3-dpill');
+      if (pill) pill.textContent = `🟢 ${yds} yds`;
+      const lbl = document.getElementById('p3-gylbl');
+      if (lbl) lbl.textContent = `${yds} yds`;
+    };
+  }
+}
+
+function p3Mark() {
+  if (p3ViewMode === 'green') updateGreenDragReference();
+  const btn = document.getElementById('p3-markbtn');
+  btn.textContent = '📍 GPS Dropped…';
+  btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+  document.getElementById('p3-gpsbar').classList.add('show');
+  if (p3ViewMode === 'green') {
+    const p = document.getElementById('p3-gpen');
+    p.style.opacity = '1'; p.style.pointerEvents = 'all';
+    p.setAttribute('transform', '');
+    p3GreenDrag.showInitial();
+  } else {
+    placePendingAt(lmap.getCenter());
+  }
+}
+
+function p3CancelGPS() {
+  removePendingMarker();
+  document.getElementById('p3-gpen').style.opacity = '0';
+  document.getElementById('p3-gpen').style.pointerEvents = 'none';
+  document.getElementById('p3-gpsbar').classList.remove('show');
+  p3GreenDrag.reset();
+  const btn = document.getElementById('p3-markbtn');
+  btn.textContent = '📍 Mark Shot';
+  btn.style.opacity = ''; btn.style.pointerEvents = '';
+}
+
+function p3ConfirmGPS() {
+  p3ShotCount++;
+  let ydsLabel = '';
+
+  if (p3ViewMode === 'green') {
+    const pos  = p3GreenDrag.getPosition();
+    const prev = p3LoggedShots.at(-1) ?? null;
+    const line = prev?.svgId === 'p3-green-svg'
+      ? addShotLine('p3-green-svg', prev.x, prev.y, pos.x, pos.y) : null;
+    const el = addShotMarker('p3-green-svg', pos.x, pos.y, p3ShotCount);
+    const shotLL = greenSVGToLatLng(pos.x, pos.y);
+    const fromLL = prev?.latlng ?? H2_TEE;
+    const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [shotLL.lat, shotLL.lng]],
+      { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+    const leafletMarker = L.marker([shotLL.lat, shotLL.lng],
+      { icon: makeShotIcon(p3ShotCount, false) }).addTo(lmap);
+    p3LoggedShots.push({ el, line, leafletMarker, leafletLine, latlng: shotLL,
+                         x: pos.x, y: pos.y, svgId: 'p3-green-svg' });
+    document.getElementById('p3-gpen').style.opacity = '0';
+    document.getElementById('p3-gpen').style.pointerEvents = 'none';
+    const gpenNum = document.getElementById('p3-gpen-num');
+    if (gpenNum) gpenNum.textContent = p3ShotCount + 1;
+    p3GreenDrag.reset();
+    ['p3-fcb-front','p3-fcb-center','p3-fcb-back'].forEach(id =>
+      document.getElementById(id).textContent = '—');
+    ydsLabel = prev?.svgId === 'p3-green-svg'
+      ? `${Math.max(1, Math.round(haversineFt(prev.latlng, shotLL)))} ft`
+      : `${Math.max(1, Math.round(haversineYds(fromLL, shotLL)))} yds`;
+  } else {
+    const ll     = p3PendingLatLng;
+    const prev   = p3LoggedShots.at(-1) ?? null;
+    const fromLL = prev?.latlng ?? H2_TEE;
+    const yds    = Math.max(1, Math.round(haversineYds(fromLL, ll)));
+    ydsLabel     = yds >= 10 ? `${yds} yds` : `${Math.round(yds * 3)} ft`;
+    const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [ll.lat, ll.lng]],
+      { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+    const leafletMarker = L.marker([ll.lat, ll.lng],
+      { icon: makeShotIcon(p3ShotCount, false) }).addTo(lmap);
+    const svgPos = latLngToSumSVG(ll);
+    p3LoggedShots.push({ leafletMarker, leafletLine, latlng: ll,
+                         x: svgPos.x, y: svgPos.y, svgId: 'p3-leaflet' });
+    removePendingMarker();
+    updateDistanceBar(ll);
+  }
+
+  document.getElementById('p3-gpsbar').classList.remove('show');
+
+  const snum = document.getElementById('p3-shot-num');
+  if (snum) { snum.textContent = p3ShotCount + 1; snum.style.color = 'var(--gold)'; }
+  const chip = document.getElementById('p3-shot-chip');
+  if (chip) { chip.textContent = p3ShotCount + 1; chip.style.color = 'var(--gold)'; }
+  const gpsLbl = document.getElementById('p3-gps-lbl');
+  if (gpsLbl) gpsLbl.textContent = `GPS Placed — Shot ${p3ShotCount + 1}`;
+
+  document.getElementById('p3-undo-ctx').innerHTML =
+    `Last: <strong>Shot ${p3ShotCount} confirmed</strong>`;
+  document.getElementById('p3-undo-btn').classList.remove('dim');
+
+  const markBtn = document.getElementById('p3-markbtn');
+  markBtn.textContent = '📍 Mark Shot';
+  markBtn.style.opacity = ''; markBtn.style.pointerEvents = '';
+  document.getElementById('p3-dpill').textContent = `Shot ${p3ShotCount} locked · walk to next ball`;
+
+  // Par 3: all shots detect GIR (no FIR); auto-switch to green if GIR on shot 1
+  const confirmedPos = p3LoggedShots.at(-1);
+  if (confirmedPos) {
+    const result = autoDetectGIR(confirmedPos);
+    showToast('p3-toast', `Auto: ${result === 'GIR' ? '✓ GIR' : 'GIR Miss'} detected`, 2200);
+    if (p3ShotCount === 1 && result === 'GIR' && p3ViewMode === 'hole') {
+      setTimeout(() => p3SetView('green'), 600);
+    }
+  }
+
+  openClubPickerP3(p3ShotCount, ydsLabel, p3ViewMode === 'green');
+}
+
+function undoLastP3() {
+  if (p3LoggedShots.length === 0) { showToast('p3-toast', 'Nothing to undo yet'); return; }
+  const last = p3LoggedShots.pop();
+  if (last.leafletMarker) lmap.removeLayer(last.leafletMarker);
+  if (last.leafletLine)   lmap.removeLayer(last.leafletLine);
+  last.line?.remove();
+  last.el?.remove();
+  p3ShotLog.pop();
+  renderShotLogP3();
+  p3ShotCount--;
+
+  const snum = document.getElementById('p3-shot-num');
+  if (snum) { snum.textContent = p3ShotCount + 1; snum.style.color = p3ShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+  const chip = document.getElementById('p3-shot-chip');
+  if (chip) { chip.textContent = p3ShotCount + 1; chip.style.color = p3ShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+  const gpenNum = document.getElementById('p3-gpen-num');
+  if (gpenNum) gpenNum.textContent = p3ShotCount + 1;
+
+  const noShots = p3LoggedShots.length === 0;
+  document.getElementById('p3-undo-ctx').innerHTML = noShots
+    ? 'No shots logged yet'
+    : `Last: <strong>Shot ${p3ShotCount} confirmed</strong>`;
+  if (noShots) document.getElementById('p3-undo-btn').classList.add('dim');
+
+  const nowLast = p3LoggedShots.at(-1);
+  if (nowLast?.svgId === 'p3-leaflet' && nowLast.latlng) {
+    updateDistanceBar(nowLast.latlng);
+  } else {
+    ['p3-fcb-front','p3-fcb-center','p3-fcb-back'].forEach(id =>
+      document.getElementById(id).textContent = '—');
+  }
+
+  p3CancelGPS();
+  showToast('p3-toast', `↩ Shot ${p3ShotCount + 1} removed`);
+}
+
+function autoSetTog(rowIdx, togIdx, colorCls) {
+  const rows = document.querySelectorAll('.trow');
+  const row = rows[rowIdx];
+  if (!row) return;
+  row.querySelectorAll('.tog').forEach((t, i) => {
+    t.classList.remove('t-g', 't-y', 't-r');
+    if (i === togIdx) t.classList.add(colorCls || 't-g');
+  });
+}
+
+// Par 3: row 0 = GIR row (no FIR row)
+function autoDetectGIR(shot) {
+  if (shot.svgId === 'p3-leaflet') {
+    if (haversineYds(shot.latlng, H2_GREEN) <= 18) { autoSetTog(0, 0, 't-g'); return 'GIR'; }
+    autoSetTog(0, 1, 't-r'); return 'GIR-Miss';
+  }
+  const dx = (shot.x - 160) / 120, dy = (shot.y - 100) / 110;
+  if (dx*dx + dy*dy <= 1) { autoSetTog(0, 0, 't-g'); return 'GIR'; }
+  autoSetTog(0, 1, 't-r'); return 'GIR-Miss';
+}
+
+let p3PendingShot = null;
+let p3SelectedClub = null;
+
+function openClubPickerP3(shotNum, yds, isGreen) {
+  p3PendingShot = { shotNum, yds };
+  p3SelectedClub = null;
+  document.querySelectorAll('#p3-club-ov .cbtn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('p3-club-shot-label').textContent = `Shot ${shotNum} · ${yds}`;
+  const putterSec = document.getElementById('p3-club-sec-putter');
+  const sheet = putterSec.closest('.club-sheet');
+  putterSec.style.display = '';
+  if (isGreen) {
+    sheet.insertBefore(putterSec, document.getElementById('p3-club-sec-woods'));
+  } else {
+    sheet.appendChild(putterSec);
+    sheet.insertBefore(putterSec, sheet.querySelector('.club-skip-full'));
+  }
+  document.getElementById('p3-club-ov').classList.add('open');
+}
+
+function selectClubP3(btn, club) {
+  document.querySelectorAll('#p3-club-ov .cbtn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  p3SelectedClub = club;
+  setTimeout(confirmClubP3, 280);
+}
+
+function confirmClubP3() {
+  if (p3PendingShot) {
+    let dist = p3PendingShot.yds;
+    if (p3SelectedClub === 'Putter') {
+      const cur = p3LoggedShots.at(-1);
+      if (cur && cur.svgId === 'p3-green-svg') {
+        dist = `${Math.max(1, Math.round(px2(cur.x, cur.y, 160, 100) * (10 / 37)))} ft`;
+      } else if (cur && cur.latlng) {
+        dist = `${Math.max(1, Math.round(haversineFt(cur.latlng, H2_GREEN)))} ft`;
+      } else if (dist.endsWith('yds')) {
+        dist = `${Math.round(parseFloat(dist) * 3)} ft`;
+      }
+    }
+    p3ShotLog.push({ num: p3PendingShot.shotNum, club: p3SelectedClub, yds: dist });
+    renderShotLogP3();
+  }
+  p3PendingShot = null;
+  p3SelectedClub = null;
+  document.getElementById('p3-club-ov').classList.remove('open');
+}
+
+function skipClubP3() {
+  if (p3PendingShot) {
+    p3ShotLog.push({ num: p3PendingShot.shotNum, club: null, yds: p3PendingShot.yds });
+    renderShotLogP3();
+    p3PendingShot = null;
+  }
+  document.getElementById('p3-club-ov').classList.remove('open');
+}
+
+function renderShotLogP3() {
+  const el = document.getElementById('p3-shot-log');
+  if (p3ShotLog.length === 0) {
+    el.innerHTML = '<span class="shot-log-empty">No shots logged yet</span>';
+    return;
+  }
+  el.innerHTML = p3ShotLog.map(s => {
+    const holedStyle = s.holed
+      ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:#F1C40F;'
+      : '';
+    return `<div class="sl-chip" style="${holedStyle}">${s.num} · ${s.club || '?'} · ${s.yds}</div>`;
+  }).join('');
+}
+
+function p3HoleOut() {
+  if (document.getElementById('p3-gpsbar').classList.contains('show')) return;
+  if (p3ViewMode !== 'green') return;
+
+  p3ShotCount++;
+  const prev = p3LoggedShots.at(-1) ?? null;
+  const line = prev?.svgId === 'p3-green-svg'
+    ? addShotLine('p3-green-svg', prev.x, prev.y, 160, 100) : null;
+  const markerEl = addShotMarker('p3-green-svg', 160, 100, p3ShotCount);
+  const fromLL = prev?.latlng ?? H2_TEE;
+  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [H2_GREEN.lat, H2_GREEN.lng]],
+    { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+  const leafletMarker = L.marker([H2_GREEN.lat, H2_GREEN.lng],
+    { icon: makeShotIcon(p3ShotCount, true) }).addTo(lmap);
+
+  p3LoggedShots.push({ el: markerEl, line, leafletMarker, leafletLine,
+                       latlng: H2_GREEN, x: 160, y: 100, svgId: 'p3-green-svg', holed: true });
+  p3ShotLog.push({ num: p3ShotCount, club: 'Putter', yds: 'MADE ⛳', holed: true });
+  renderShotLogP3();
+
+  const snum = document.getElementById('p3-shot-num');
+  if (snum) { snum.textContent = '✓'; snum.style.color = 'var(--green)'; }
+  const chip = document.getElementById('p3-shot-chip');
+  if (chip) { chip.textContent = '✓'; chip.style.color = 'var(--green)'; }
+
+  document.getElementById('p3-undo-ctx').innerHTML = `<strong>Holed out — Shot ${p3ShotCount}</strong>`;
+  document.getElementById('p3-undo-btn').classList.remove('dim');
+  document.getElementById('p3-dpill').textContent = `⛳ Holed! Shot ${p3ShotCount}`;
+
+  const ring = document.getElementById('p3-cup-ring');
+  if (ring) {
+    ring.setAttribute('fill', 'rgba(46,204,113,0.18)');
+    ring.setAttribute('stroke', 'rgba(46,204,113,0.8)');
+  }
+
+  showToast('p3-toast', `⛳ Holed out! Shot ${p3ShotCount}`, 3000);
+  setTimeout(showSheetP3, 900);
+}
+
+function p3HoleOutFromMap() {
+  if (document.getElementById('p3-gpsbar').classList.contains('show')) return;
+  if (p3ViewMode !== 'hole') return;
+  if (p3LoggedShots.length === 0) return;
+  if (p3LoggedShots.some(s => s.holed)) return;
+
+  p3ShotCount++;
+  const prev = p3LoggedShots.at(-1);
+  const fromLL = prev.latlng ?? H2_TEE;
+
+  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [H2_GREEN.lat, H2_GREEN.lng]],
+    { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+  const leafletMarker = L.marker([H2_GREEN.lat, H2_GREEN.lng],
+    { icon: makeShotIcon(p3ShotCount, true) }).addTo(lmap);
+
+  const distYds = Math.max(1, Math.round(haversineYds(fromLL, H2_GREEN)));
+  const distLabel = prev.svgId === 'p3-green-svg'
+    ? `${Math.max(1, Math.round(haversineFt(fromLL, H2_GREEN)))} ft`
+    : distYds < 10 ? `${Math.round(distYds * 3)} ft` : `${distYds} yds`;
+
+  p3LoggedShots.push({ leafletMarker, leafletLine, latlng: H2_GREEN,
+                       x: 150, y: 22, svgId: 'p3-leaflet', holed: true });
+  p3ShotLog.push({ num: p3ShotCount, club: 'Putter', yds: `MADE ⛳ · ${distLabel}`, holed: true });
+  renderShotLogP3();
+
+  const snum = document.getElementById('p3-shot-num');
+  if (snum) { snum.textContent = '✓'; snum.style.color = 'var(--green)'; }
+  const chip = document.getElementById('p3-shot-chip');
+  if (chip) { chip.textContent = '✓'; chip.style.color = 'var(--green)'; }
+
+  document.getElementById('p3-undo-ctx').innerHTML = `<strong>Holed out — Shot ${p3ShotCount}</strong>`;
+  document.getElementById('p3-undo-btn').classList.remove('dim');
+  document.getElementById('p3-dpill').textContent = `⛳ Holed! Shot ${p3ShotCount}`;
+
+  showToast('p3-toast', `⛳ Holed out! Shot ${p3ShotCount}`, 3000);
+  setTimeout(showSheetP3, 900);
+}
+
+let p3Putts = 0;
+
+function buildSummaryMapP3() {
+  const svg = document.getElementById('p3-sum-svg');
+  svg.querySelectorAll('[data-sum]').forEach(el => el.remove());
+  const ns = 'http://www.w3.org/2000/svg';
+
+  function mk(tag, attrs) {
+    const el = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    el.setAttribute('data-sum', '1');
+    return el;
+  }
+
+  const positions = p3LoggedShots.map(s => {
+    if (s.svgId === 'p3-green-svg') {
+      const h = greenToSumSVG(s.x, s.y);
+      return { x: h.x, y: h.y, holed: s.holed };
+    }
+    return { x: s.x, y: s.y, holed: s.holed };
+  });
+
+  if (positions.length > 0) {
+    svg.appendChild(mk('line', { x1:155, y1:234, x2:positions[0].x, y2:positions[0].y,
+      stroke:'rgba(255,255,255,0.45)', 'stroke-width':'1.5', 'stroke-dasharray':'4,3' }));
+  }
+  for (let i = 1; i < positions.length; i++) {
+    svg.appendChild(mk('line', { x1:positions[i-1].x, y1:positions[i-1].y,
+      x2:positions[i].x, y2:positions[i].y,
+      stroke:'rgba(255,255,255,0.45)', 'stroke-width':'1.5', 'stroke-dasharray':'4,3' }));
+  }
+  positions.forEach((p, i) => {
+    const gold = p.holed;
+    svg.appendChild(mk('circle', { cx:p.x, cy:p.y, r:'8',
+      fill: gold ? 'rgba(241,196,15,0.25)' : 'rgba(46,204,113,0.2)',
+      stroke: gold ? 'rgba(241,196,15,0.9)' : 'rgba(46,204,113,0.7)',
+      'stroke-width':'1.5' }));
+    const t = mk('text', { x:p.x, y:p.y + 3.5, 'text-anchor':'middle',
+      'font-size':'8', fill:'white', 'font-weight':'800' });
+    t.textContent = gold ? '⛳' : (i + 1);
+    svg.appendChild(t);
+  });
+
+  const shotsEl = document.getElementById('p3-sum-shots');
+  shotsEl.innerHTML = p3ShotLog.length === 0
+    ? '<span class="shot-log-empty" style="padding:6px 0;font-size:11px;">No shots logged</span>'
+    : p3ShotLog.map(s => {
+        const st = s.holed ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:#F1C40F;' : '';
+        return `<div class="sl-chip" style="${st}">${s.num} · ${s.club || '?'} · ${s.yds}</div>`;
+      }).join('');
+
+  const score = p3ShotCount;
+  document.getElementById('p3-sum-score').textContent = score || '—';
+  const diff = score - 3;
+  const diffEl = document.getElementById('p3-sum-diff');
+  diffEl.textContent = score ? (diff === 0 ? 'E' : (diff > 0 ? '+' + diff : diff)) : '—';
+  diffEl.style.color = diff < 0 ? 'var(--green)' : diff > 0 ? '#E74C3C' : 'var(--muted)';
+
+  p3Putts = Math.max(0, p3ShotLog.filter(s => s.club === 'Putter' || s.holed).length);
+  document.getElementById('p3-pcval').textContent = p3Putts;
+  document.getElementById('p3-sum-putts-disp').textContent = p3Putts || '—';
+
+  function togState(rowIdx) {
+    const row = document.querySelectorAll('.trow')[rowIdx];
+    if (!row) return null;
+    const togs = [...row.querySelectorAll('.tog')];
+    const i = togs.findIndex(t => t.classList.contains('t-g') || t.classList.contains('t-y') || t.classList.contains('t-r'));
+    if (i === -1) return null;
+    const color = togs[i].classList.contains('t-g') ? 'g' : togs[i].classList.contains('t-y') ? 'y' : 'r';
+    return { idx: i, color };
+  }
+
+  const girLabels = ['GIR', 'GIR Miss', 'Bunker', 'Water'];
+  const girSt = togState(0);
+
+  function chipHtml(label, color) {
+    const cls = color === 'g' ? 'chip-g' : color === 'y' ? 'chip-y' : 'chip-m';
+    const icon = color === 'g' ? '✓' : '✕';
+    return `<div class="chip ${cls}">${icon} ${label}</div>`;
+  }
+
+  const chipsEl = document.getElementById('p3-sum-stats-chips');
+  let html = '';
+  if (girSt) html += chipHtml(girLabels[girSt.idx] ?? 'GIR', girSt.color);
+  chipsEl.innerHTML = html || '<span style="font-size:11px;color:var(--muted);">No stats detected yet</span>';
+}
+
+function showSheetP3() {
+  buildSummaryMapP3();
+  document.getElementById('p3-sheet-ov').classList.add('open');
+}
+function hideSheetP3() { document.getElementById('p3-sheet-ov').classList.remove('open'); }
+function adjP3(d) {
+  p3Putts = Math.max(0, Math.min(8, p3Putts + d));
+  document.getElementById('p3-pcval').textContent = p3Putts;
+  document.getElementById('p3-sum-putts-disp').textContent = p3Putts;
+}
+
+const SCORECARD = [
+  { h:1,  par:4, hdcp:9,  score:4,    done:true  },
+  { h:2,  par:3, hdcp:15, score:null, done:false, active:true },
+  { h:3,  par:4, hdcp:3,  score:null, done:false },
+  { h:4,  par:5, hdcp:11, score:null, done:false },
+  { h:5,  par:4, hdcp:1,  score:null, done:false },
+  { h:6,  par:3, hdcp:17, score:null, done:false },
+  { h:7,  par:4, hdcp:5,  score:null, done:false },
+  { h:8,  par:3, hdcp:17, score:null, done:false },
+  { h:9,  par:5, hdcp:7,  score:null, done:false },
+  { h:10, par:4, hdcp:10, score:null, done:false },
+  { h:11, par:4, hdcp:4,  score:null, done:false },
+  { h:12, par:5, hdcp:12, score:null, done:false },
+  { h:13, par:4, hdcp:2,  score:null, done:false },
+  { h:14, par:3, hdcp:16, score:null, done:false },
+  { h:15, par:4, hdcp:6,  score:null, done:false },
+  { h:16, par:4, hdcp:8,  score:null, done:false },
+  { h:17, par:5, hdcp:14, score:null, done:false },
+  { h:18, par:4, hdcp:18, score:null, done:false },
+];
+
+function buildScorecard() {
+  function makeRows(holes) {
+    return holes.map(h => {
+      const diff = h.score != null ? h.score - h.par : null;
+      let scoreCell = `<span class="sc-na">—</span>`;
+      let diffCell  = `<span class="sc-na">—</span>`;
+      if (h.active) {
+        scoreCell = `<span style="color:var(--green);font-size:9px;font-weight:800;">NOW</span>`;
+        diffCell  = `<span class="sc-na">·</span>`;
+      } else if (diff != null) {
+        const cls = diff < -1 ? 'sc-bd' : diff === -1 ? 'sc-bd' : diff === 0 ? 'sc-par' : diff === 1 ? 'sc-bo' : 'sc-db';
+        const str = diff === 0 ? 'E' : diff < 0 ? diff : '+' + diff;
+        scoreCell = `<span class="${cls}">${h.score}</span>`;
+        diffCell  = `<span class="${cls}">${str}</span>`;
+      }
+      const rc = h.active ? ' class="now"' : '';
+      return `<tr${rc}><td>${h.h}</td><td style="color:var(--muted)">${h.par}</td><td style="color:var(--dim);font-size:9px">${h.hdcp}</td><td>${scoreCell}</td><td>${diffCell}</td></tr>`;
+    }).join('');
+  }
+  const front = SCORECARD.slice(0, 9);
+  const back  = SCORECARD.slice(9);
+  const frontScore = front.filter(h => h.done).reduce((a, h) => a + h.score, 0);
+  document.getElementById('p3-scov-front').innerHTML =
+    makeRows(front) +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">OUT</td><td></td><td style="color:var(--muted)">${frontScore}</td><td style="color:var(--green)">−1</td></tr>`;
+  document.getElementById('p3-scov-back').innerHTML =
+    makeRows(back) +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">IN</td><td></td><td class="sc-na">—</td><td class="sc-na">—</td></tr>` +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">TOT</td><td></td><td class="sc-na">—</td><td style="color:var(--green)">−1*</td></tr>`;
+}
+
+function openScorecard()  { document.getElementById('p3-scov').classList.add('open'); }
+function closeScorecardP3() { document.getElementById('p3-scov').classList.remove('open'); }
+
+buildScorecard();
+renderShotLogP3();
+</script>
+</body>
+</html>

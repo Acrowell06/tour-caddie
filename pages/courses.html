@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Rounds</title>
+<link rel="stylesheet" href="tc.css">
+<style>
+/* ── LAYOUT ── */
+.rounds-scroller { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; min-height:0; }
+.rounds-scroller::-webkit-scrollbar { display:none; }
+
+/* ── SEASON SUMMARY STRIP ── */
+.ssummary { display:flex; gap:0; margin:0 12px 12px; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; flex-shrink:0; }
+.ssum-cell { flex:1; padding:10px 8px; text-align:center; border-right:1px solid var(--border); }
+.ssum-cell:last-child { border-right:none; }
+.ssum-val { font-size:16px; font-weight:900; letter-spacing:-0.5px; }
+.ssum-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+
+/* ── FILTER DROPDOWNS ── */
+.filter-row { display:flex; gap:8px; padding:0 12px 10px; flex-shrink:0; }
+.filter-select {
+  flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  color:#fff; font-size:11px; font-weight:700; padding:7px 10px;
+  cursor:pointer; font-family:Inter,sans-serif; appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A5A7A'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;
+  padding-right:28px;
+}
+.filter-select:focus { outline:none; border-color:rgba(46,204,113,0.4); }
+
+/* ── ROUND CARDS ── */
+.round-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin:0 12px 8px; cursor:pointer; overflow:hidden; transition:background 0.12s; }
+.round-card:active { background:rgba(255,255,255,0.03); }
+
+.rc-top { display:flex; align-items:center; gap:10px; padding:11px 14px 8px; }
+.rc-date-col { min-width:40px; }
+.rc-date { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; }
+.rc-month { font-size:9px; color:var(--dim); margin-top:1px; }
+.rc-course { flex:1; min-width:0; }
+.rc-name { font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rc-tee { font-size:10px; color:var(--muted); margin-top:2px; }
+.rc-score-col { text-align:right; }
+.rc-score { font-size:22px; font-weight:900; letter-spacing:-1px; line-height:1; }
+.rc-gross { font-size:9px; font-weight:700; color:var(--muted); margin-top:2px; letter-spacing:0.5px; }
+
+.rc-chips { display:flex; gap:5px; padding:0 14px 10px; }
+.rc-chip { font-size:10px; font-weight:600; color:var(--muted); background:rgba(255,255,255,0.04); border-radius:4px; padding:3px 7px; white-space:nowrap; }
+
+/* ── COURSE INSIGHTS BAR ── */
+.ci-bar { display:flex; gap:8px; margin:0 12px 10px; flex-shrink:0; }
+.ci-card { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 12px; }
+.ci-tag { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); margin-bottom:4px; }
+.ci-course { font-size:12px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ci-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+
+/* ── SPARKLINE ── */
+.sparkline-wrap { margin:0 12px 10px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 12px; flex-shrink:0; }
+.spark-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.spark-label { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); }
+.spark-legend { display:flex; gap:8px; }
+.spark-leg-item { font-size:8px; color:var(--dim); }
+
+/* ── TYPE FILTER ── */
+.type-filter-row { display:flex; gap:6px; padding:0 12px 10px; flex-shrink:0; }
+.tf-pill {
+  flex:1; text-align:center; padding:7px 4px; border-radius:8px;
+  font-size:10px; font-weight:800; letter-spacing:0.3px;
+  color:#4A4A6A; background:#141420; border:1.5px solid #222238;
+  cursor:pointer; user-select:none;
+}
+.tf-pill.on {
+  color:#2ECC71; background:#0D2B1A; border-color:#2ECC71;
+}
+
+/* ── MONTH DIVIDERS ── */
+.month-label { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); padding:4px 14px 6px; }
+
+/* ── DETAIL OVERLAY ── */
+.rd-ov { position:absolute; inset:0; z-index:60; pointer-events:none; }
+.rd-ov.open { pointer-events:all; }
+.rd-bd { position:absolute; inset:0; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.3s; }
+.rd-ov.open .rd-bd { opacity:1; }
+.rd-sheet { position:absolute; left:0; right:0; bottom:0; height:93%; background:#0A0A0F; border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
+.rd-ov.open .rd-sheet { transform:translateY(0); }
+
+/* ── DETAIL HEADER ── */
+.rd-handle { width:36px; height:4px; background:rgba(255,255,255,0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.rd-hdr { display:flex; align-items:center; padding:10px 14px 0; gap:10px; flex-shrink:0; }
+.rd-close { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.rd-title { flex:1; text-align:center; }
+.rd-title-name { font-size:14px; font-weight:900; }
+.rd-title-date { font-size:10px; color:var(--muted); margin-top:1px; }
+.rd-spacer { width:52px; }
+
+/* ── DETAIL TAB PILLS ── */
+.rd-tabs { display:flex; gap:4px; margin:10px 14px 0; background:var(--surface); border-radius:8px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
+.rdtab { flex:1; padding:6px; border-radius:5px; font-size:11px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; }
+.rdtab.on { background:var(--surface2); color:#fff; }
+
+/* ── DETAIL BODY ── */
+.rd-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:14px; }
+.rd-body::-webkit-scrollbar { display:none; }
+
+/* ── SCORE HERO ── */
+.score-hero { display:flex; align-items:center; justify-content:center; gap:18px; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:14px; }
+.sh-main { text-align:center; }
+.sh-val { font-size:46px; font-weight:900; letter-spacing:-2px; line-height:1; }
+.sh-lbl { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+.sh-divider { width:1px; height:40px; background:var(--border); }
+
+/* ── SCORECARD GRID ── */
+.sc-grid { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:14px; }
+.sc-row { display:flex; }
+.sc-row + .sc-row { border-top:1px solid var(--border); }
+.sc-cell { flex:1; padding:6px 2px; text-align:center; font-size:10px; font-weight:700; min-width:0; }
+.sc-cell.lbl { color:var(--muted); font-size:8px; letter-spacing:0.5px; background:rgba(255,255,255,0.02); }
+.sc-cell.hdr { font-size:9px; color:var(--dim); font-weight:700; }
+.sc-cell.ttl { font-size:11px; font-weight:900; }
+.score-e  { color:var(--gold); }
+.score-b  { color:var(--green); }
+.score-p  { color:rgba(255,255,255,0.7); }
+.score-bo { color:#E67E22; }
+.score-d  { color:var(--red); }
+.score-t  { color:#8B0000; }
+
+/* ── STAT ROW ── */
+.rs-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:6px; }
+.rs-icon { font-size:16px; width:22px; text-align:center; flex-shrink:0; }
+.rs-label { flex:1; font-size:12px; font-weight:700; }
+.rs-val { font-size:14px; font-weight:900; }
+.rs-sub { font-size:10px; color:var(--muted); text-align:right; }
+
+/* ── KPI GRID (reused) ── */
+.rd-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px; }
+.rd-kpi-grid.c3 { grid-template-columns:1fr 1fr 1fr; }
+.rd-kpi-grid.c4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+.rd-kpi { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
+.rk-val { font-size:18px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
+.rk-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+
+/* ── SG BARS ── */
+.sg-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+.sg-lbl { font-size:11px; font-weight:600; min-width:100px; }
+.sg-track { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; position:relative; }
+.sg-center { position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; background:rgba(255,255,255,0.22); border-radius:1px; }
+.sg-fill-pos { position:absolute; left:50%; top:0; height:8px; border-radius:0 4px 4px 0; }
+.sg-fill-neg { position:absolute; right:50%; top:0; height:8px; border-radius:4px 0 0 4px; }
+.sg-val { font-size:12px; font-weight:800; min-width:38px; text-align:right; }
+
+/* ── SEC LABEL ── */
+.rd-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; margin-top:14px; }
+</style>
+</head>
+<body data-page="courses">
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+
+<div class="flow">
+  <div class="step" onclick="navigate('login')">Sign In</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('home')">Home</div>
+  <div class="arr">→</div>
+  <div class="step on">Rounds</div>
+</div>
+
+<div class="phone">
+<div class="wrap" id="wrap">
+
+<div class="page" style="overflow-y:hidden;">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- Header -->
+  <div style="padding:6px 16px 10px; flex-shrink:0;">
+    <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px;">My Courses</div>
+    <div style="font-size:11px; color:var(--muted); margin-top:1px;" id="hdr-sub">2026 Season · 12 rounds</div>
+  </div>
+
+  <!-- Season summary -->
+  <div class="ssummary">
+    <div class="ssum-cell">
+      <div class="ssum-val" style="color:var(--green);">12</div>
+      <div class="ssum-lbl">Rounds</div>
+    </div>
+    <div class="ssum-cell">
+      <div class="ssum-val" style="color:var(--green);">+0.4</div>
+      <div class="ssum-lbl">Scr Avg</div>
+    </div>
+    <div class="ssum-cell">
+      <div class="ssum-val" style="color:var(--green);">+1.8</div>
+      <div class="ssum-lbl">Handicap</div>
+    </div>
+    <div class="ssum-cell">
+      <div class="ssum-val" style="color:var(--gold);">−5</div>
+      <div class="ssum-lbl">Low Rd</div>
+    </div>
+  </div>
+
+  <!-- Sparkline -->
+  <div class="sparkline-wrap">
+    <div class="spark-hdr">
+      <div class="spark-label">Season Trend · Avg Score to Par</div>
+      <div class="spark-legend">
+        <div class="spark-leg-item"><span style="color:#2ECC71;">■</span> Under par</div>
+        <div class="spark-leg-item"><span style="color:#E67E22;">■</span> Over par</div>
+      </div>
+    </div>
+    <svg id="sparkline-svg" style="width:100%;height:100px;display:block;"></svg>
+  </div>
+
+  <!-- Course insights bar (always visible) -->
+  <div class="ci-bar" id="ci-bar">
+    <div class="ci-card">
+      <div class="ci-tag">Most Played</div>
+      <div class="ci-course" id="ci-most-course">—</div>
+      <div class="ci-sub" id="ci-most-sub">—</div>
+    </div>
+    <div class="ci-card">
+      <div class="ci-tag">Best Score</div>
+      <div class="ci-course" id="ci-best-course">—</div>
+      <div class="ci-sub" id="ci-best-sub">—</div>
+    </div>
+  </div>
+
+  <!-- Filter dropdowns -->
+  <div class="filter-row">
+    <select class="filter-select" id="year-filter" onchange="applyFilters()">
+      <option value="">All Years</option>
+    </select>
+    <select class="filter-select" id="month-filter" onchange="applyFilters()">
+      <option value="">All Months</option>
+    </select>
+  </div>
+
+  <!-- Round type filter -->
+  <div class="type-filter-row">
+    <div class="tf-pill on" data-type="Home"        onclick="toggleType(this)">Home</div>
+    <div class="tf-pill on" data-type="Away"        onclick="toggleType(this)">Away</div>
+    <div class="tf-pill on" data-type="Competition" onclick="toggleType(this)">Competition</div>
+  </div>
+
+  <!-- Round list -->
+  <div class="rounds-scroller">
+    <div id="round-list"></div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tbar" style="flex-shrink:0;">
+    <div class="tbi" onclick="navigate('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tbi-lbl">Home</span>
+    </div>
+    <div class="tbi" onclick="navigate('rounds')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tbi-lbl">Rounds</span>
+    </div>
+    <div class="tbi" onclick="navigate('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="tbi-lbl">Stats</span>
+    </div>
+    <div class="tbi active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      <span class="tbi-lbl">Courses</span>
+    </div>
+    <div class="tbi" onclick="navigate('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tbi-lbl">Profile</span>
+    </div>
+  </div>
+</div><!-- /page -->
+
+<!-- ── ROUND DETAIL SHEET ── -->
+<div class="rd-ov" id="rd-ov">
+  <div class="rd-bd" onclick="closeRound()"></div>
+  <div class="rd-sheet">
+    <div class="rd-handle"></div>
+    <div class="rd-hdr">
+      <button class="rd-close" onclick="closeRound()">← Back</button>
+      <div class="rd-title">
+        <div class="rd-title-name" id="rd-course"></div>
+        <div class="rd-title-date" id="rd-date"></div>
+      </div>
+      <div class="rd-spacer"></div>
+    </div>
+    <div class="rd-tabs" id="rd-tabs">
+      <div class="rdtab on" onclick="rdTab(this,0)">Scorecard</div>
+      <div class="rdtab"    onclick="rdTab(this,1)">Stats</div>
+      <div class="rdtab"    onclick="rdTab(this,2)">Strokes Gained</div>
+    </div>
+    <div class="rd-body" id="rd-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="courses-toast"></div>
+
+</div><!-- /wrap -->
+</div><!-- /phone -->
+
+<p class="pg-note">Tap any round to see full scorecard and stats</p>
+
+<script src="tc-utils.js"></script>
+<script>
+
+/* ══ ROUND DATA ══ */
+const ROUNDS = [
+  {
+    id: 1,
+    course: 'Riviera CC',         date: 'Jun 27', month: 'June 2026',
+    tee: 'Blue · 6,980 yds',      type: 'Home',
+    score: −5, gross: 67,          diff: '+0.1',
+    fir: 78, gir: 72, putts: 27,   up_down: 80,
+    sg: { ott:+0.6, app:+0.8, atg:+0.3, putt:+0.4, total:+2.1 },
+    holes: [4,3,4,5,4,3,4,4,5,  4,3,5,4,3,4,4,5,4],
+    pars:  [4,3,4,5,4,3,4,4,5,  4,4,5,4,3,4,4,5,4],
+    chips: ['78% FIR','72% GIR','27 putts'],
+  },
+  {
+    id: 2,
+    course: 'Pebble Beach GL',    date: 'Jun 22', month: 'June 2026',
+    tee: 'Blue · 6,828 yds',      type: 'Away',
+    score: +2, gross: 74,           diff: '+1.8',
+    fir: 61, gir: 61, putts: 30,   up_down: 50,
+    sg: { ott:+0.2, app:−0.1, atg:−0.4, putt:+0.1, total:−0.2 },
+    holes: [4,5,4,4,3,5,3,4,4,  4,4,4,4,3,4,4,3,5],
+    pars:  [4,5,4,4,3,5,3,4,4,  4,4,4,4,3,4,4,3,5],
+    chips: ['61% FIR','61% GIR','30 putts'],
+  },
+  {
+    id: 3,
+    course: 'Augusta National',   date: 'Jun 15', month: 'June 2026',
+    tee: 'Members · 6,365 yds',   type: 'Competition',
+    score: +3, gross: 75,           diff: '+2.9',
+    fir: 56, gir: 56, putts: 32,   up_down: 40,
+    sg: { ott:−0.2, app:−0.5, atg:−0.3, putt:−0.1, total:−1.1 },
+    holes: [4,5,4,3,4,3,4,5,4,  4,4,3,5,4,5,3,4,4],
+    pars:  [4,5,4,3,4,3,4,5,4,  4,4,3,5,4,5,3,4,4],
+    chips: ['56% FIR','56% GIR','32 putts'],
+  },
+  {
+    id: 4,
+    course: 'TPC Sawgrass',       date: 'Jun 8', month: 'June 2026',
+    tee: 'Blue · 6,954 yds',      type: 'Home',
+    score: −1, gross: 71,           diff: '+0.9',
+    fir: 72, gir: 67, putts: 28,   up_down: 67,
+    sg: { ott:+0.4, app:+0.3, atg:+0.1, putt:+0.2, total:+1.0 },
+    holes: [4,5,3,4,4,4,4,3,5,  4,4,4,3,4,5,5,3,4],
+    pars:  [4,5,3,4,4,4,4,3,5,  4,4,4,3,4,5,5,3,4],
+    chips: ['72% FIR','67% GIR','28 putts'],
+  },
+  {
+    id: 5,
+    course: 'Torrey Pines South', date: 'Jun 1', month: 'June 2026',
+    tee: 'Blue · 7,106 yds',      type: 'Away',
+    score: +1, gross: 73,           diff: '+1.9',
+    fir: 67, gir: 61, putts: 29,   up_down: 55,
+    sg: { ott:+0.3, app:+0.1, atg:−0.2, putt:+0.1, total:+0.3 },
+    holes: [4,4,3,4,4,5,4,3,5,  4,4,3,5,4,4,3,5,4],
+    pars:  [4,4,3,4,4,5,4,3,5,  4,4,3,5,4,4,3,5,4],
+    chips: ['67% FIR','61% GIR','29 putts'],
+  },
+  {
+    id: 6,
+    course: 'Los Angeles CC',     date: 'May 25', month: 'May 2026',
+    tee: 'Blue · 7,088 yds',      type: 'Competition',
+    score: −1, gross: 71,           diff: '−0.3',
+    fir: 83, gir: 78, putts: 26,   up_down: 75,
+    sg: { ott:+0.7, app:+0.6, atg:+0.4, putt:+0.5, total:+2.2 },
+    holes: [4,4,4,3,5,4,4,3,4,  4,5,4,4,3,4,4,3,5],
+    pars:  [4,4,4,3,5,4,4,3,4,  4,5,4,4,3,4,4,3,5],
+    chips: ['83% FIR','78% GIR','26 putts'],
+  },
+  {
+    id: 7,
+    course: 'Riviera CC',         date: 'May 18', month: 'May 2026',
+    tee: 'Blue · 6,980 yds',      type: 'Home',
+    score: −1, gross: 71,           diff: '+0.8',
+    fir: 72, gir: 67, putts: 28,   up_down: 60,
+    sg: { ott:+0.5, app:+0.4, atg:−0.1, putt:+0.3, total:+1.1 },
+    holes: [4,3,4,5,3,3,4,4,5,  4,3,5,5,3,4,4,5,4],
+    pars:  [4,3,4,5,4,3,4,4,5,  4,4,5,4,3,4,4,5,4],
+    chips: ['72% FIR','67% GIR','28 putts'],
+  },
+  {
+    id: 8,
+    course: 'Bethpage Black',     date: 'May 11', month: 'May 2026',
+    tee: 'Black · 7,468 yds',     type: 'Away',
+    score: +4, gross: 76,           diff: '+2.4',
+    fir: 50, gir: 50, putts: 33,   up_down: 33,
+    sg: { ott:−0.3, app:−0.6, atg:−0.5, putt:−0.2, total:−1.6 },
+    holes: [4,4,3,5,4,4,4,3,4,  4,5,4,4,3,4,4,3,5],
+    pars:  [4,4,3,5,4,4,4,3,4,  4,5,4,4,3,4,4,3,5],
+    chips: ['50% FIR','50% GIR','33 putts'],
+  },
+  {
+    id: 9,
+    course: 'Winged Foot West',   date: 'May 4', month: 'May 2026',
+    tee: 'Blue · 7,077 yds',      type: 'Away',
+    score: +2, gross: 74,           diff: '+1.6',
+    fir: 61, gir: 61, putts: 30,   up_down: 50,
+    sg: { ott:+0.1, app:−0.2, atg:−0.1, putt:+0.1, total:−0.1 },
+    holes: [4,4,3,4,5,3,4,4,4,  4,4,4,3,5,4,4,3,4],
+    pars:  [4,4,3,4,5,3,4,4,4,  4,4,4,3,5,4,4,3,4],
+    chips: ['61% FIR','61% GIR','30 putts'],
+  },
+  {
+    id: 10,
+    course: 'Merion East',        date: 'Apr 27', month: 'April 2026',
+    tee: 'Blue · 6,996 yds',      type: 'Away',
+    score: 0, gross: 72,            diff: '+1.2',
+    fir: 67, gir: 67, putts: 29,   up_down: 57,
+    sg: { ott:+0.3, app:+0.2, atg:0.0, putt:+0.2, total:+0.7 },
+    holes: [4,4,3,4,4,5,4,3,4,  4,5,4,4,3,4,4,3,4],
+    pars:  [4,4,3,4,4,5,4,3,4,  4,5,4,4,3,4,4,3,4],
+    chips: ['67% FIR','67% GIR','29 putts'],
+  },
+  {
+    id: 11,
+    course: 'TPC Sawgrass',       date: 'Apr 20', month: 'April 2026',
+    tee: 'Blue · 6,954 yds',      type: 'Home',
+    score: +1, gross: 73,           diff: '+1.4',
+    fir: 61, gir: 56, putts: 31,   up_down: 44,
+    sg: { ott:+0.2, app:0.0, atg:−0.2, putt:0.0, total:0.0 },
+    holes: [4,5,4,4,3,4,5,3,4,  4,4,3,3,5,4,5,3,4],
+    pars:  [4,5,3,4,4,4,4,3,5,  4,4,4,3,4,5,5,3,4],
+    chips: ['61% FIR','56% GIR','31 putts'],
+  },
+  {
+    id: 12,
+    course: 'Riviera CC',         date: 'Apr 13', month: 'April 2026',
+    tee: 'Blue · 6,980 yds',      type: 'Home',
+    score: −3, gross: 69,           diff: '+0.4',
+    fir: 78, gir: 72, putts: 27,   up_down: 71,
+    sg: { ott:+0.6, app:+0.7, atg:+0.2, putt:+0.4, total:+1.9 },
+    holes: [3,3,4,5,4,3,4,4,5,  4,3,5,4,3,4,4,4,3],
+    pars:  [4,3,4,5,4,3,4,4,5,  4,4,5,4,3,4,4,5,4],
+    chips: ['78% FIR','72% GIR','27 putts'],
+  },
+];
+
+let activeRound = null;
+let rdTabIdx = 0;
+let activeTypes = new Set(['Home', 'Away', 'Competition']);
+
+/* ══ SCORE DISPLAY ══ */
+function scoreToPar(n) {
+  if (n <= -3) return { str: '−' + Math.abs(n), cls: 'score-e' };
+  if (n === -2) return { str: '−2', cls: 'score-e' };
+  if (n === -1) return { str: '−1', cls: 'score-b' };
+  if (n ===  0) return { str: 'E',  cls: 'score-p' };
+  if (n ===  1) return { str: '+1', cls: 'score-bo' };
+  if (n ===  2) return { str: '+2', cls: 'score-d' };
+  return { str: '+' + n, cls: 'score-t' };
+}
+
+/* ══ BUILD FILTER DROPDOWNS ══ */
+function buildFilters() {
+  const yearSel  = document.getElementById('year-filter');
+  const monthSel = document.getElementById('month-filter');
+  const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  const years  = [...new Set(ROUNDS.map(r => r.month.split(' ')[1]))].sort((a,b) => b-a);
+  const months = [...new Set(ROUNDS.map(r => r.month.split(' ')[0]))]
+    .sort((a,b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+
+  years.forEach(y => {
+    const o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === '2026') o.selected = true;
+    yearSel.appendChild(o);
+  });
+  months.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    monthSel.appendChild(o);
+  });
+}
+
+function applyFilters() {
+  const year  = document.getElementById('year-filter').value;
+  const month = document.getElementById('month-filter').value;
+  renderRounds(year, month);
+}
+
+function toggleType(el) {
+  const type = el.dataset.type;
+  if (activeTypes.has(type)) {
+    if (activeTypes.size === 1) return; // keep at least one active
+    activeTypes.delete(type);
+    el.classList.remove('on');
+  } else {
+    activeTypes.add(type);
+    el.classList.add('on');
+  }
+  applyFilters();
+}
+
+/* ══ RENDER ROUND LIST ══ */
+function renderRounds(filterYear = '2026', filterMonth = '') {
+  const list = document.getElementById('round-list');
+  list.innerHTML = '';
+
+  const filtered = ROUNDS.filter(r => {
+    const [rMonth, rYear] = r.month.split(' ');
+    if (filterYear  && rYear  !== filterYear)  return false;
+    if (filterMonth && rMonth !== filterMonth) return false;
+    if (!activeTypes.has(r.type)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;">No rounds found</div>';
+    document.getElementById('hdr-sub').textContent = 'No rounds for this period';
+    renderSparkline([]);
+    return;
+  }
+
+  const label = filterYear
+    ? (filterMonth ? `${filterMonth} ${filterYear}` : `${filterYear} Season`)
+    : 'All Time';
+  document.getElementById('hdr-sub').textContent = `${label} · ${filtered.length} round${filtered.length !== 1 ? 's' : ''}`;
+
+  let lastMonth = '';
+  filtered.forEach(r => {
+    if (r.month !== lastMonth) {
+      const div = document.createElement('div');
+      div.className = 'month-label';
+      div.textContent = r.month;
+      list.appendChild(div);
+      lastMonth = r.month;
+    }
+    const sp = scoreToPar(r.score);
+    const card = document.createElement('div');
+    card.className = 'round-card';
+    card.onclick = () => openRound(r.id);
+    card.innerHTML = `
+      <div class="rc-top">
+        <div class="rc-date-col">
+          <div class="rc-date">${r.date.split(' ')[0].toUpperCase()}</div>
+          <div class="rc-month">${r.date.split(' ')[1]}</div>
+        </div>
+        <div class="rc-course">
+          <div class="rc-name">${r.course}</div>
+          <div class="rc-tee">${r.tee} · ${r.type}</div>
+        </div>
+        <div class="rc-score-col">
+          <div class="rc-score ${sp.cls}">${sp.str}</div>
+          <div class="rc-gross">${r.gross} GROSS</div>
+        </div>
+      </div>
+      <div class="rc-chips">
+        ${r.chips.map(ch => `<div class="rc-chip">${ch}</div>`).join('')}
+        <div class="rc-chip" style="color:${parseFloat(r.diff) <= 1 ? 'var(--green)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--red)'}">Diff ${r.diff}</div>
+      </div>`;
+    list.appendChild(card);
+  });
+
+  renderSparkline(filtered);
+}
+
+/* ══ SPARKLINE ══ */
+function renderSparkline(rounds) {
+  const svg = document.getElementById('sparkline-svg');
+  if (!svg) return;
+
+  svg.setAttribute('viewBox', '0 0 300 100');
+
+  if (rounds.length === 0) { svg.innerHTML = ''; return; }
+
+  // Group by month in chronological order (oldest → newest)
+  const monthMap = new Map();
+  [...rounds].reverse().forEach(r => {
+    if (!monthMap.has(r.month)) monthMap.set(r.month, []);
+    monthMap.get(r.month).push(r.score);
+  });
+
+  const months = [...monthMap.entries()].map(([month, scores]) => ({
+    label: month.split(' ')[0].slice(0, 3),
+    avg:   scores.reduce((a, b) => a + b, 0) / scores.length,
+  }));
+
+  const W = 300, H = 100;
+  const AX = 28;  // left axis width for Y labels
+  const BH = 16;  // bottom height for month labels
+  const plotW = W - AX;
+  const plotH = H - BH;
+
+  // Y range — at least ±2 strokes, pad by 0.5
+  const avgs = months.map(m => m.avg);
+  const yMin = Math.min(Math.min(...avgs) - 0.5, -2);
+  const yMax = Math.max(Math.max(...avgs) + 0.5,  2);
+  const yRange = yMax - yMin;
+
+  // yMin (best/most negative) maps to top of chart (y=0); yMax to bottom (y=plotH)
+  const toY = s => ((s - yMin) / yRange) * plotH;
+  const zeroY = toY(0);
+
+  let html = '';
+
+  // Y-axis gridlines + labels at each integer
+  for (let t = Math.ceil(yMin); t <= Math.floor(yMax); t++) {
+    const y   = toY(t);
+    const lbl = t === 0 ? 'E' : t < 0 ? '' + t : '+' + t;
+    const isE = t === 0;
+    html += `<line x1="${AX}" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="${isE ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}" stroke-width="${isE ? 1.5 : 1}"/>`;
+    html += `<text x="${AX - 4}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="8" font-weight="700" font-family="Inter,sans-serif" fill="${isE ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.22)'}">${lbl}</text>`;
+  }
+
+  // Bars + month labels
+  const n     = months.length;
+  const slotW = plotW / n;
+  const barW  = Math.min(slotW * 0.55, 32);
+
+  const barCol = avg => avg <= -2 ? '#F1C40F' : avg < 0 ? '#2ECC71' : avg === 0 ? 'rgba(255,255,255,0.35)' : avg <= 1 ? '#E67E22' : '#E74C3C';
+
+  months.forEach((m, i) => {
+    const cx  = AX + (i + 0.5) * slotW;
+    const bx  = cx - barW / 2;
+    const sy  = toY(m.avg);
+    const col = barCol(m.avg);
+
+    // Under par: bar from score up to zero line; over par: from zero line down to score
+    const ry = m.avg <= 0 ? sy    : zeroY;
+    const rh = Math.max(2, Math.abs(sy - zeroY));
+    html += `<rect x="${bx.toFixed(1)}" y="${ry.toFixed(1)}" width="${barW.toFixed(1)}" height="${rh.toFixed(1)}" fill="${col}" rx="2"/>`;
+
+    // Month label
+    html += `<text x="${cx.toFixed(1)}" y="${H - 3}" text-anchor="middle" font-size="8" font-weight="700" font-family="Inter,sans-serif" fill="rgba(255,255,255,0.3)">${m.label}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+/* ══ OPEN / CLOSE ROUND ══ */
+function openRound(id) {
+  activeRound = ROUNDS.find(r => r.id === id);
+  document.getElementById('rd-course').textContent = activeRound.course;
+  document.getElementById('rd-date').textContent   = activeRound.date + ' · ' + activeRound.type;
+  rdTabIdx = 0;
+  document.querySelectorAll('#rd-tabs .rdtab').forEach((t,i) => t.classList.toggle('on', i === 0));
+  renderRdTab();
+  document.getElementById('rd-ov').classList.add('open');
+  document.getElementById('rd-body').scrollTop = 0;
+}
+
+function closeRound() {
+  document.getElementById('rd-ov').classList.remove('open');
+}
+
+function rdTab(el, idx) {
+  rdTabIdx = idx;
+  document.querySelectorAll('#rd-tabs .rdtab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('rd-body').scrollTop = 0;
+  renderRdTab();
+}
+
+function renderRdTab() {
+  const body = document.getElementById('rd-body');
+  if (rdTabIdx === 0) renderScorecard(body);
+  if (rdTabIdx === 1) renderRdStats(body);
+  if (rdTabIdx === 2) renderRdSG(body);
+}
+
+/* ══ TAB 0: SCORECARD ══ */
+function renderScorecard(body) {
+  const r = activeRound;
+  const sp = scoreToPar(r.score);
+
+  // Score hero
+  let heroHTML = `
+    <div class="score-hero">
+      <div class="sh-main">
+        <div class="sh-val ${sp.cls}">${sp.str}</div>
+        <div class="sh-lbl">TO PAR</div>
+      </div>
+      <div class="sh-divider"></div>
+      <div class="sh-main">
+        <div class="sh-val">${r.gross}</div>
+        <div class="sh-lbl">GROSS</div>
+      </div>
+      <div class="sh-divider"></div>
+      <div class="sh-main">
+        <div class="sh-val" style="color:${parseFloat(r.diff) <= 1 ? 'var(--green)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--red)'};">${r.diff}</div>
+        <div class="sh-lbl">DIFF</div>
+      </div>
+    </div>`;
+
+  // Build scorecard rows
+  const holes = r.holes;
+  const pars  = r.pars;
+  const front9Gross = holes.slice(0,9).reduce((a,b)=>a+b,0);
+  const back9Gross  = holes.slice(9).reduce((a,b)=>a+b,0);
+  const front9Par   = pars.slice(0,9).reduce((a,b)=>a+b,0);
+  const back9Par    = pars.slice(9).reduce((a,b)=>a+b,0);
+
+  function makeHalf(start, end, label) {
+    const holeNums  = Array.from({length:end-start}, (_,i) => i+start+1);
+    const halfPars  = pars.slice(start, end);
+    const halfHoles = holes.slice(start, end);
+    const halfPar   = halfPars.reduce((a,b)=>a+b,0);
+    const halfGross = halfHoles.reduce((a,b)=>a+b,0);
+
+    const holeCells  = holeNums.map(h => `<div class="sc-cell hdr">${h}</div>`).join('');
+    const parCells   = halfPars.map(p => `<div class="sc-cell lbl">${p}</div>`).join('');
+    const scoreCells = halfHoles.map((s,i) => {
+      const diff = s - halfPars[i];
+      let cls = 'score-p';
+      if (diff <= -2) cls = 'score-e';
+      else if (diff === -1) cls = 'score-b';
+      else if (diff === 1) cls = 'score-bo';
+      else if (diff === 2) cls = 'score-d';
+      else if (diff >= 3) cls = 'score-t';
+      return `<div class="sc-cell ${cls}">${s}</div>`;
+    }).join('');
+
+    return `
+      <div class="sc-row">
+        <div class="sc-cell lbl" style="min-width:32px;">${label}</div>
+        ${holeCells}
+        <div class="sc-cell ttl">${halfPar}</div>
+      </div>
+      <div class="sc-row">
+        <div class="sc-cell lbl" style="min-width:32px;">PAR</div>
+        ${parCells}
+        <div class="sc-cell lbl ttl">${halfPar}</div>
+      </div>
+      <div class="sc-row">
+        <div class="sc-cell lbl" style="min-width:32px;">SCR</div>
+        ${scoreCells}
+        <div class="sc-cell ttl">${halfGross}</div>
+      </div>`;
+  }
+
+  const cardHTML = `
+    <div class="sc-grid" style="font-size:10px;">${makeHalf(0,9,'OUT')}${makeHalf(9,18,'IN')}</div>`;
+
+  // Score legend
+  const legendHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:2px 0 14px;">
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:var(--gold);font-weight:800;">−2</span> Eagle+</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:var(--green);font-weight:800;">−1</span> Birdie</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:rgba(255,255,255,0.5);font-weight:800;">E</span> Par</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:#E67E22;font-weight:800;">+1</span> Bogey</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:var(--red);font-weight:800;">+2</span> Double</div>
+    </div>`;
+
+  body.innerHTML = heroHTML + cardHTML + legendHTML + '<div style="height:8px;"></div>';
+}
+
+/* ══ TAB 1: STATS ══ */
+function renderRdStats(body) {
+  const r = activeRound;
+  function kpi4(items) {
+    return `<div class="rd-kpi-grid c4">${items.map(k =>
+      `<div class="rd-kpi"><div class="rk-val" style="color:${k.c||'#fff'}">${k.v}</div><div class="rk-lbl">${k.l}</div></div>`
+    ).join('')}</div>`;
+  }
+  function kpi2(items) {
+    return `<div class="rd-kpi-grid">${items.map(k =>
+      `<div class="rd-kpi"><div class="rk-val" style="color:${k.c||'#fff'}">${k.v}</div><div class="rk-lbl">${k.l}</div></div>`
+    ).join('')}</div>`;
+  }
+  function sec(t) { return `<div class="rd-sec">${t}</div>`; }
+
+  const firC  = r.fir >= 70 ? 'var(--green)' : r.fir >= 55 ? '#F1C40F' : 'var(--red)';
+  const girC  = r.gir >= 70 ? 'var(--green)' : r.gir >= 55 ? '#F1C40F' : 'var(--red)';
+  const puttC = r.putts <= 27 ? 'var(--green)' : r.putts <= 30 ? '#F1C40F' : 'var(--red)';
+  const udC   = r.up_down >= 65 ? 'var(--green)' : r.up_down >= 45 ? '#F1C40F' : 'var(--red)';
+
+  body.innerHTML =
+    sec('Tee to Green') +
+    kpi4([
+      { v: r.fir + '%',    l: 'FIR %',     c: firC  },
+      { v: r.gir + '%',    l: 'GIR %',     c: girC  },
+      { v: r.up_down + '%',l: 'SCRAMBLE',  c: udC   },
+      { v: r.putts,        l: 'PUTTS',     c: puttC },
+    ]) +
+
+    sec('Par Breakdown') +
+    kpi4([
+      { v: r.holes.filter((s,i)=>s<r.pars[i]).length,  l: 'BIRDIES+', c: 'var(--green)' },
+      { v: r.holes.filter((s,i)=>s===r.pars[i]).length, l: 'PARS',    c: '#fff' },
+      { v: r.holes.filter((s,i)=>s===r.pars[i]+1).length, l: 'BOGEYS', c: '#E67E22' },
+      { v: r.holes.filter((s,i)=>s>=r.pars[i]+2).length, l: 'DOUBLES+', c: 'var(--red)' },
+    ]) +
+
+    sec('Nine-Hole Split') +
+    kpi2([
+      { v: r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0) >= 0
+          ? '+' + (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0))
+          : '' + (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)),
+        l: 'FRONT 9',
+        c: (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--green)' : '#E67E22' },
+      { v: r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0) >= 0
+          ? '+' + (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0))
+          : '' + (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)),
+        l: 'BACK 9',
+        c: (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--green)' : '#E67E22' },
+    ]) +
+    '<div style="height:8px;"></div>';
+}
+
+/* ══ TAB 2: STROKES GAINED ══ */
+function renderRdSG(body) {
+  const r = activeRound;
+  const sg = r.sg;
+
+  function sgBar(lbl, val) {
+    const maxAbs = 1.0;
+    const pct = Math.min(Math.abs(val) / maxAbs * 50, 50);
+    const pos = val >= 0;
+    const color = pos ? 'var(--green)' : 'var(--red)';
+    const str = (val > 0 ? '+' : '') + val.toFixed(1);
+    return `<div class="sg-row">
+      <div class="sg-lbl">${lbl}</div>
+      <div class="sg-track">
+        <div class="sg-center"></div>
+        <div class="${pos ? 'sg-fill-pos' : 'sg-fill-neg'}" style="width:${pct}%;background:${color};"></div>
+      </div>
+      <div class="sg-val" style="color:${color}">${str}</div>
+    </div>`;
+  }
+
+  const totalColor = sg.total >= 0 ? 'var(--green)' : 'var(--red)';
+  const totalStr   = (sg.total > 0 ? '+' : '') + sg.total.toFixed(1);
+
+  body.innerHTML = `
+    <div style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;">
+      <div style="font-size:42px;font-weight:900;color:${totalColor};letter-spacing:-2px;line-height:1;">${totalStr}</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">SG TOTAL · THIS ROUND</div>
+    </div>
+    <div class="rd-sec">Strokes Gained by Category</div>` +
+    sgBar('SG: Off the Tee',   sg.ott)  +
+    sgBar('SG: Approach',      sg.app)  +
+    sgBar('SG: Around Green',  sg.atg)  +
+    sgBar('SG: Putting',       sg.putt) +
+    '<div style="height:8px;"></div>';
+}
+
+/* ══ COURSE INSIGHTS ══ */
+function renderInsights() {
+  // Most played course
+  const counts = {};
+  ROUNDS.forEach(r => { counts[r.course] = (counts[r.course] || 0) + 1; });
+  const mostCourse = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+
+  // Lowest score course (best score to par)
+  const best = ROUNDS.reduce((a, b) => a.score < b.score ? a : b);
+
+  document.getElementById('ci-most-course').textContent = mostCourse[0];
+  document.getElementById('ci-most-sub').textContent    = mostCourse[1] + ' rounds played';
+
+  const sp = scoreToPar(best.score);
+  const spColor = best.score < 0 ? 'var(--green)' : best.score === 0 ? '#fff' : '#E67E22';
+  document.getElementById('ci-best-course').textContent = best.course;
+  document.getElementById('ci-best-sub').innerHTML      =
+    `<span style="color:${spColor};font-weight:800;">${sp.str}</span> · ${best.date}`;
+}
+
+/* ══ INIT ══ */
+buildFilters();
+renderRounds('2026', '');
+renderInsights();
+</script>
+</body>
+</html>

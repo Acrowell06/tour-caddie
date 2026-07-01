@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Scan Scorecard</title>
+<link rel="stylesheet" href="tc.css">
+<style>
+/* ── LAYOUT ── */
+.sc-state { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.sc-state.hidden { display:none; }
+
+/* ── NAV BAR ── */
+.sc-nav { display:flex; align-items:center; padding:8px 14px; flex-shrink:0; border-bottom:1px solid var(--border); position:relative; }
+.sc-back { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:700; color:var(--green); cursor:pointer; user-select:none; }
+.sc-back svg { width:16px; height:16px; }
+.sc-ttl { position:absolute; left:50%; transform:translateX(-50%); font-size:14px; font-weight:800; }
+.sc-act { margin-left:auto; font-size:12px; font-weight:700; color:var(--green); cursor:pointer; }
+
+/* ══ UPLOAD STATE ══ */
+.up-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 20px 28px; gap:20px; }
+
+.up-zone {
+  width:100%; background:rgba(46,204,113,0.04); border:1.5px dashed rgba(46,204,113,0.3);
+  border-radius:18px; padding:32px 20px; display:flex; flex-direction:column; align-items:center;
+  gap:12px; cursor:pointer; transition:background 0.2s;
+}
+.up-zone:active { background:rgba(46,204,113,0.08); }
+.up-icon { width:52px; height:52px; background:rgba(46,204,113,0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.up-icon svg { width:24px; height:24px; stroke:var(--green); }
+.up-lbl { font-size:13px; font-weight:700; color:#fff; text-align:center; line-height:1.4; }
+.up-sub { font-size:11px; color:var(--muted); text-align:center; }
+
+.up-btns { display:flex; flex-direction:column; gap:8px; width:100%; }
+.up-btn { width:100%; padding:13px; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; font-family:Inter,sans-serif; border:none; }
+.up-btn.primary { background:var(--green); color:#000; }
+.up-btn.secondary { background:var(--surface); color:#fff; border:1px solid var(--border); }
+.up-btn:active { opacity:0.8; }
+
+.up-tips { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+.up-tip { display:flex; align-items:flex-start; gap:8px; font-size:11px; color:var(--muted); line-height:1.4; }
+.up-tip-dot { width:4px; height:4px; background:var(--green); border-radius:50%; margin-top:5px; flex-shrink:0; }
+
+/* ══ PROCESSING STATE ══ */
+.proc-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 24px; gap:28px; }
+
+.proc-spinner { position:relative; width:72px; height:72px; }
+.proc-ring {
+  width:72px; height:72px; border:3px solid rgba(46,204,113,0.15);
+  border-top-color:var(--green); border-radius:50%;
+  animation:spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.proc-pct { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:900; color:var(--green); }
+
+.proc-hdr { font-size:16px; font-weight:800; text-align:center; letter-spacing:-0.3px; }
+.proc-sub { font-size:12px; color:var(--muted); text-align:center; margin-top:-20px; }
+
+.proc-steps { display:flex; flex-direction:column; gap:10px; width:100%; }
+.proc-step { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; transition:all 0.3s; }
+.proc-step.active { border-color:rgba(46,204,113,0.3); background:rgba(46,204,113,0.05); }
+.proc-step.done  { opacity:0.6; }
+.ps-icon { width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.3s; }
+.proc-step.active .ps-icon { background:rgba(46,204,113,0.2); border-color:var(--green); }
+.proc-step.done  .ps-icon { background:var(--green); border-color:var(--green); }
+.ps-lbl { font-size:12px; font-weight:700; color:var(--muted); }
+.proc-step.active .ps-lbl { color:#fff; }
+.ps-check { font-size:10px; color:#000; font-weight:900; opacity:0; transition:opacity 0.2s; }
+.proc-step.done .ps-check { opacity:1; }
+
+/* ══ REVIEW STATE ══ */
+.rv-scroller { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; min-height:0; }
+.rv-scroller::-webkit-scrollbar { display:none; }
+
+.rv-summary { margin:10px 12px 0; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; }
+.rvs-course { font-size:13px; font-weight:800; letter-spacing:-0.2px; }
+.rvs-date   { font-size:10px; color:var(--muted); margin-top:1px; }
+.rvs-score  { display:flex; align-items:baseline; gap:6px; margin-top:10px; }
+.rvs-big    { font-size:30px; font-weight:900; letter-spacing:-1px; }
+.rvs-net    { font-size:14px; font-weight:800; color:var(--muted); }
+.rvs-nine   { font-size:10px; color:var(--muted); margin-top:1px; }
+.rvs-stats  { display:flex; gap:0; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.rvs-stat   { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.rvs-stat + .rvs-stat { border-left:1px solid rgba(255,255,255,0.06); }
+.rvs-sv     { font-size:14px; font-weight:900; }
+.rvs-sv.green  { color:var(--green); }
+.rvs-sl     { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); }
+
+.rv-sec { padding:12px 16px 5px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+
+.hole-row { display:flex; align-items:center; gap:8px; margin:0 12px 5px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 12px; cursor:pointer; }
+.hole-row:active { background:var(--surface2,#1e1e2e); }
+
+.hr-hole { font-size:10px; font-weight:800; color:var(--muted); width:22px; flex-shrink:0; }
+.hr-par  { font-size:9px; font-weight:700; color:rgba(255,255,255,0.3); width:18px; flex-shrink:0; }
+.hr-score { width:38px; flex-shrink:0; display:flex; align-items:baseline; gap:3px; }
+.hr-num  { font-size:20px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
+.hr-net  { font-size:9px; font-weight:700; }
+.hr-num.birdie, .hr-net.birdie { color:var(--green); }
+.hr-num.par,    .hr-net.par    { color:#fff; }
+.hr-num.bogey,  .hr-net.bogey  { color:#F1C40F; }
+.hr-num.dbl,    .hr-net.dbl    { color:var(--red,#e74c3c); }
+.hr-tags { flex:1; display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.tag { font-size:8px; font-weight:800; padding:2px 5px; border-radius:4px; letter-spacing:0.3px; }
+.tag.hit  { background:rgba(46,204,113,0.15); color:var(--green); }
+.tag.miss { background:rgba(255,255,255,0.07); color:var(--muted); }
+.tag.na   { display:none; }
+.hr-putts { font-size:10px; font-weight:700; color:var(--muted); }
+.hr-chev  { font-size:16px; color:rgba(255,255,255,0.2); margin-left:auto; flex-shrink:0; }
+
+.rv-import { padding:12px; flex-shrink:0; }
+.rv-import-btn { width:100%; background:var(--green); border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:900; color:#000; cursor:pointer; font-family:Inter,sans-serif; letter-spacing:-0.2px; }
+.rv-import-btn:active { opacity:0.85; }
+
+/* ══ HOLE DETAIL SHEET ══ */
+.hole-ov { position:absolute; inset:0; z-index:200; pointer-events:none; }
+.hole-ov.open { pointer-events:all; }
+.hole-bd { position:absolute; inset:0; background:rgba(0,0,0,0.65); opacity:0; transition:opacity 0.3s; }
+.hole-ov.open .hole-bd { opacity:1; }
+.hole-sheet {
+  position:absolute; left:0; right:0; bottom:0; max-height:88%; background:var(--bg,#0A0A0F);
+  border-radius:20px 20px 0 0; border-top:1px solid var(--border);
+  transform:translateY(100%); transition:transform 0.34s cubic-bezier(0.4,0,0.2,1);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.hole-ov.open .hole-sheet { transform:translateY(0); }
+.hs-handle { width:36px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.hs-hdr { padding:10px 16px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.hs-hole { font-size:16px; font-weight:900; letter-spacing:-0.3px; }
+.hs-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.hs-close { font-size:13px; font-weight:700; color:var(--green); cursor:pointer; padding:4px 8px; }
+.hs-scroll { flex:1; overflow-y:auto; scrollbar-width:none; padding:12px 16px 20px; display:flex; flex-direction:column; gap:14px; }
+.hs-scroll::-webkit-scrollbar { display:none; }
+
+.hs-section { display:flex; flex-direction:column; gap:6px; }
+.hs-sec-lbl { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.hs-fields { display:flex; flex-direction:column; gap:5px; }
+.hs-field { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+.hs-field:active { border-color:rgba(46,204,113,0.4); }
+.hsf-lbl { font-size:11px; font-weight:700; color:var(--muted); }
+.hsf-val { font-size:13px; font-weight:800; display:flex; align-items:center; gap:6px; }
+.hsf-edit { font-size:10px; color:rgba(255,255,255,0.25); }
+.hit-badge  { font-size:10px; font-weight:800; color:var(--green); background:rgba(46,204,113,0.15); padding:2px 6px; border-radius:5px; }
+.miss-badge { font-size:10px; font-weight:800; color:var(--muted); background:rgba(255,255,255,0.07); padding:2px 6px; border-radius:5px; }
+
+/* ══ SUCCESS STATE ══ */
+.suc-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 24px; gap:18px; text-align:center; }
+.suc-ring { width:72px; height:72px; background:rgba(46,204,113,0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+@keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+.suc-check { font-size:32px; }
+.suc-ttl { font-size:22px; font-weight:900; letter-spacing:-0.5px; }
+.suc-round { font-size:13px; color:var(--muted); line-height:1.6; }
+.suc-stats { display:flex; gap:0; background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; width:100%; }
+.suc-stat { flex:1; padding:12px 6px; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.suc-stat + .suc-stat { border-left:1px solid var(--border); }
+.suc-sv { font-size:15px; font-weight:900; }
+.suc-sv.green { color:var(--green); }
+.suc-sl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); }
+.suc-btn { width:100%; background:var(--green); border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:900; color:#000; cursor:pointer; font-family:Inter,sans-serif; }
+.suc-btn:active { opacity:0.85; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap" data-page="scanner">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- ══════════════════════════════
+       STATE: UPLOAD
+  ══════════════════════════════ -->
+  <div class="sc-state" id="st-upload">
+    <div class="sc-nav">
+      <div class="sc-back" onclick="navigate('rounds')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Rounds
+      </div>
+      <div class="sc-ttl">Scan Scorecard</div>
+    </div>
+
+    <div class="up-body">
+      <div class="up-zone" onclick="beginScan()">
+        <div class="up-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div class="up-lbl">Take a photo of your completed scorecard</div>
+        <div class="up-sub">Both front and back 9 can be scanned separately</div>
+      </div>
+
+      <div class="up-btns">
+        <button class="up-btn primary" onclick="beginScan()">Take Photo</button>
+        <button class="up-btn secondary" onclick="beginScan()">Upload from Photos</button>
+      </div>
+
+      <div class="up-tips">
+        <div class="up-tip"><div class="up-tip-dot"></div>Lay the card flat in good lighting — avoid shadows</div>
+        <div class="up-tip"><div class="up-tip-dot"></div>Make sure all 9 holes on the card are visible</div>
+        <div class="up-tip"><div class="up-tip-dot"></div>The app reads FIR, GIR, club, yardage, lie, proximity and all putt distances</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STATE: PROCESSING
+  ══════════════════════════════ -->
+  <div class="sc-state hidden" id="st-proc">
+    <div class="sc-nav">
+      <div style="width:60px"></div>
+      <div class="sc-ttl">Analyzing…</div>
+    </div>
+
+    <div class="proc-body">
+      <div class="proc-spinner">
+        <div class="proc-ring"></div>
+        <div class="proc-pct" id="proc-pct">0%</div>
+      </div>
+
+      <div style="text-align:center;">
+        <div class="proc-hdr">Reading your scorecard</div>
+        <div class="proc-sub" style="margin-top:4px;">This takes about 3 seconds</div>
+      </div>
+
+      <div class="proc-steps">
+        <div class="proc-step" id="ps0">
+          <div class="ps-icon"><div class="ps-check">✓</div></div>
+          <div class="ps-lbl">Detecting Tour Caddie scorecard</div>
+        </div>
+        <div class="proc-step" id="ps1">
+          <div class="ps-icon"><div class="ps-check">✓</div></div>
+          <div class="ps-lbl">Reading hole data &amp; course info</div>
+        </div>
+        <div class="proc-step" id="ps2">
+          <div class="ps-icon"><div class="ps-check">✓</div></div>
+          <div class="ps-lbl">Extracting shots, clubs &amp; distances</div>
+        </div>
+        <div class="proc-step" id="ps3">
+          <div class="ps-icon"><div class="ps-check">✓</div></div>
+          <div class="ps-lbl">Processing putting &amp; proximity data</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STATE: REVIEW
+  ══════════════════════════════ -->
+  <div class="sc-state hidden" id="st-review">
+    <div class="sc-nav">
+      <div class="sc-back" onclick="goState('upload')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Rescan
+      </div>
+      <div class="sc-ttl">Review Data</div>
+      <div class="sc-act">Edit All</div>
+    </div>
+
+    <div class="rv-scroller">
+      <!-- Summary card -->
+      <div class="rv-summary">
+        <div class="rvs-course">Pebble Beach Golf Links</div>
+        <div class="rvs-date">June 30, 2026 · Tips · 9:08 AM · Calm</div>
+        <div class="rvs-score">
+          <div class="rvs-big">75</div>
+          <div class="rvs-net">+2</div>
+        </div>
+        <div class="rvs-nine">Out 37 (+1) &nbsp;·&nbsp; In 38 (+1)</div>
+        <div class="rvs-stats">
+          <div class="rvs-stat"><div class="rvs-sv">32</div><div class="rvs-sl">Putts</div></div>
+          <div class="rvs-stat"><div class="rvs-sv green">71%</div><div class="rvs-sl">FIR</div></div>
+          <div class="rvs-stat"><div class="rvs-sv green">72%</div><div class="rvs-sl">GIR</div></div>
+          <div class="rvs-stat"><div class="rvs-sv green">2</div><div class="rvs-sl">Birdies</div></div>
+          <div class="rvs-stat"><div class="rvs-sv" style="color:#F1C40F">4</div><div class="rvs-sl">Bogeys</div></div>
+        </div>
+      </div>
+
+      <div class="rv-sec">Hole by Hole — tap to review &amp; edit</div>
+      <div id="holes-list"></div>
+      <div style="height:8px"></div>
+    </div>
+
+    <div class="rv-import">
+      <button class="rv-import-btn" onclick="importRound()">Import Round → Update All Stats</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       STATE: SUCCESS
+  ══════════════════════════════ -->
+  <div class="sc-state hidden" id="st-success">
+    <div class="suc-body">
+      <div class="suc-ring"><div class="suc-check">✓</div></div>
+      <div class="suc-ttl">Round Imported</div>
+      <div class="suc-round">Pebble Beach Golf Links<br>June 30, 2026 · Tips · 75 (+2)</div>
+      <div class="suc-stats">
+        <div class="suc-stat"><div class="suc-sv">4.2→4.0</div><div class="suc-sl">Handicap</div></div>
+        <div class="suc-stat"><div class="suc-sv green">72%</div><div class="suc-sl">GIR</div></div>
+        <div class="suc-stat"><div class="suc-sv">1.78</div><div class="suc-sl">Putts/GIR</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.6;">
+        All 8 stat categories updated<br>Handicap index recalculated
+      </div>
+      <button class="suc-btn" onclick="navigate('rounds')">View Round</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       HOLE DETAIL SHEET
+  ══════════════════════════════ -->
+  <div class="hole-ov" id="hole-ov">
+    <div class="hole-bd" onclick="closeHole()"></div>
+    <div class="hole-sheet" id="hole-sheet">
+      <div class="hs-handle"></div>
+      <div class="hs-hdr">
+        <div>
+          <div class="hs-hole" id="hs-hole-ttl">Hole 1</div>
+          <div class="hs-meta" id="hs-hole-meta">Par 4 · 430 yds · S.I. 7</div>
+        </div>
+        <div class="hs-close" onclick="closeHole()">Done</div>
+      </div>
+      <div class="hs-scroll" id="hs-scroll"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="tc-utils.js"></script>
+<script>
+/* ── DATA: Simulated OCR extraction from Tour Caddie scorecard ── */
+const HOLES = [
+  { h:1,  par:4, yards:430, si:7,  teeClub:'D',   teeYds:285, fir:'H',   apprClub:'9i',  apprYds:142, apprPrx:12, gir:'✓',  p1:12, p2:2,         putts:2, score:4 },
+  { h:2,  par:5, yards:502, si:11, teeClub:'D',   teeYds:308, fir:'H',   apprClub:'7i',  apprYds:165, apprPrx:20, gir:'✓',  p1:20, p2:3,         putts:2, score:5 },
+  { h:3,  par:4, yards:390, si:3,  teeClub:'D',   teeYds:268, fir:'L',   apprClub:'8i',  apprYds:158, apprPrx:8,  gir:'✓',  p1:8,               putts:1, score:4 },
+  { h:4,  par:4, yards:438, si:1,  teeClub:'D',   teeYds:291, fir:'H',   apprClub:'9i',  apprYds:140, apprPrx:48, gir:'S',  s3:{club:'SW',lie:'F',from:15}, p1:3, p2:1, putts:2, score:5 },
+  { h:5,  par:3, yards:166, si:17,                             apprClub:'6i',  apprYds:166, apprPrx:22, gir:'✓',  p1:22, p2:4,         putts:2, score:3 },
+  { h:6,  par:5, yards:521, si:13, teeClub:'D',   teeYds:312, fir:'H',   apprClub:'PW', apprYds:115, apprPrx:6,  gir:'✓',  p1:6,               putts:1, score:4 },
+  { h:7,  par:3, yards:107, si:18,                             apprClub:'9i',  apprYds:107, apprPrx:35, gir:'R',  s3:{club:'LW',lie:'F',from:18}, p1:4, p2:1, putts:2, score:3 },
+  { h:8,  par:4, yards:425, si:5,  teeClub:'D',   teeYds:272, fir:'R',   apprClub:'7i',  apprYds:172, apprPrx:16, gir:'✓',  p1:16, p2:2,         putts:2, score:4 },
+  { h:9,  par:4, yards:464, si:9,  teeClub:'D',   teeYds:268, fir:'H',   apprClub:'8i',  apprYds:160, apprPrx:55, gir:'L',  s3:{club:'LW',lie:'R',from:22}, p1:5, p2:2, putts:2, score:5 },
+  { h:10, par:4, yards:446, si:2,  teeClub:'D',   teeYds:288, fir:'H',   apprClub:'8i',  apprYds:152, apprPrx:14, gir:'✓',  p1:14, p2:2,         putts:2, score:4 },
+  { h:11, par:4, yards:384, si:8,  teeClub:'3W',  teeYds:248, fir:'H',   apprClub:'7i',  apprYds:168, apprPrx:10, gir:'✓',  p1:10,              putts:1, score:4 },
+  { h:12, par:3, yards:202, si:14,                             apprClub:'5i',  apprYds:202, apprPrx:60, gir:'Lg', s3:{club:'SW',lie:'B',from:28}, p1:4, p2:2, putts:2, score:4 },
+  { h:13, par:5, yards:444, si:16, teeClub:'D',   teeYds:298, fir:'H',   apprClub:'9i',  apprYds:138, apprPrx:22, gir:'✓',  p1:22, p2:3,         putts:2, score:5 },
+  { h:14, par:5, yards:565, si:10, teeClub:'D',   teeYds:305, fir:'L',   apprClub:'PW', apprYds:112, apprPrx:8,  gir:'✓',  p1:8,               putts:1, score:4 },
+  { h:15, par:4, yards:397, si:4,  teeClub:'D',   teeYds:280, fir:'H',   apprClub:'9i',  apprYds:145, apprPrx:18, gir:'✓',  p1:18, p2:2,         putts:2, score:4 },
+  { h:16, par:4, yards:402, si:6,  teeClub:'D',   teeYds:261, fir:'R',   apprClub:'7i',  apprYds:170, apprPrx:58, gir:'R',  s3:{club:'SW',lie:'R',from:21}, p1:5, p2:2, putts:2, score:5 },
+  { h:17, par:3, yards:175, si:12,                             apprClub:'5i',  apprYds:175, apprPrx:12, gir:'✓',  p1:12, p2:2,         putts:2, score:3 },
+  { h:18, par:5, yards:548, si:15, teeClub:'D',   teeYds:295, fir:'H',   apprClub:'9i',  apprYds:140, apprPrx:28, gir:'✓',  p1:28, p2:4,         putts:2, score:5 },
+];
+
+/* ── STATE MANAGEMENT ── */
+function goState(id) {
+  document.querySelectorAll('.sc-state').forEach(s => s.classList.add('hidden'));
+  document.getElementById('st-' + id).classList.remove('hidden');
+}
+
+/* ── UPLOAD → PROCESSING ── */
+function beginScan() {
+  goState('proc');
+  let pct = 0;
+  const pctEl = document.getElementById('proc-pct');
+  const steps = [document.getElementById('ps0'), document.getElementById('ps1'),
+                 document.getElementById('ps2'), document.getElementById('ps3')];
+  let stepIdx = 0;
+
+  const pctIv = setInterval(() => {
+    pct = Math.min(pct + 3, 100);
+    pctEl.textContent = pct + '%';
+    if (pct >= 100) clearInterval(pctIv);
+  }, 80);
+
+  steps[0].classList.add('active');
+  const stepTimings = [0, 700, 1400, 2100];
+  stepTimings.forEach((t, i) => {
+    setTimeout(() => {
+      if (i > 0) steps[i - 1].classList.remove('active');
+      if (i > 0) steps[i - 1].classList.add('done');
+      if (steps[i]) steps[i].classList.add('active');
+    }, t);
+  });
+
+  setTimeout(() => {
+    steps[3].classList.remove('active');
+    steps[3].classList.add('done');
+    setTimeout(() => {
+      renderReview();
+      goState('review');
+    }, 400);
+  }, 2900);
+}
+
+/* ── RENDER REVIEW LIST ── */
+function scoreClass(score, par) {
+  const d = score - par;
+  return d < 0 ? 'birdie' : d === 0 ? 'par' : d === 1 ? 'bogey' : 'dbl';
+}
+function netStr(score, par) {
+  const d = score - par;
+  return d === 0 ? 'E' : (d > 0 ? '+' + d : '' + d);
+}
+
+function renderReview() {
+  const list = document.getElementById('holes-list');
+  list.innerHTML = HOLES.map((h, i) => {
+    const cls = scoreClass(h.score, h.par);
+    const net = netStr(h.score, h.par);
+    const isPar3 = h.par === 3;
+    const firHit = h.fir === 'H';
+    const girHit = h.gir === '✓';
+    const firTag = isPar3
+      ? '<span class="tag na">FIR</span>'
+      : `<span class="tag ${firHit ? 'hit' : 'miss'}">FIR</span>`;
+    const girTag = `<span class="tag ${girHit ? 'hit' : 'miss'}">GIR</span>`;
+    return `
+      <div class="hole-row" onclick="openHole(${i})">
+        <div class="hr-hole">H${h.h}</div>
+        <div class="hr-par">P${h.par}</div>
+        <div class="hr-score">
+          <div class="hr-num ${cls}">${h.score}</div>
+          <div class="hr-net ${cls}">${net}</div>
+        </div>
+        <div class="hr-tags">${firTag}${girTag}<span class="hr-putts">${h.putts}P</span></div>
+        <div class="hr-chev">›</div>
+      </div>`;
+  }).join('');
+}
+
+/* ── HOLE DETAIL SHEET ── */
+let currentHole = 0;
+
+function openHole(idx) {
+  currentHole = idx;
+  const h = HOLES[idx];
+  const cls = scoreClass(h.score, h.par);
+  const net = netStr(h.score, h.par);
+  const isPar3 = h.par === 3;
+  const girHit = h.gir === '✓';
+
+  document.getElementById('hs-hole-ttl').textContent = `Hole ${h.h}  ·  ${h.score} (${net})`;
+  document.getElementById('hs-hole-meta').textContent = `Par ${h.par} · ${h.yards} yds · S.I. ${h.si}`;
+
+  let html = '';
+
+  // ─ Tee Shot ─
+  if (!isPar3) {
+    html += `
+      <div class="hs-section">
+        <div class="hs-sec-lbl">Tee Shot</div>
+        <div class="hs-fields">
+          <div class="hs-field" onclick="editField(${idx},'teeClub')">
+            <div class="hsf-lbl">Club</div>
+            <div class="hsf-val">${h.teeClub || '—'} <span class="hsf-edit">✎</span></div>
+          </div>
+          <div class="hs-field" onclick="editField(${idx},'teeYds')">
+            <div class="hsf-lbl">Distance</div>
+            <div class="hsf-val">${h.teeYds ? h.teeYds + ' yds' : '—'} <span class="hsf-edit">✎</span></div>
+          </div>
+          <div class="hs-field" onclick="editField(${idx},'fir')">
+            <div class="hsf-lbl">FIR</div>
+            <div class="hsf-val">
+              ${h.fir === 'H'
+                ? '<span class="hit-badge">✓ Hit</span>'
+                : `<span class="miss-badge">✗ Missed ${h.fir === 'L' ? 'Left' : 'Right'}</span>`}
+              <span class="hsf-edit">✎</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ─ Approach ─
+  html += `
+    <div class="hs-section">
+      <div class="hs-sec-lbl">${isPar3 ? 'Tee Shot (Approach)' : 'Approach'}</div>
+      <div class="hs-fields">
+        <div class="hs-field" onclick="editField(${idx},'apprClub')">
+          <div class="hsf-lbl">Club</div>
+          <div class="hsf-val">${h.apprClub || '—'} <span class="hsf-edit">✎</span></div>
+        </div>
+        <div class="hs-field" onclick="editField(${idx},'apprYds')">
+          <div class="hsf-lbl">To Pin</div>
+          <div class="hsf-val">${h.apprYds ? h.apprYds + ' yds' : '—'} <span class="hsf-edit">✎</span></div>
+        </div>
+        <div class="hs-field" onclick="editField(${idx},'apprPrx')">
+          <div class="hsf-lbl">Proximity</div>
+          <div class="hsf-val">${h.apprPrx ? h.apprPrx + ' ft' : '—'} <span class="hsf-edit">✎</span></div>
+        </div>
+        <div class="hs-field" onclick="editField(${idx},'gir')">
+          <div class="hsf-lbl">GIR</div>
+          <div class="hsf-val">
+            ${girHit
+              ? '<span class="hit-badge">✓ Hit</span>'
+              : `<span class="miss-badge">✗ Missed ${h.gir === 'S' ? 'Short' : h.gir === 'Lg' ? 'Long' : h.gir === 'L' ? 'Left' : 'Right'}</span>`}
+            <span class="hsf-edit">✎</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  // ─ Short Game ─
+  if (h.s3) {
+    const lbl = { R:'Rough', B:'Bunker', F:'Fringe', Fw:'Fairway' };
+    html += `
+      <div class="hs-section">
+        <div class="hs-sec-lbl">Short Game</div>
+        <div class="hs-fields">
+          <div class="hs-field" onclick="editField(${idx},'s3club')">
+            <div class="hsf-lbl">Club</div>
+            <div class="hsf-val">${h.s3.club} <span class="hsf-edit">✎</span></div>
+          </div>
+          <div class="hs-field" onclick="editField(${idx},'s3lie')">
+            <div class="hsf-lbl">Lie</div>
+            <div class="hsf-val">${lbl[h.s3.lie] || h.s3.lie} <span class="hsf-edit">✎</span></div>
+          </div>
+          <div class="hs-field" onclick="editField(${idx},'s3from')">
+            <div class="hsf-lbl">From</div>
+            <div class="hsf-val">${h.s3.from} ft <span class="hsf-edit">✎</span></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ─ Putting ─
+  html += `
+    <div class="hs-section">
+      <div class="hs-sec-lbl">Putting</div>
+      <div class="hs-fields">
+        <div class="hs-field" onclick="editField(${idx},'p1')">
+          <div class="hsf-lbl">P1 Distance</div>
+          <div class="hsf-val">${h.p1} ft <span class="hsf-edit">✎</span></div>
+        </div>
+        ${h.p2 ? `<div class="hs-field" onclick="editField(${idx},'p2')">
+          <div class="hsf-lbl">P2 Distance</div>
+          <div class="hsf-val">${h.p2} ft <span class="hsf-edit">✎</span></div>
+        </div>` : ''}
+        ${h.p3 ? `<div class="hs-field" onclick="editField(${idx},'p3')">
+          <div class="hsf-lbl">P3 Distance</div>
+          <div class="hsf-val">${h.p3} ft <span class="hsf-edit">✎</span></div>
+        </div>` : ''}
+        <div class="hs-field" onclick="editField(${idx},'putts')">
+          <div class="hsf-lbl">Total Putts</div>
+          <div class="hsf-val">${h.putts} <span class="hsf-edit">✎</span></div>
+        </div>
+      </div>
+    </div>`;
+
+  // ─ Score ─
+  html += `
+    <div class="hs-section">
+      <div class="hs-sec-lbl">Result</div>
+      <div class="hs-fields">
+        <div class="hs-field" onclick="editField(${idx},'score')">
+          <div class="hsf-lbl">Score</div>
+          <div class="hsf-val ${cls}" style="font-size:18px">${h.score} <span style="font-size:12px;opacity:0.6">${net}</span> <span class="hsf-edit" style="font-size:10px">✎</span></div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('hs-scroll').innerHTML = html;
+  document.getElementById('hole-ov').classList.add('open');
+}
+
+function closeHole() {
+  document.getElementById('hole-ov').classList.remove('open');
+}
+
+function editField(idx, field) {
+  const h = HOLES[idx];
+  const labels = {
+    teeClub:'Tee Club', teeYds:'Tee Distance (yds)', fir:'FIR (H=Hit, L=Left, R=Right)',
+    apprClub:'Approach Club', apprYds:'To Pin (yds)', apprPrx:'Proximity (ft)',
+    gir:'GIR (✓=Hit, S=Short, L=Left, R=Right, Lg=Long)',
+    s3club:'S3 Club', s3lie:'S3 Lie (R/B/F/Fw)', s3from:'S3 From Hole (ft)',
+    p1:'P1 Distance (ft)', p2:'P2 Distance (ft)', p3:'P3 Distance (ft)',
+    putts:'Total Putts', score:'Score'
+  };
+  const cur = field === 's3club' ? h.s3?.club
+    : field === 's3lie' ? h.s3?.lie
+    : field === 's3from' ? h.s3?.from
+    : h[field];
+  const val = prompt(`Edit ${labels[field] || field}:`, cur ?? '');
+  if (val === null) return;
+
+  if (field === 's3club' || field === 's3lie' || field === 's3from') {
+    if (!h.s3) h.s3 = {};
+    const k = field.replace('s3','');
+    h.s3[k] = field === 's3from' ? +val : val;
+  } else {
+    h[field] = ['teeYds','apprYds','apprPrx','p1','p2','p3','putts','score'].includes(field) ? +val : val;
+  }
+  openHole(idx); // re-render sheet
+  renderReview(); // update hole row
+}
+
+/* ── IMPORT ── */
+function importRound() {
+  goState('success');
+  setTimeout(() => navigate('rounds'), 3500);
+}
+</script>
+</body>
+</html>

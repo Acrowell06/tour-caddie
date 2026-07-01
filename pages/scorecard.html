@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tour Caddie — Scorecard</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── Screen shell ─── */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Arial, sans-serif;
+  background: #0A0A0F;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 36px 24px 56px;
+  gap: 18px;
+}
+.pg-logo  { font-size: 11px; font-weight: 900; color: #2ECC71; letter-spacing: 2.5px; text-transform: uppercase; }
+.pg-title { font-size: 26px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+.pg-sub   { font-size: 12px; color: #8B8BA7; text-align: center; line-height: 1.6; }
+
+.toggle { display: flex; background: #141420; border-radius: 8px; padding: 3px; }
+.toggle-btn {
+  padding: 7px 22px; border-radius: 6px; font-size: 13px; font-weight: 700;
+  color: #8B8BA7; cursor: pointer; user-select: none; transition: all 0.15s;
+}
+.toggle-btn.on { background: #2ECC71; color: #0A0A0F; }
+
+.print-btn {
+  background: #2ECC71; color: #0A0A0F; border: none; border-radius: 8px;
+  padding: 11px 28px; font-size: 13px; font-weight: 800;
+  cursor: pointer; letter-spacing: 0.3px; transition: opacity 0.15s;
+}
+.print-btn:hover { opacity: 0.85; }
+
+/* ─── Card ─── */
+.card {
+  width: 10.5in; background: #fff; border-radius: 8px; overflow: hidden;
+  box-shadow: 0 12px 56px rgba(0,0,0,0.7);
+}
+.card.hidden { display: none; }
+
+/* Header bar */
+.c-hdr {
+  background: #0D0D14; display: flex; align-items: center;
+  justify-content: space-between; padding: 5px 12px; gap: 14px;
+}
+.c-logo {
+  font-size: 8.5pt; font-weight: 900; color: #2ECC71;
+  letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+}
+.c-fields { display: flex; gap: 10px; flex: 1; align-items: center; }
+.c-field {
+  display: flex; align-items: flex-end; gap: 4px;
+  font-size: 5.5pt; font-weight: 600; color: rgba(255,255,255,0.4);
+  letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap;
+}
+.c-line { display: inline-block; border-bottom: 0.6px solid rgba(255,255,255,0.28); height: 12px; }
+.c-nine {
+  font-size: 7pt; font-weight: 800; color: #2ECC71;
+  letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+}
+
+/* ─── Score Table ─── */
+.sc {
+  width: 100%; border-collapse: collapse; table-layout: fixed;
+  font-family: -apple-system, BlinkMacSystemFont, Arial, Helvetica, sans-serif;
+}
+.sc td {
+  border-right: 0.4px solid #e8e8e8; border-bottom: 0.4px solid #eee;
+  text-align: center; vertical-align: middle;
+  font-size: 7pt; color: #111; padding: 0; overflow: hidden;
+}
+.sc td:last-child { border-right: none; }
+
+/* Label col */
+.sc td.lbl {
+  text-align: right; padding-right: 6px;
+  background: #fafafa; font-size: 5pt; font-weight: 700;
+  color: #999; letter-spacing: 0.4px; text-transform: uppercase;
+  border-right: 1px solid #ddd !important; width: 0.72in;
+}
+
+/* OUT / IN */
+.sc td.out {
+  background: #f6f6f6; font-weight: 800; font-size: 7.5pt;
+  border-left: 1.5px solid #2ECC71 !important; border-right: none; width: 0.56in;
+}
+
+/* TOTAL */
+.sc td.tot {
+  background: #efefef; font-weight: 900; font-size: 8pt;
+  border-left: 1.5px solid #999 !important; border-right: none; width: 0.56in;
+}
+
+/* ── Row types ── */
+
+/* Hole number — dark header */
+.r-hole td           { height: 0.26in; background: #111; color: #fff; font-weight: 900; font-size: 9pt; border-color: #333 !important; }
+.r-hole td.lbl       { background: #111; color: #2ECC71; font-size: 5.5pt; letter-spacing: 0.8px; }
+.r-hole td.out       { background: #1a1a22; color: #2ECC71; border-color: #2ECC71 !important; }
+.r-hole td.tot       { background: #0d0d14; color: #fff; border-color: #444 !important; }
+
+/* Course info (par/yards/SI) */
+.r-info td           { height: 0.21in; background: #f7f7f7; font-size: 6.5pt; color: #444; }
+.r-info td.lbl       { background: #f2f2f2; }
+.r-info td.out,
+.r-info td.tot       { background: #f0f0f0; }
+
+/* Green section divider */
+.r-div td            { height: 3px; background: #2ECC71; border: none !important; padding: 0; }
+
+/* Light section separator */
+.r-sep td            { height: 1px; background: #e4e4e4; border: none !important; padding: 0; }
+
+/* Section group label row */
+.r-grp td            { height: 0.155in; background: #f0f0f0 !important; padding: 0; }
+.r-grp td.lbl        { background: #e8e8e8 !important; font-size: 4.5pt; color: #888; letter-spacing: 0.6px; }
+.r-grp td:not(.lbl):not(.out):not(.tot) {
+  font-size: 4.5pt; color: #bbb; letter-spacing: 0.3px;
+}
+.r-grp td.out,
+.r-grp td.tot        { background: #ebebeb !important; }
+
+/* Club rows */
+.r-clb td            { height: 0.255in; background: #fff; font-size: 7pt; }
+.r-clb td.lbl        { font-size: 5.2pt; color: #666; font-weight: 800; }
+
+/* Yardage / distance rows */
+.r-yds td            { height: 0.21in; background: #fcfcfc; font-size: 6.5pt; color: #555; }
+.r-yds td.lbl        { color: #aaa; font-weight: 600; }
+
+/* Proximity / distance-from-hole rows */
+.r-prx td            { height: 0.225in; background: #fafff9; font-size: 7pt; }
+.r-prx td.lbl        { color: #888; font-weight: 700; }
+.r-prx td.out,
+.r-prx td.tot        { background: #f2f2f2; }
+
+/* Lie rows */
+.r-lie td            { height: 0.205in; background: #fffaf4; font-size: 6.5pt; color: #555; }
+.r-lie td.lbl        { color: #bbb; font-size: 4.8pt; font-weight: 700; }
+.r-lie td.out,
+.r-lie td.tot        { background: #f2f2f2; }
+
+/* From (starting distance from hole) rows */
+.r-from td           { height: 0.21in; background: #fff9f4; font-size: 6.5pt; color: #555; }
+.r-from td.lbl       { color: #bbb; font-size: 4.8pt; font-weight: 700; }
+.r-from td.out,
+.r-from td.tot       { background: #f2f2f2; }
+
+/* FIR / GIR direction rows */
+.r-dir td            { height: 0.19in; background: #f5f5f5; font-size: 6pt; color: #aaa; letter-spacing: 1px; }
+.r-dir td.lbl        { font-size: 4.8pt; color: #bbb; }
+.r-dir td.out,
+.r-dir td.tot        { background: #efefef; }
+
+/* Putt distance rows */
+.r-pft td            { height: 0.245in; background: #fff; font-size: 7pt; }
+.r-pft td.lbl        { font-size: 5.2pt; color: #666; font-weight: 800; }
+.r-pft.p1 td:not(.lbl):not(.out):not(.tot) { background: #f5f5ff; }
+
+/* Putts total */
+.r-putts td          { height: 0.185in; background: #f4f4f4; font-size: 5.5pt; color: #999; }
+.r-putts td.lbl      { font-size: 4.6pt; color: #bbb; }
+.r-putts td.out,
+.r-putts td.tot      { background: #efefef; }
+
+/* Score — inverted */
+.r-score td          { height: 0.34in; background: #111; color: #fff; font-size: 10.5pt; font-weight: 900; border-color: #333 !important; }
+.r-score td.lbl      { background: #111; color: rgba(255,255,255,0.45); font-size: 5.2pt; }
+.r-score td.out      { background: #1a1a22; color: #2ECC71; font-size: 11.5pt; border-left-color: #2ECC71 !important; }
+.r-score td.tot      { background: #0d0d14; color: #fff; font-size: 12.5pt; border-left-color: #555 !important; }
+
+/* Net */
+.r-net td            { height: 0.18in; background: #fafafa; font-size: 5.5pt; color: #aaa; }
+.r-net td.lbl        { color: #ccc; }
+
+/* Footer */
+.c-ftr {
+  background: #f4f4f4; border-top: 1px solid #e8e8e8;
+  padding: 4px 12px; display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 12px;
+}
+.c-legend { font-size: 5pt; color: #888; line-height: 1.8; }
+.c-legend b { color: #555; }
+.c-scan { font-size: 5.5pt; font-weight: 800; color: #2ECC71; letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; }
+
+/* ─── Print ─── */
+@media print {
+  @page { size: 11in 8.5in landscape; margin: 0.15in 0.2in; }
+  body { background: #fff; padding: 0; gap: 0.18in; display: block; }
+  .pg-logo, .pg-title, .pg-sub, .toggle, .print-btn { display: none !important; }
+  .card { width: 100%; box-shadow: none; border-radius: 0; border: 0.5px solid #ccc; page-break-after: always; }
+  .card:last-of-type { page-break-after: auto; }
+  .card.hidden { display: block !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="pg-logo">Tour Caddie</div>
+<div class="pg-title">Scorecard</div>
+<div class="pg-sub">Print · Fill in · Scan with Tour Caddie to import all stats</div>
+
+<div class="toggle">
+  <div class="toggle-btn on" id="t18" onclick="setMode(18)">18 Holes</div>
+  <div class="toggle-btn"    id="t9"  onclick="setMode(9)">9 Holes</div>
+</div>
+<button class="print-btn" onclick="window.print()">Print</button>
+
+
+<!-- ═══════════════════════════════════════════════
+     FRONT 9
+════════════════════════════════════════════════ -->
+<div class="card" id="c-front">
+  <div class="c-hdr">
+    <div class="c-logo">Tour Caddie</div>
+    <div class="c-fields">
+      <div class="c-field">Course <span class="c-line" style="width:108px"></span></div>
+      <div class="c-field">Date <span class="c-line" style="width:66px"></span></div>
+      <div class="c-field">Player <span class="c-line" style="width:88px"></span></div>
+      <div class="c-field">Tees <span class="c-line" style="width:54px"></span></div>
+      <div class="c-field">HCP <span class="c-line" style="width:32px"></span></div>
+      <div class="c-field">Tee Time <span class="c-line" style="width:44px"></span></div>
+      <div class="c-field">Conditions <span class="c-line" style="width:72px"></span></div>
+    </div>
+    <div class="c-nine">Front 9</div>
+  </div>
+
+  <table class="sc">
+    <colgroup>
+      <col style="width:0.72in">
+      <col><col><col><col><col><col><col><col><col>
+      <col style="width:0.56in">
+    </colgroup>
+    <tbody>
+
+      <!-- Hole info -->
+      <tr class="r-hole">
+        <td class="lbl">Hole</td>
+        <td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+        <td class="out">Out</td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">Par</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">Yards</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">S.I.</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-div"><td colspan="11"></td></tr>
+
+      <!-- TEE SHOT -->
+      <tr class="r-grp">
+        <td class="lbl">Tee Shot</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Par 3: skip — use Approach rows for tee shot</td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-yds">
+        <td class="lbl">Dist · Yds</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-dir">
+        <td class="lbl">FIR ✓ / ✗</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="11"></td></tr>
+
+      <!-- APPROACH -->
+      <tr class="r-grp">
+        <td class="lbl">Approach</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Par 3: fill these rows with tee shot data</td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-yds">
+        <td class="lbl">To Pin · Yds</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-prx">
+        <td class="lbl">Prx · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-dir">
+        <td class="lbl">GIR ✓ / ✗</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="11"></td></tr>
+
+      <!-- SHORT GAME -->
+      <tr class="r-grp">
+        <td class="lbl">Short Game</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Fill if GIR missed — also use for lay-ups / extra approach shots on par 5s</td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">S3 · Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-lie">
+        <td class="lbl">S3 · Lie</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-from">
+        <td class="lbl">S3 · From·Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">S4 · Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-lie">
+        <td class="lbl">S4 · Lie</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-from">
+        <td class="lbl">S4 · From·Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="11"></td></tr>
+
+      <!-- PUTTING -->
+      <tr class="r-pft p1">
+        <td class="lbl">P1 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-pft">
+        <td class="lbl">P2 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-pft">
+        <td class="lbl">P3 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-putts">
+        <td class="lbl">Putts total</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <!-- RESULT -->
+      <tr class="r-score">
+        <td class="lbl">Score</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-net">
+        <td class="lbl">Net +/−</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="c-ftr">
+    <span class="c-legend">
+      <b>Clubs —</b> D:Driver · W:Wood · H:Hybrid · 2–9:Iron · G:Gap · S:Sand · L:Lob · P:Putter · R:Penalty
+      &nbsp;&nbsp;
+      <b>FIR —</b> ✓:Hit · ✗L:Missed left · ✗R:Missed right · (blank on par 3)
+      &nbsp;&nbsp;
+      <b>GIR —</b> ✓:Hit · ✗L:Left · ✗R:Right · ✗S:Short · ✗Lg:Long
+      &nbsp;&nbsp;
+      <b>Lie —</b> R:Rough · B:Bunker · F:Fringe · Fw:Fairway
+    </span>
+    <span class="c-scan">↑ Scan with Tour Caddie to import</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     BACK 9
+════════════════════════════════════════════════ -->
+<div class="card" id="c-back">
+  <div class="c-hdr">
+    <div class="c-logo">Tour Caddie</div>
+    <div class="c-fields">
+      <div class="c-field">Course <span class="c-line" style="width:108px"></span></div>
+      <div class="c-field">Date <span class="c-line" style="width:66px"></span></div>
+      <div class="c-field">Player <span class="c-line" style="width:88px"></span></div>
+      <div class="c-field">Out Score <span class="c-line" style="width:32px"></span></div>
+      <div class="c-field">Out Putts <span class="c-line" style="width:32px"></span></div>
+      <div class="c-field">Net so far <span class="c-line" style="width:32px"></span></div>
+    </div>
+    <div class="c-nine">Back 9</div>
+  </div>
+
+  <table class="sc">
+    <colgroup>
+      <col style="width:0.72in">
+      <col><col><col><col><col><col><col><col><col>
+      <col style="width:0.56in">
+      <col style="width:0.56in">
+    </colgroup>
+    <tbody>
+
+      <tr class="r-hole">
+        <td class="lbl">Hole</td>
+        <td>10</td><td>11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td>
+        <td class="out">In</td><td class="tot">Total</td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">Par</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">Yards</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">S.I.</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+
+      <tr class="r-div"><td colspan="12"></td></tr>
+
+      <tr class="r-grp">
+        <td class="lbl">Tee Shot</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Par 3: skip — use Approach rows for tee shot</td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-yds">
+        <td class="lbl">Dist · Yds</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-dir">
+        <td class="lbl">FIR ✓ / ✗</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="12"></td></tr>
+
+      <tr class="r-grp">
+        <td class="lbl">Approach</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Par 3: fill these rows with tee shot data</td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-yds">
+        <td class="lbl">To Pin · Yds</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-prx">
+        <td class="lbl">Prx · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-dir">
+        <td class="lbl">GIR ✓ / ✗</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="12"></td></tr>
+
+      <tr class="r-grp">
+        <td class="lbl">Short Game</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Fill if GIR missed — also use for lay-ups / extra approach shots on par 5s</td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">S3 · Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-lie">
+        <td class="lbl">S3 · Lie</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-from">
+        <td class="lbl">S3 · From·Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">S4 · Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-lie">
+        <td class="lbl">S4 · Lie</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-from">
+        <td class="lbl">S4 · From·Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="12"></td></tr>
+
+      <tr class="r-pft p1">
+        <td class="lbl">P1 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-pft">
+        <td class="lbl">P2 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-pft">
+        <td class="lbl">P3 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-putts">
+        <td class="lbl">Putts total</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+
+      <tr class="r-score">
+        <td class="lbl">Score</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+      <tr class="r-net">
+        <td class="lbl">Net +/−</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td><td class="tot"></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="c-ftr">
+    <span class="c-legend">
+      <b>Clubs —</b> D:Driver · W:Wood · H:Hybrid · 2–9:Iron · G:Gap · S:Sand · L:Lob · P:Putter · R:Penalty
+      &nbsp;&nbsp;
+      <b>FIR —</b> ✓:Hit · ✗L:Missed left · ✗R:Missed right · (blank on par 3)
+      &nbsp;&nbsp;
+      <b>GIR —</b> ✓:Hit · ✗L:Left · ✗R:Right · ✗S:Short · ✗Lg:Long
+      &nbsp;&nbsp;
+      <b>Lie —</b> R:Rough · B:Bunker · F:Fringe · Fw:Fairway
+    </span>
+    <span class="c-scan">↑ Scan with Tour Caddie to import</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     9-HOLE
+════════════════════════════════════════════════ -->
+<div class="card hidden" id="c-nine">
+  <div class="c-hdr">
+    <div class="c-logo">Tour Caddie</div>
+    <div class="c-fields">
+      <div class="c-field">Course <span class="c-line" style="width:108px"></span></div>
+      <div class="c-field">Date <span class="c-line" style="width:66px"></span></div>
+      <div class="c-field">Player <span class="c-line" style="width:88px"></span></div>
+      <div class="c-field">Tees <span class="c-line" style="width:54px"></span></div>
+      <div class="c-field">HCP <span class="c-line" style="width:32px"></span></div>
+      <div class="c-field">Tee Time <span class="c-line" style="width:44px"></span></div>
+      <div class="c-field">Conditions <span class="c-line" style="width:72px"></span></div>
+    </div>
+    <div class="c-nine">9 Holes</div>
+  </div>
+
+  <table class="sc">
+    <colgroup>
+      <col style="width:0.72in">
+      <col><col><col><col><col><col><col><col><col>
+      <col style="width:0.56in">
+    </colgroup>
+    <tbody>
+
+      <tr class="r-hole">
+        <td class="lbl">Hole</td>
+        <td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+        <td class="out">Total</td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">Par</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">Yards</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-info">
+        <td class="lbl">S.I.</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-div"><td colspan="11"></td></tr>
+
+      <tr class="r-grp">
+        <td class="lbl">Tee Shot</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Par 3: skip — use Approach rows for tee shot</td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-yds">
+        <td class="lbl">Dist · Yds</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-dir">
+        <td class="lbl">FIR ✓ / ✗</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="11"></td></tr>
+
+      <tr class="r-grp">
+        <td class="lbl">Approach</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Par 3: fill these rows with tee shot data</td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-yds">
+        <td class="lbl">To Pin · Yds</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-prx">
+        <td class="lbl">Prx · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-dir">
+        <td class="lbl">GIR ✓ / ✗</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="11"></td></tr>
+
+      <tr class="r-grp">
+        <td class="lbl">Short Game</td>
+        <td colspan="9" style="text-align:left;padding-left:6px;color:#bbb;font-size:4.5pt;letter-spacing:0.3px;">Fill if GIR missed — also use for lay-ups / extra approach shots on par 5s</td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">S3 · Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-lie">
+        <td class="lbl">S3 · Lie</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-from">
+        <td class="lbl">S3 · From·Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-clb">
+        <td class="lbl">S4 · Club</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-lie">
+        <td class="lbl">S4 · Lie</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-from">
+        <td class="lbl">S4 · From·Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-sep"><td colspan="11"></td></tr>
+
+      <tr class="r-pft p1">
+        <td class="lbl">P1 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-pft">
+        <td class="lbl">P2 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-pft">
+        <td class="lbl">P3 · Ft</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-putts">
+        <td class="lbl">Putts total</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+      <tr class="r-score">
+        <td class="lbl">Score</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+      <tr class="r-net">
+        <td class="lbl">Net +/−</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        <td class="out"></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="c-ftr">
+    <span class="c-legend">
+      <b>Clubs —</b> D:Driver · W:Wood · H:Hybrid · 2–9:Iron · G:Gap · S:Sand · L:Lob · P:Putter · R:Penalty
+      &nbsp;&nbsp;
+      <b>FIR —</b> ✓:Hit · ✗L:Missed left · ✗R:Missed right · (blank on par 3)
+      &nbsp;&nbsp;
+      <b>GIR —</b> ✓:Hit · ✗L:Left · ✗R:Right · ✗S:Short · ✗Lg:Long
+      &nbsp;&nbsp;
+      <b>Lie —</b> R:Rough · B:Bunker · F:Fringe · Fw:Fairway
+    </span>
+    <span class="c-scan">↑ Scan with Tour Caddie to import</span>
+  </div>
+</div>
+
+
+<script>
+function setMode(n) {
+  const is18 = n === 18;
+  document.getElementById('t18').classList.toggle('on', is18);
+  document.getElementById('t9').classList.toggle('on', !is18);
+  document.getElementById('c-front').classList.toggle('hidden', !is18);
+  document.getElementById('c-back').classList.toggle('hidden', !is18);
+  document.getElementById('c-nine').classList.toggle('hidden', is18);
+}
+const _m = new URLSearchParams(location.search).get('mode');
+if (_m === '9') setMode(9);
+</script>
+</body>
+</html>

@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Hole 7</title>
+<link rel="stylesheet" href="tc.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ── Hole nav header ── */
+.hole-nav { display:flex; align-items:center; justify-content:space-between; padding:5px 12px 4px; flex-shrink:0; background:var(--surface); border-bottom:1px solid var(--border); }
+.hn-arr { padding:5px 10px; border-radius:7px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; }
+.hn-center { text-align:center; flex:1; padding:0 8px; }
+.hn-course { font-size:11px; font-weight:800; }
+.hn-info { font-size:9px; color:var(--dim); margin-top:1px; }
+.hn-card-btn { padding:5px 9px; border-radius:7px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:14px; cursor:pointer; line-height:1; }
+
+/* ── F/C/B distance strip ── */
+.fcb-strip { display:flex; background:var(--surface2); border-bottom:1px solid var(--border); flex-shrink:0; }
+.fcb-cell { flex:1; padding:5px 4px; text-align:center; border-right:1px solid var(--border); }
+.fcb-cell:last-child { border-right:none; }
+.fcb-lbl { font-size:7px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); }
+.fcb-val { font-size:13px; font-weight:900; line-height:1.3; }
+.fcb-cell.ctr .fcb-val { color:var(--green); }
+.fcb-cell.my .fcb-val { font-size:11px; color:var(--muted); }
+
+/* ── Shot log ── */
+.shot-log { display:flex; gap:5px; padding:5px 12px; overflow-x:auto; flex-shrink:0; min-height:30px; scrollbar-width:none; align-items:center; }
+.shot-log::-webkit-scrollbar { display:none; }
+.shot-log-empty { font-size:10px; color:var(--dim); }
+.sl-chip { flex-shrink:0; font-size:10px; font-weight:700; white-space:nowrap; background:rgba(46,204,113,0.07); border:1px solid rgba(46,204,113,0.25); border-radius:5px; padding:3px 8px; color:var(--green); }
+
+/* ── Club picker overlay ── */
+.club-ov { position:absolute; inset:0; z-index:80; pointer-events:none; }
+.club-ov.open { pointer-events:all; }
+.club-bd { position:absolute; inset:0; background:rgba(0,0,0,0); transition:background 0.25s; }
+.club-ov.open .club-bd { background:rgba(0,0,0,0.55); }
+.club-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--bg); border-radius:18px 18px 0 0; border-top:1px solid var(--border); transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.4,0,0.2,1); padding-bottom:22px; }
+.club-ov.open .club-sheet { transform:translateY(0); }
+.club-handle { width:36px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; margin:10px auto 0; }
+.club-ttl-row { display:flex; align-items:baseline; justify-content:space-between; padding:8px 14px 10px; }
+.club-ttl { font-size:13px; font-weight:800; }
+.club-sub { font-size:10px; color:var(--muted); }
+.club-skip-btn { font-size:11px; font-weight:700; color:var(--dim); padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid var(--border); cursor:pointer; }
+.club-grp { padding:0 12px 7px; }
+.club-grp-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
+.club-btns { display:flex; gap:5px; flex-wrap:wrap; }
+.cbtn { padding:7px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; font-size:11px; font-weight:700; color:rgba(255,255,255,0.7); cursor:pointer; }
+.cbtn.sel { background:rgba(46,204,113,0.12); border-color:#2ECC71; color:#2ECC71; }
+.cbtn:active { transform:scale(0.93); }
+.club-skip-full { margin:6px 12px 0; padding:9px; text-align:center; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:9px; font-size:11px; font-weight:700; color:var(--dim); cursor:pointer; }
+
+/* ── Lift dpill above the Mark Shot button ── */
+#s2-dpill { bottom: 48px; }
+
+/* ── Wind overlay (HTML, not SVG — never moves) ── */
+.wind-ov { position:absolute; top:44px; left:10px; display:flex; flex-direction:column; align-items:center; gap:2px; pointer-events:none; z-index:20; }
+.wind-spd { font-size:9px; font-weight:800; color:var(--gold); letter-spacing:0.3px; text-shadow:0 1px 3px rgba(0,0,0,0.9); }
+
+/* ── Scorecard overlay ── */
+.scov { position:absolute; inset:0; z-index:90; background:var(--bg); display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+.scov.open { transform:translateY(0); }
+.scov-hdr { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.scov-back { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.scov-ttl { font-size:13px; font-weight:800; flex:1; }
+.scov-score { font-size:13px; font-weight:900; color:var(--green); }
+.scov-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:10px 12px 16px; }
+.scov-body::-webkit-scrollbar { display:none; }
+.scov-sec { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); padding:8px 0 5px; }
+.sct { width:100%; border-collapse:collapse; }
+.sct th { font-size:8px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--dim); padding:4px 6px; text-align:center; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02); }
+.sct td { font-size:11px; font-weight:700; padding:7px 6px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.03); }
+.sct tr.now td { background:rgba(46,204,113,0.08); }
+.sct tr.now td:first-child { border-left:2px solid var(--green); }
+.sct tr.tot td { font-weight:900; border-top:1px solid var(--border); background:rgba(255,255,255,0.03); }
+.sc-bd { color:var(--green); }
+.sc-par { color:rgba(255,255,255,0.65); }
+.sc-bo { color:#E67E22; }
+.sc-db { color:var(--red); }
+.sc-na { color:rgba(255,255,255,0.2); }
+/* ── Hole summary sheet ── */
+.sum-map-wrap { padding:6px 10px 4px; }
+.sum-map-wrap svg { width:100%; height:130px; border-radius:10px; display:block; }
+.sum-shots { display:flex; gap:5px; padding:0 10px 6px; overflow-x:auto; scrollbar-width:none; }
+.sum-shots::-webkit-scrollbar { display:none; }
+.sum-score-row { display:flex; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:0; }
+.sum-score-cell { flex:1; padding:8px 4px; text-align:center; border-right:1px solid var(--border); }
+.sum-score-cell:last-child { border-right:none; }
+.sum-score-lbl { font-size:7px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+.sum-score-val { font-size:18px; font-weight:900; }
+.chip-y { background:rgba(241,196,15,0.1); border-color:rgba(241,196,15,0.35); color:#F1C40F; }
+</style>
+</head>
+<body data-page="s2">
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+
+<div class="flow">
+  <div class="step" onclick="navigate('login')">Sign In</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('home')">Home</div>
+  <div class="arr">→</div>
+  <div class="step on">Fairway · H7</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('p3')">Par 3 · H2</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('p5')">Par 5 · H9</div>
+</div>
+
+<div class="phone">
+<div class="wrap" id="wrap">
+
+<div class="page" style="overflow-y:hidden;">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- Hole navigation header -->
+  <div class="hole-nav">
+    <div class="hn-arr" onclick="navigate('home')">← H6</div>
+    <div class="hn-center">
+      <div class="hn-course">Riviera CC</div>
+      <div class="hn-info">Hole 7 of 18 · Par 4 · Hdcp 5</div>
+    </div>
+    <div class="hn-card-btn" onclick="openScorecard()">📋</div>
+  </div>
+
+  <!-- Score bar -->
+  <div class="sb">
+    <div class="sb-l"><div class="stp neg">−1</div><div class="sth">THRU 6 HOLES</div></div>
+    <div class="sdv"></div>
+    <div class="sb-r">
+      <div class="shl">HOLE 7 · PAR 4 · 412 YDS</div>
+      <div class="shd">Shot <span id="s2-shot-num" style="color:var(--green);font-weight:800;">1</span></div>
+    </div>
+  </div>
+
+  <!-- Undo bar -->
+  <div class="undo-bar">
+    <span class="undo-ctx" id="s2-undo-ctx">No shots logged yet</span>
+    <div class="undo-btn dim" id="s2-undo-btn" onclick="undoLastS2()">↩ Undo Shot</div>
+  </div>
+
+  <!-- Map -->
+  <div class="map" style="height:210px;position:relative;" id="s2-map">
+    <!-- Leaflet satellite map (hole view) -->
+    <div id="s2-leaflet" style="position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;"></div>
+
+    <!-- Green close-up SVG (overlays Leaflet when in green mode) -->
+    <svg viewBox="0 0 320 242" id="s2-green-svg" xmlns="http://www.w3.org/2000/svg"
+         style="display:none;touch-action:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;">
+      <rect width="320" height="242" fill="#060D06"/>
+      <ellipse cx="160" cy="121" rx="148" ry="118" fill="#12361A"/>
+      <ellipse cx="160" cy="121" rx="137" ry="109" fill="#1A5820"/>
+      <ellipse cx="160" cy="121" rx="127" ry="101" fill="#1D6523" opacity="0.8"/>
+      <ellipse cx="160" cy="100" rx="112" ry="106" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="3,3"/>
+      <ellipse cx="160" cy="100" rx="74" ry="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3"/>
+      <ellipse cx="160" cy="100" rx="37" ry="35" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="235" y="103" font-size="8" fill="rgba(255,255,255,0.2)" font-weight="600">20 ft</text>
+      <text x="197" y="103" font-size="8" fill="rgba(255,255,255,0.25)" font-weight="600">10 ft</text>
+      <ellipse cx="255" cy="95" rx="20" ry="12" fill="#2A2510" opacity="0.7"/>
+      <text x="255" y="99" text-anchor="middle" font-size="7" fill="rgba(200,180,80,0.4)">bunker</text>
+      <circle cx="160" cy="100" r="5.5" fill="#0A0A0F" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+      <line x1="160" y1="100" x2="160" y2="63" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/>
+      <polygon points="160,63 175,71 160,79" fill="#E74C3C"/>
+      <!-- Tappable hole-out zone (rendered above pin so it catches taps) -->
+      <circle id="s2-cup-ring" cx="160" cy="100" r="22" fill="rgba(46,204,113,0.05)" stroke="rgba(46,204,113,0.25)" stroke-width="1.5" stroke-dasharray="4,3" style="cursor:pointer;"/>
+      <text x="160" y="131" text-anchor="middle" font-size="8" fill="rgba(46,204,113,0.45)" font-weight="700" pointer-events="none">⛳ hole out</text>
+      <!-- Green pending marker -->
+      <g id="s2-gpen" style="opacity:0;pointer-events:none;" class="draggable-marker">
+        <circle cx="160" cy="145" r="18" fill="rgba(241,196,15,0.08)"/>
+        <circle cx="160" cy="145" r="11" fill="rgba(241,196,15,0.25)" stroke="rgba(241,196,15,0.9)" stroke-width="2"/>
+        <text id="s2-gpen-num" x="160" y="149" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+        <text id="s2-gylbl" x="174" y="146" font-size="10" fill="rgba(241,196,15,1)" font-weight="800"
+              paint-order="stroke" stroke="rgba(10,10,15,0.95)" stroke-width="3.5" stroke-linejoin="round">18 ft</text>
+      </g>
+    </svg>
+
+    <div class="map-view-toggle">
+      <div class="mvt-btn active" id="s2-view-hole" onclick="s2SetView('hole')">⛳ Hole</div>
+      <div class="mvt-btn" id="s2-view-green" onclick="s2SetView('green')">🟢 Green</div>
+    </div>
+    <div class="dpill" id="s2-dpill">📍 Mark your tee shot</div>
+    <div class="mbtns">
+      <div class="mbtn mbtn-g" id="s2-markbtn" onclick="s2Mark()">📍 Mark Shot</div>
+    </div>
+    <div class="mchips">
+      <div class="mc"><div class="mc-lbl">HOLE</div><div class="mc-val">7</div></div>
+      <div class="mc"><div class="mc-lbl">PAR</div><div class="mc-val">4</div></div>
+      <div class="mc"><div class="mc-lbl">SHOT</div><div class="mc-val" id="s2-shot-chip" style="color:var(--green)">1</div></div>
+    </div>
+    <!-- Wind indicator (HTML overlay — stays fixed, not in SVG) -->
+    <div class="wind-ov">
+      <svg width="34" height="34" viewBox="-17 -17 34 34" style="display:block;">
+        <!-- Dial background -->
+        <circle r="16" fill="rgba(10,10,15,0.88)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <!-- Cardinal tick marks -->
+        <line x1="0" y1="-16" x2="0" y2="-13" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="16"  y1="0" x2="13"  y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="0"  y1="16" x2="0"  y2="13" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="-16" y1="0" x2="-13" y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <!-- Cardinal labels -->
+        <text x="0"   y="-9"  text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.55)" font-weight="700">N</text>
+        <text x="9.5" y="3.5" text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.3)"  font-weight="700">E</text>
+        <text x="0"   y="13"  text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.3)"  font-weight="700">S</text>
+        <text x="-9.5" y="3.5" text-anchor="middle" font-size="5.5" fill="rgba(255,255,255,0.3)" font-weight="700">W</text>
+        <!-- Wind arrow — rotate(225) = SW direction (wind coming from SW) -->
+        <g transform="rotate(225)">
+          <line x1="0" y1="5" x2="0" y2="-8" stroke="rgba(241,196,15,0.95)" stroke-width="2" stroke-linecap="round"/>
+          <polygon points="0,-12 -3,-7 3,-7" fill="rgba(241,196,15,0.95)"/>
+          <!-- Tail feathers -->
+          <line x1="-3" y1="5" x2="3" y2="5" stroke="rgba(241,196,15,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <div class="wind-spd">8 mph</div>
+    </div>
+  </div>
+
+  <!-- F/C/B distance strip -->
+  <div class="fcb-strip">
+    <div class="fcb-cell">
+      <div class="fcb-lbl">Front</div>
+      <div class="fcb-val" id="s2-fcb-front">128</div>
+    </div>
+    <div class="fcb-cell ctr">
+      <div class="fcb-lbl">Center ▾</div>
+      <div class="fcb-val" id="s2-fcb-center">143</div>
+    </div>
+    <div class="fcb-cell">
+      <div class="fcb-lbl">Back</div>
+      <div class="fcb-val" id="s2-fcb-back">157</div>
+    </div>
+    <div class="fcb-cell my">
+      <div class="fcb-lbl">6i avg</div>
+      <div class="fcb-val">150 yds</div>
+    </div>
+  </div>
+
+  <!-- GPS bar -->
+  <div class="gps-bar" id="s2-gpsbar">
+    <div class="gps-bar-inner">
+      <div class="gps-bar-top">
+        <div class="gps-dot"></div>
+        <div class="gps-lbl" id="s2-gps-lbl">GPS Placed — Shot 1</div>
+        <div class="gps-acc">±3 yds accuracy</div>
+      </div>
+      <div class="gps-bar-hint">
+        <strong>Drag the yellow marker</strong> to fine-tune if GPS is off.<br>
+        Tap Confirm when position looks right.
+      </div>
+      <div class="gps-actions">
+        <button class="gps-cancel" onclick="s2CancelGPS()">↩ Re-place</button>
+        <button class="gps-confirm" onclick="s2ConfirmGPS()">✓ Confirm Shot</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shot log -->
+  <div class="shot-log" id="s2-shot-log">
+    <span class="shot-log-empty">No shots logged yet</span>
+  </div>
+
+  <!-- Toggles -->
+  <div class="tsec">
+    <div class="tgl">Tee Shot / Fairway</div>
+    <div class="trow">
+      <div class="tog t-g" onclick="tt(this)">✓ FIR</div>
+      <div class="tog" onclick="tt(this)">Missed L</div>
+      <div class="tog" onclick="tt(this)">Missed R</div>
+      <div class="tog t-y" onclick="tt(this)">Bunker</div>
+    </div>
+    <div class="tgl">Green / Scoring</div>
+    <div class="trow">
+      <div class="tog" onclick="tt(this)">GIR</div>
+      <div class="tog" onclick="tt(this)">Missed</div>
+      <div class="tog" onclick="tt(this)">Scramble</div>
+      <div class="tog t-r" onclick="tt(this)">Sand Save</div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+  <button class="cta cta-gold" onclick="showSheet()">🚩 Hole Out → Summary</button>
+</div><!-- /page -->
+
+<!-- Toast -->
+<div class="toast" id="s2-toast"></div>
+
+<!-- Hole Summary Sheet -->
+<div class="sheet-ov" id="sheet-ov">
+  <div class="sheet-bd" onclick="hideSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Hole 7 — Summary</div>
+      <div class="sh-undo" onclick="hideSheet()">↩ Edit</div>
+    </div>
+
+    <!-- Mini hole map with all shots rendered dynamically -->
+    <div class="sum-map-wrap">
+      <svg viewBox="0 0 320 242" id="sum-svg" xmlns="http://www.w3.org/2000/svg">
+        <!-- Bird's-eye overhead terrain -->
+        <rect width="320" height="242" fill="#0C1A0C"/>
+        <ellipse cx="55"  cy="225" rx="42" ry="22" fill="#0A1609"/>
+        <ellipse cx="66"  cy="190" rx="36" ry="21" fill="#0B1B0A"/>
+        <ellipse cx="50"  cy="155" rx="40" ry="23" fill="#0A1609"/>
+        <ellipse cx="70"  cy="118" rx="32" ry="20" fill="#0B1A0A"/>
+        <ellipse cx="52"  cy="83"  rx="38" ry="21" fill="#0A1609"/>
+        <ellipse cx="72"  cy="50"  rx="30" ry="17" fill="#0B1B0A"/>
+        <ellipse cx="90"  cy="22"  rx="22" ry="13" fill="#0A1609"/>
+        <ellipse cx="254" cy="218" rx="40" ry="21" fill="#0A1609"/>
+        <ellipse cx="244" cy="183" rx="33" ry="20" fill="#0B1B0A"/>
+        <ellipse cx="256" cy="148" rx="38" ry="21" fill="#0A1609"/>
+        <ellipse cx="242" cy="112" rx="30" ry="18" fill="#0B1A0A"/>
+        <ellipse cx="252" cy="78"  rx="34" ry="19" fill="#0A1609"/>
+        <ellipse cx="238" cy="44"  rx="26" ry="15" fill="#0B1B0A"/>
+        <path d="M108 235 C106 195 102 155 105 112 C108 69 124 40 131 24 L169 24 C176 40 190 69 191 112 C192 155 188 195 186 235 Z" fill="#183818"/>
+        <path d="M127 235 C126 195 124 155 126 112 C128 69 134 42 131 24 L169 24 C166 42 172 69 170 112 C170 155 168 195 167 235 Z" fill="#286428"/>
+        <path d="M136 235 C135 198 133 162 134 122 C135 80 139 50 150 28 L150 28 C161 50 163 80 162 122 C161 162 159 198 158 235 Z" fill="#2E7030" opacity="0.45"/>
+        <ellipse cx="97" cy="65" rx="20" ry="12" fill="#0A1E3A"/>
+        <ellipse cx="97" cy="65" rx="16" ry="9" fill="#0D2545" opacity="0.8"/>
+        <text x="97" y="69" text-anchor="middle" font-size="8" fill="rgba(52,152,219,0.55)">💧</text>
+        <ellipse cx="193" cy="123" rx="17" ry="11" fill="#7A6428"/>
+        <ellipse cx="150" cy="24" rx="19" ry="13" fill="#1A7A1A"/>
+        <ellipse cx="150" cy="24" rx="15" ry="9" fill="#22A022" opacity="0.9"/>
+        <line x1="150" y1="24" x2="150" y2="7" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+        <polygon points="150,7 162,13 150,19" fill="#E74C3C"/>
+        <rect x="146" y="230" width="18" height="9" rx="4" fill="#2A3A1A"/>
+        <circle cx="155" cy="234" r="7" fill="rgba(10,10,15,0.85)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <text x="155" y="238" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.55)" font-weight="700">T</text>
+        <!-- dynamic shot lines + markers injected here by buildSummaryMap() -->
+      </svg>
+    </div>
+
+    <!-- Shot review strip -->
+    <div class="sum-shots" id="sum-shots"></div>
+
+    <!-- Score row -->
+    <div class="sum-score-row">
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">SCORE</div>
+        <div class="sum-score-val" id="sum-score">—</div>
+      </div>
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">PAR</div>
+        <div class="sum-score-val">4</div>
+      </div>
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">+/−</div>
+        <div class="sum-score-val" id="sum-diff">—</div>
+      </div>
+      <div class="sum-score-cell">
+        <div class="sum-score-lbl">PUTTS</div>
+        <div class="sum-score-val" id="sum-putts-disp">—</div>
+      </div>
+    </div>
+
+    <!-- Putt adjuster -->
+    <div class="pcrow" style="margin-top:8px;">
+      <div>
+        <div class="pclbl">Adjust Putts</div>
+        <div class="pc">
+          <div class="pcbtn" onclick="adj(-1)">−</div>
+          <div class="pcval" id="pcval">0</div>
+          <div class="pcbtn" onclick="adj(1)">+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats chips (tappable to toggle) -->
+    <div class="adlbl">Stats</div>
+    <div class="chips" id="sum-stats-chips"></div>
+
+    <button class="cfm" onclick="navigate('p3')">Confirm · Next Hole (Par 3) →</button>
+  </div>
+</div>
+
+<!-- Club picker overlay -->
+<div class="club-ov" id="club-ov">
+  <div class="club-bd" onclick="skipClub()"></div>
+  <div class="club-sheet">
+    <div class="club-handle"></div>
+    <div class="club-ttl-row">
+      <div>
+        <div class="club-ttl">Which club?</div>
+        <div class="club-sub" id="club-shot-label">Shot 1 confirmed</div>
+      </div>
+      <div class="club-skip-btn" onclick="skipClub()">Skip</div>
+    </div>
+    <div class="club-grp" id="club-sec-woods">
+      <div class="club-grp-lbl">Woods / Hybrids</div>
+      <div class="club-btns">
+        <div class="cbtn" onclick="selectClub(this,'Dr')">Dr</div>
+        <div class="cbtn" onclick="selectClub(this,'3W')">3W</div>
+        <div class="cbtn" onclick="selectClub(this,'5W')">5W</div>
+        <div class="cbtn" onclick="selectClub(this,'3H')">3H</div>
+        <div class="cbtn" onclick="selectClub(this,'4H')">4H</div>
+      </div>
+    </div>
+    <div class="club-grp" id="club-sec-irons">
+      <div class="club-grp-lbl">Irons</div>
+      <div class="club-btns">
+        <div class="cbtn" onclick="selectClub(this,'4i')">4i</div>
+        <div class="cbtn" onclick="selectClub(this,'5i')">5i</div>
+        <div class="cbtn" onclick="selectClub(this,'6i')">6i</div>
+        <div class="cbtn" onclick="selectClub(this,'7i')">7i</div>
+        <div class="cbtn" onclick="selectClub(this,'8i')">8i</div>
+        <div class="cbtn" onclick="selectClub(this,'9i')">9i</div>
+      </div>
+    </div>
+    <div class="club-grp" id="club-sec-wedges">
+      <div class="club-grp-lbl">Wedges</div>
+      <div class="club-btns">
+        <div class="cbtn" onclick="selectClub(this,'PW')">PW</div>
+        <div class="cbtn" onclick="selectClub(this,'48°')">48°</div>
+        <div class="cbtn" onclick="selectClub(this,'52°')">52°</div>
+        <div class="cbtn" onclick="selectClub(this,'56°')">56°</div>
+        <div class="cbtn" onclick="selectClub(this,'60°')">60°</div>
+      </div>
+    </div>
+    <div class="club-grp" id="club-sec-putter" style="display:none;">
+      <div class="club-grp-lbl">Putter</div>
+      <div class="club-btns">
+        <div class="cbtn" style="flex:1;text-align:center;padding:12px;" onclick="selectClub(this,'Putter')">🏌️ Putter</div>
+      </div>
+    </div>
+    <div class="club-skip-full" onclick="skipClub()">Don't log a club for this shot</div>
+  </div>
+</div>
+
+<!-- Scorecard overlay -->
+<div class="scov" id="scov">
+  <div class="scov-hdr">
+    <button class="scov-back" onclick="closeScorecard()">← Back</button>
+    <div class="scov-ttl">Riviera CC · Round</div>
+    <div class="scov-score">−1</div>
+  </div>
+  <div class="scov-body">
+    <div class="scov-sec">Front Nine</div>
+    <table class="sct">
+      <thead><tr><th>HOLE</th><th>PAR</th><th>HDCP</th><th>SCORE</th><th>+/−</th></tr></thead>
+      <tbody id="scov-front"></tbody>
+    </table>
+    <div class="scov-sec">Back Nine</div>
+    <table class="sct">
+      <thead><tr><th>HOLE</th><th>PAR</th><th>HDCP</th><th>SCORE</th><th>+/−</th></tr></thead>
+      <tbody id="scov-back"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+</div><!-- /phone -->
+
+<p class="pg-note">Mark Shot · drag GPS pin · club picker · Hole Out → Green Summary → Hole 8</p>
+
+<script src="tc-utils.js"></script>
+<script>
+/* ── GPS REFERENCE POINTS (Riviera CC Hole 7, approximate) ── */
+const H7_TEE         = { lat: 34.0462, lng: -118.5090 };
+const H7_GREEN       = { lat: 34.0496, lng: -118.5085 };
+const H7_GREEN_FRONT = { lat: 34.0493, lng: -118.5085 };
+const H7_GREEN_BACK  = { lat: 34.0499, lng: -118.5085 };
+
+/* ── DISTANCE + COORDINATE UTILITIES ── */
+function haversineYds(a, b) {
+  const R = 6378137, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s)) / 0.9144;
+}
+function haversineFt(a, b) { return haversineYds(a, b) * 3; }
+
+// Green SVG (pin at 160,100, scale 10ft per 37px) → GPS.
+function greenSVGToLatLng(gx, gy) {
+  const ftPerPx = 10 / 37;
+  const dEast  = (gx - 160) * ftPerPx;
+  const dSouth = (gy - 100) * ftPerPx;
+  return {
+    lat: H7_GREEN.lat - dSouth * 0.3048 / 111320,
+    lng: H7_GREEN.lng + dEast  * 0.3048 / (111320 * Math.cos(H7_GREEN.lat * Math.PI / 180))
+  };
+}
+
+// GPS → approximate hole-summary-SVG coords (tee=155,234 / green=150,24).
+function latLngToSumSVG(ll) {
+  const t = Math.min(1, haversineYds(H7_TEE, ll) / haversineYds(H7_TEE, H7_GREEN));
+  return { x: 155 + (150 - 155) * t, y: 234 + (24 - 234) * t };
+}
+
+// Update FRONT / CENTER / BACK strip using real GPS distances.
+function updateDistanceBar(ll) {
+  const f = document.getElementById('s2-fcb-front');
+  const c = document.getElementById('s2-fcb-center');
+  const b = document.getElementById('s2-fcb-back');
+  if (!f) return;
+  f.textContent = Math.max(1, Math.round(haversineYds(ll, H7_GREEN_FRONT)));
+  c.textContent = Math.max(1, Math.round(haversineYds(ll, H7_GREEN)));
+  b.textContent = Math.max(1, Math.round(haversineYds(ll, H7_GREEN_BACK)));
+}
+
+/* ── LEAFLET SATELLITE MAP ── */
+const lmap = L.map('s2-leaflet', {
+  center: [34.0479, -118.5088], zoom: 18,
+  zoomControl: false, attributionControl: false
+});
+L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { maxZoom: 19 }
+).addTo(lmap);
+
+// Static tee marker
+L.marker([H7_TEE.lat, H7_TEE.lng], {
+  icon: L.divIcon({
+    html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+  }),
+  interactive: false
+}).addTo(lmap);
+
+// Flag marker — tap to hole out
+const s2FlagMarker = L.marker([H7_GREEN.lat, H7_GREEN.lng], {
+  icon: L.divIcon({
+    html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgba(255,255,255,0.9);"></div><div style="background:#E74C3C;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:white;white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
+    iconSize: [80, 40], iconAnchor: [1, 0], className: ''
+  })
+}).addTo(lmap);
+s2FlagMarker.on('click', s2HoleOutFromMap);
+
+// Shot marker icon
+function makeShotIcon(num, holed) {
+  const bg = holed ? 'rgba(241,196,15,0.3)' : 'rgba(46,204,113,0.2)';
+  const bd = holed ? 'rgba(241,196,15,0.9)' : 'rgba(46,204,113,0.7)';
+  return L.divIcon({
+    html: `<div style="background:${bg};border:2px solid ${bd};width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${holed?'11':'10'}px;font-weight:800;color:white;font-family:Inter,sans-serif;">${holed ? '⛳' : num}</div>`,
+    iconSize: [22, 22], iconAnchor: [11, 11], className: ''
+  });
+}
+
+// Pending (draggable) shot marker
+let s2PendingMarker = null;
+let s2PendingLatLng = { lat: H7_TEE.lat + 0.0007, lng: H7_TEE.lng };
+
+function makePendingIcon(num) {
+  return L.divIcon({
+    html: `<div style="background:rgba(241,196,15,0.2);border:2px solid #F1C40F;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;font-family:Inter,sans-serif;">${num}</div>`,
+    iconSize: [26, 26], iconAnchor: [13, 13], className: ''
+  });
+}
+
+function placePendingAt(ll) {
+  s2PendingLatLng = ll;
+  if (!s2PendingMarker) {
+    s2PendingMarker = L.marker(ll, { icon: makePendingIcon(s2ShotCount + 1), draggable: true }).addTo(lmap);
+    s2PendingMarker.on('drag', e => {
+      s2PendingLatLng = e.target.getLatLng();
+      refreshHolePill();
+      updateDistanceBar(s2PendingLatLng);
+    });
+  } else {
+    s2PendingMarker.setLatLng(ll);
+    s2PendingMarker.setIcon(makePendingIcon(s2ShotCount + 1));
+  }
+  refreshHolePill();
+  updateDistanceBar(ll);
+}
+
+function removePendingMarker() {
+  if (s2PendingMarker) { lmap.removeLayer(s2PendingMarker); s2PendingMarker = null; }
+}
+
+// Tap map to place pending marker
+lmap.on('click', e => {
+  if (!document.getElementById('s2-gpsbar').classList.contains('show')) return;
+  if (s2ViewMode !== 'hole') return;
+  placePendingAt(e.latlng);
+});
+
+function refreshHolePill() {
+  const prev = s2LoggedShots.at(-1);
+  const fromLL = prev?.latlng ?? H7_TEE;
+  const yds = Math.max(1, Math.round(haversineYds(fromLL, s2PendingLatLng)));
+  const pill = document.getElementById('s2-dpill');
+  if (pill) pill.textContent = prev ? `↑ ${yds} yds` : `↑ ${yds} yds from tee · Dr`;
+}
+
+/* ── GREEN SVG DRAG (unchanged) ── */
+const s2GreenDragCfg = {
+  baseX: 160, baseY: 145, pinX: 160, pinY: 235,
+  scale: 10 / (37 * 3),
+  pillId: 's2-dpill', format: v => `🟢 ${v} yds`,
+  originalText: '🟢 On Green — drag to place',
+  labelId: 's2-gylbl', labelFormat: v => `${v} yds`
+};
+const s2GreenDrag = makeDraggable('s2-gpen', 's2-green-svg', s2GreenDragCfg);
+
+makePannable('s2-green-svg', 's2-gpsbar');
+addTapToPlace('s2-green-svg', 's2-gpsbar', () => s2GreenDrag);
+
+document.getElementById('s2-cup-ring').addEventListener('pointerdown', e => {
+  e.stopPropagation(); e.preventDefault(); s2HoleOut();
+});
+
+/* ── VIEW TOGGLE ── */
+let s2ViewMode = 'hole';
+function s2SetView(mode) {
+  s2ViewMode = mode;
+  document.getElementById('s2-view-hole').classList.toggle('active',  mode === 'hole');
+  document.getElementById('s2-view-green').classList.toggle('active', mode === 'green');
+  document.getElementById('s2-leaflet').style.display   = mode === 'hole'  ? '' : 'none';
+  document.getElementById('s2-green-svg').style.display = mode === 'green' ? '' : 'none';
+  if (mode === 'hole') lmap.invalidateSize();
+  if (mode === 'green') {
+    const n = document.getElementById('s2-gpen-num');
+    if (n) n.textContent = s2ShotCount + 1;
+  }
+  s2CancelGPS();
+}
+
+/* ── GPS FLOW ── */
+let s2ShotCount = 0;
+const s2LoggedShots = [];
+const s2ShotLog = [];
+
+// greenToHoleSVG still used for summary map (green SVG shots → summary SVG positions).
+function greenToHoleSVG(gx, gy) {
+  return { x: 150 + (gx - 160) * (19 / 74), y: 24 + (gy - 100) * (13 / 70) };
+}
+
+function updateGreenDragReference() {
+  const prevGreen = [...s2LoggedShots].reverse().find(s => s.svgId === 's2-green-svg');
+  if (prevGreen) {
+    s2GreenDragCfg.pinX = prevGreen.x; s2GreenDragCfg.pinY = prevGreen.y;
+    s2GreenDragCfg.scale = 10 / (37 * 3);
+    s2GreenDragCfg.format = v => `🟢 ${v} yds from last ball`;
+    s2GreenDragCfg.labelFormat = v => `${v} yds`;
+    s2GreenDragCfg.originalText = '🟢 Drag to place';
+    s2GreenDragCfg.onMove = null;
+  } else {
+    const prevLL = s2LoggedShots.at(-1)?.latlng ?? H7_TEE;
+    const approxYds = Math.max(1, Math.round(haversineYds(prevLL, H7_GREEN)));
+    s2GreenDragCfg.pinX = 160; s2GreenDragCfg.pinY = 100;
+    s2GreenDragCfg.scale = 10 / (37 * 3);
+    s2GreenDragCfg.format = () => `🟢 ~${approxYds} yds`;
+    s2GreenDragCfg.labelFormat = () => `~${approxYds}`;
+    s2GreenDragCfg.originalText = `🟢 ~${approxYds} yds`;
+    s2GreenDragCfg.onMove = (gx, gy) => {
+      const yds = Math.max(1, Math.round(haversineYds(prevLL, greenSVGToLatLng(gx, gy))));
+      const pill = document.getElementById('s2-dpill');
+      if (pill) pill.textContent = `🟢 ${yds} yds`;
+      const lbl = document.getElementById('s2-gylbl');
+      if (lbl) lbl.textContent = `${yds} yds`;
+    };
+  }
+}
+
+function s2Mark() {
+  if (s2ViewMode === 'green') updateGreenDragReference();
+  const btn = document.getElementById('s2-markbtn');
+  btn.textContent = '📍 GPS Dropped…';
+  btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+  document.getElementById('s2-gpsbar').classList.add('show');
+  if (s2ViewMode === 'green') {
+    const p = document.getElementById('s2-gpen');
+    p.style.opacity = '1'; p.style.pointerEvents = 'all';
+    p.setAttribute('transform', '');
+    s2GreenDrag.showInitial();
+  } else {
+    placePendingAt(lmap.getCenter());
+  }
+}
+
+function s2CancelGPS() {
+  removePendingMarker();
+  document.getElementById('s2-gpen').style.opacity = '0';
+  document.getElementById('s2-gpen').style.pointerEvents = 'none';
+  document.getElementById('s2-gpsbar').classList.remove('show');
+  s2GreenDrag.reset();
+  const btn = document.getElementById('s2-markbtn');
+  btn.textContent = '📍 Mark Shot';
+  btn.style.opacity = ''; btn.style.pointerEvents = '';
+}
+
+function s2ConfirmGPS() {
+  s2ShotCount++;
+  let ydsLabel = '';
+
+  if (s2ViewMode === 'green') {
+    const pos  = s2GreenDrag.getPosition();
+    const prev = s2LoggedShots.at(-1) ?? null;
+
+    // Green SVG elements (unchanged)
+    const line = prev?.svgId === 's2-green-svg'
+      ? addShotLine('s2-green-svg', prev.x, prev.y, pos.x, pos.y) : null;
+    const el = addShotMarker('s2-green-svg', pos.x, pos.y, s2ShotCount);
+
+    // Mirror onto Leaflet map
+    const shotLL = greenSVGToLatLng(pos.x, pos.y);
+    const fromLL = prev?.latlng ?? H7_TEE;
+    const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [shotLL.lat, shotLL.lng]],
+      { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+    const leafletMarker = L.marker([shotLL.lat, shotLL.lng],
+      { icon: makeShotIcon(s2ShotCount, false) }).addTo(lmap);
+
+    s2LoggedShots.push({ el, line, leafletMarker, leafletLine, latlng: shotLL,
+                         x: pos.x, y: pos.y, svgId: 's2-green-svg' });
+    document.getElementById('s2-gpen').style.opacity = '0';
+    document.getElementById('s2-gpen').style.pointerEvents = 'none';
+    const gpenNum = document.getElementById('s2-gpen-num');
+    if (gpenNum) gpenNum.textContent = s2ShotCount + 1;
+    s2GreenDrag.reset();
+
+    ['s2-fcb-front','s2-fcb-center','s2-fcb-back'].forEach(id =>
+      document.getElementById(id).textContent = '—');
+
+    ydsLabel = prev?.svgId === 's2-green-svg'
+      ? `${Math.max(1, Math.round(haversineFt(prev.latlng, shotLL)))} ft`
+      : `${Math.max(1, Math.round(haversineYds(fromLL, shotLL)))} yds`;
+    }
+  } else {
+    // Hole view — Leaflet
+    const ll     = s2PendingLatLng;
+    const prev   = s2LoggedShots.at(-1) ?? null;
+    const fromLL = prev?.latlng ?? H7_TEE;
+    const yds    = Math.max(1, Math.round(haversineYds(fromLL, ll)));
+    ydsLabel     = yds >= 10 ? `${yds} yds` : `${Math.round(yds * 3)} ft`;
+
+    const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [ll.lat, ll.lng]],
+      { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+    const leafletMarker = L.marker([ll.lat, ll.lng],
+      { icon: makeShotIcon(s2ShotCount, false) }).addTo(lmap);
+
+    const svgPos = latLngToSumSVG(ll);
+    s2LoggedShots.push({ leafletMarker, leafletLine, latlng: ll,
+                         x: svgPos.x, y: svgPos.y, svgId: 's2-leaflet' });
+    removePendingMarker();
+    updateDistanceBar(ll);
+  }
+
+  document.getElementById('s2-gpsbar').classList.remove('show');
+
+  const snum = document.getElementById('s2-shot-num');
+  if (snum) { snum.textContent = s2ShotCount + 1; snum.style.color = 'var(--gold)'; }
+  const chip = document.getElementById('s2-shot-chip');
+  if (chip) { chip.textContent = s2ShotCount + 1; chip.style.color = 'var(--gold)'; }
+  const gpsLbl = document.getElementById('s2-gps-lbl');
+  if (gpsLbl) gpsLbl.textContent = `GPS Placed — Shot ${s2ShotCount + 1}`;
+
+  document.getElementById('s2-undo-ctx').innerHTML =
+    `Last: <strong>Shot ${s2ShotCount} confirmed</strong>`;
+  document.getElementById('s2-undo-btn').classList.remove('dim');
+
+  const markBtn = document.getElementById('s2-markbtn');
+  markBtn.textContent = '📍 Mark Shot';
+  markBtn.style.opacity = ''; markBtn.style.pointerEvents = '';
+  document.getElementById('s2-dpill').textContent = `Shot ${s2ShotCount} locked · walk to next ball`;
+
+  // Auto-detect FIR (shot 1, hole view) or GIR (shot 2+)
+  {
+    const confirmedPos = s2LoggedShots.at(-1);
+    if (confirmedPos) {
+      if (s2ShotCount === 1 && confirmedPos.svgId === 's2-leaflet') {
+        const result = autoDetectFIR(confirmedPos.latlng);
+        showToast('s2-toast', `Auto: ${result} detected`, 2200);
+      } else if (s2ShotCount >= 2) {
+        const result = autoDetectGIR(confirmedPos);
+        showToast('s2-toast', `Auto: ${result === 'GIR' ? '✓ GIR' : 'GIR Miss'} detected`, 2200);
+      }
+    }
+  }
+
+  openClubPicker(s2ShotCount, ydsLabel, s2ViewMode === 'green');
+}
+
+function undoLastS2() {
+  if (s2LoggedShots.length === 0) { showToast('s2-toast', 'Nothing to undo yet'); return; }
+  const last = s2LoggedShots.pop();
+  if (last.leafletMarker) lmap.removeLayer(last.leafletMarker);
+  if (last.leafletLine)   lmap.removeLayer(last.leafletLine);
+  last.line?.remove();
+  last.el?.remove();
+  s2ShotLog.pop();
+  renderShotLog();
+  s2ShotCount--;
+
+  const snum = document.getElementById('s2-shot-num');
+  if (snum) { snum.textContent = s2ShotCount + 1; snum.style.color = s2ShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+  const chip = document.getElementById('s2-shot-chip');
+  if (chip) { chip.textContent = s2ShotCount + 1; chip.style.color = s2ShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+  const gpenNum = document.getElementById('s2-gpen-num');
+  if (gpenNum) gpenNum.textContent = s2ShotCount + 1;
+
+  const noShots = s2LoggedShots.length === 0;
+  document.getElementById('s2-undo-ctx').innerHTML = noShots
+    ? 'No shots logged yet'
+    : `Last: <strong>Shot ${s2ShotCount} confirmed</strong>`;
+  if (noShots) document.getElementById('s2-undo-btn').classList.add('dim');
+
+  const nowLast = s2LoggedShots.at(-1);
+  if (nowLast?.svgId === 's2-leaflet' && nowLast.latlng) {
+    updateDistanceBar(nowLast.latlng);
+  } else {
+    ['s2-fcb-front','s2-fcb-center','s2-fcb-back'].forEach(id =>
+      document.getElementById(id).textContent = '—');
+  }
+
+  s2CancelGPS();
+  showToast('s2-toast', `↩ Shot ${s2ShotCount + 1} removed`);
+}
+
+/* ── AUTO-DETECT FIR / GIR ── */
+function autoSetTog(rowIdx, togIdx, colorCls) {
+  const rows = document.querySelectorAll('.trow');
+  const row = rows[rowIdx];
+  if (!row) return;
+  row.querySelectorAll('.tog').forEach((t, i) => {
+    t.classList.remove('t-g', 't-y', 't-r');
+    if (i === togIdx) t.classList.add(colorCls || 't-g');
+  });
+}
+
+function autoDetectFIR(latlng) {
+  const total = haversineYds(H7_TEE, H7_GREEN);
+  const t = Math.min(1, haversineYds(H7_TEE, latlng) / total);
+  const axisLL = {
+    lat: H7_TEE.lat + (H7_GREEN.lat - H7_TEE.lat) * t,
+    lng: H7_TEE.lng + (H7_GREEN.lng - H7_TEE.lng) * t
+  };
+  const lateral = haversineYds(latlng, axisLL);
+  if (lateral <= 20) { autoSetTog(0, 0, 't-g'); return 'FIR'; }
+  // Cross product determines left vs right of hole axis
+  const cross = (H7_GREEN.lat - H7_TEE.lat) * (latlng.lng - H7_TEE.lng)
+              - (H7_GREEN.lng - H7_TEE.lng) * (latlng.lat - H7_TEE.lat);
+  if (cross > 0) { autoSetTog(0, 1, 't-r'); return 'Missed L'; }
+  autoSetTog(0, 2, 't-r'); return 'Missed R';
+}
+
+function autoDetectGIR(shot) {
+  if (shot.svgId === 's2-leaflet') {
+    if (haversineYds(shot.latlng, H7_GREEN) <= 18) { autoSetTog(1, 0, 't-g'); return 'GIR'; }
+    autoSetTog(1, 1, 't-r'); return 'GIR-Miss';
+  }
+  // Green SVG shot
+  const dx = (shot.x - 160) / 120, dy = (shot.y - 100) / 110;
+  if (dx*dx + dy*dy <= 1) { autoSetTog(1, 0, 't-g'); return 'GIR'; }
+  autoSetTog(1, 1, 't-r'); return 'GIR-Miss';
+}
+
+/* ── CLUB PICKER ── */
+let pendingShot = null;
+let selectedClub = null;
+
+function openClubPicker(shotNum, yds, isGreen) {
+  pendingShot = { shotNum, yds };
+  selectedClub = null;
+  document.querySelectorAll('#club-ov .cbtn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('club-shot-label').textContent = `Shot ${shotNum} · ${yds}`;
+  // Always show all clubs — green view may still need wedge/iron for chip shots
+  // Putter section is always visible; visually reorder it to top when on green
+  const putterSec = document.getElementById('club-sec-putter');
+  const sheet = putterSec.closest('.club-sheet');
+  putterSec.style.display = '';
+  if (isGreen) {
+    sheet.insertBefore(putterSec, document.getElementById('club-sec-woods'));
+  } else {
+    sheet.appendChild(putterSec);
+    sheet.insertBefore(putterSec, document.querySelector('.club-skip-full'));
+  }
+  document.getElementById('club-ov').classList.add('open');
+}
+
+function selectClub(btn, club) {
+  document.querySelectorAll('#club-ov .cbtn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  selectedClub = club;
+  setTimeout(confirmClub, 280);
+}
+
+function confirmClub() {
+  if (pendingShot) {
+    let dist = pendingShot.yds;
+    if (selectedClub === 'Putter') {
+      // Putter: recalculate from confirmed ball position to pin, in feet.
+      // Uses 10/37 ft/px — from 10ft ring (rx=37) in the green SVG.
+      const cur = s2LoggedShots.at(-1);
+      if (cur && cur.svgId === 's2-green-svg') {
+        dist = `${Math.max(1, Math.round(px2(cur.x, cur.y, 160, 100) * (10 / 37)))} ft`;
+      } else if (cur && cur.latlng) {
+        dist = `${Math.max(1, Math.round(haversineFt(cur.latlng, H7_GREEN)))} ft`;
+      } else if (dist.endsWith('yds')) {
+        dist = `${Math.round(parseFloat(dist) * 3)} ft`;
+      }
+    }
+    // Non-putter: dist is already "X yds from previous ball" or "X yds from fringe"
+    s2ShotLog.push({ num: pendingShot.shotNum, club: selectedClub, yds: dist });
+    renderShotLog();
+  }
+  pendingShot = null;
+  selectedClub = null;
+  document.getElementById('club-ov').classList.remove('open');
+}
+
+function skipClub() {
+  if (pendingShot) {
+    s2ShotLog.push({ num: pendingShot.shotNum, club: null, yds: pendingShot.yds });
+    renderShotLog();
+    pendingShot = null;
+  }
+  document.getElementById('club-ov').classList.remove('open');
+}
+
+function renderShotLog() {
+  const el = document.getElementById('s2-shot-log');
+  if (s2ShotLog.length === 0) {
+    el.innerHTML = '<span class="shot-log-empty">No shots logged yet</span>';
+    return;
+  }
+  el.innerHTML = s2ShotLog.map(s => {
+    const holedStyle = s.holed
+      ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:#F1C40F;'
+      : '';
+    return `<div class="sl-chip" style="${holedStyle}">${s.num} · ${s.club || '?'} · ${s.yds}</div>`;
+  }).join('');
+}
+
+/* ── HOLE OUT (tap pin on green) ── */
+function s2HoleOut() {
+  if (document.getElementById('s2-gpsbar').classList.contains('show')) return;
+  if (s2ViewMode !== 'green') return;
+
+  s2ShotCount++;
+
+  const prev = s2LoggedShots.at(-1) ?? null;
+  const line = prev?.svgId === 's2-green-svg'
+    ? addShotLine('s2-green-svg', prev.x, prev.y, 160, 100) : null;
+  const markerEl = addShotMarker('s2-green-svg', 160, 100, s2ShotCount);
+
+  // Mirror onto Leaflet map
+  const fromLL = prev?.latlng ?? H7_TEE;
+  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [H7_GREEN.lat, H7_GREEN.lng]],
+    { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+  const leafletMarker = L.marker([H7_GREEN.lat, H7_GREEN.lng],
+    { icon: makeShotIcon(s2ShotCount, true) }).addTo(lmap);
+
+  s2LoggedShots.push({ el: markerEl, line, leafletMarker, leafletLine,
+                       latlng: H7_GREEN, x: 160, y: 100, svgId: 's2-green-svg', holed: true });
+
+  s2ShotLog.push({ num: s2ShotCount, club: 'Putter', yds: 'MADE ⛳', holed: true });
+  renderShotLog();
+
+  const snum = document.getElementById('s2-shot-num');
+  if (snum) { snum.textContent = '✓'; snum.style.color = 'var(--green)'; }
+  const chip = document.getElementById('s2-shot-chip');
+  if (chip) { chip.textContent = '✓'; chip.style.color = 'var(--green)'; }
+
+  document.getElementById('s2-undo-ctx').innerHTML = `<strong>Holed out — Shot ${s2ShotCount}</strong>`;
+  document.getElementById('s2-undo-btn').classList.remove('dim');
+  document.getElementById('s2-dpill').textContent = `⛳ Holed! Shot ${s2ShotCount}`;
+
+  const ring = document.getElementById('s2-cup-ring');
+  if (ring) {
+    ring.setAttribute('fill', 'rgba(46,204,113,0.18)');
+    ring.setAttribute('stroke', 'rgba(46,204,113,0.8)');
+  }
+
+  showToast('s2-toast', `⛳ Holed out! Shot ${s2ShotCount}`, 3000);
+  setTimeout(showSheet, 900);
+}
+
+/* ── HOLE OUT (tap flag on hole map) ── */
+function s2HoleOutFromMap() {
+  if (document.getElementById('s2-gpsbar').classList.contains('show')) return;
+  if (s2ViewMode !== 'hole') return;
+  if (s2LoggedShots.length === 0) return;
+  if (s2LoggedShots.some(s => s.holed)) return;
+
+  s2ShotCount++;
+  const prev = s2LoggedShots.at(-1);
+  const fromLL = prev.latlng ?? H7_TEE;
+
+  const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [H7_GREEN.lat, H7_GREEN.lng]],
+    { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+  const leafletMarker = L.marker([H7_GREEN.lat, H7_GREEN.lng],
+    { icon: makeShotIcon(s2ShotCount, true) }).addTo(lmap);
+
+  const distYds = Math.max(1, Math.round(haversineYds(fromLL, H7_GREEN)));
+  const distLabel = prev.svgId === 's2-green-svg'
+    ? `${Math.max(1, Math.round(haversineFt(fromLL, H7_GREEN)))} ft`
+    : distYds < 10 ? `${Math.round(distYds * 3)} ft` : `${distYds} yds`;
+
+  s2LoggedShots.push({ leafletMarker, leafletLine, latlng: H7_GREEN,
+                       x: 150, y: 24, svgId: 's2-leaflet', holed: true });
+  s2ShotLog.push({ num: s2ShotCount, club: 'Putter', yds: `MADE ⛳ · ${distLabel}`, holed: true });
+  renderShotLog();
+
+  const snum = document.getElementById('s2-shot-num');
+  if (snum) { snum.textContent = '✓'; snum.style.color = 'var(--green)'; }
+  const chip = document.getElementById('s2-shot-chip');
+  if (chip) { chip.textContent = '✓'; chip.style.color = 'var(--green)'; }
+
+  document.getElementById('s2-undo-ctx').innerHTML = `<strong>Holed out — Shot ${s2ShotCount}</strong>`;
+  document.getElementById('s2-undo-btn').classList.remove('dim');
+  document.getElementById('s2-dpill').textContent = `⛳ Holed! Shot ${s2ShotCount}`;
+
+  showToast('s2-toast', `⛳ Holed out! Shot ${s2ShotCount}`, 3000);
+  setTimeout(showSheet, 900);
+}
+
+/* ── HOLE SUMMARY SHEET ── */
+let putts = 0;
+
+function buildSummaryMap() {
+  const svg = document.getElementById('sum-svg');
+  svg.querySelectorAll('[data-sum]').forEach(el => el.remove());
+  const ns = 'http://www.w3.org/2000/svg';
+
+  function mk(tag, attrs) {
+    const el = document.createElementNS(ns, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    el.setAttribute('data-sum', '1');
+    return el;
+  }
+
+  const positions = s2LoggedShots.map(s => {
+    if (s.svgId === 's2-green-svg') {
+      const h = greenToHoleSVG(s.x, s.y);
+      return { x: h.x, y: h.y, holed: s.holed };
+    }
+    return { x: s.x, y: s.y, holed: s.holed };
+  });
+
+  // Lines: tee → shot 1, then shot-to-shot
+  if (positions.length > 0) {
+    svg.appendChild(mk('line', { x1:155, y1:234, x2:positions[0].x, y2:positions[0].y,
+      stroke:'rgba(255,255,255,0.45)', 'stroke-width':'1.5', 'stroke-dasharray':'4,3' }));
+  }
+  for (let i = 1; i < positions.length; i++) {
+    svg.appendChild(mk('line', { x1:positions[i-1].x, y1:positions[i-1].y,
+      x2:positions[i].x, y2:positions[i].y,
+      stroke:'rgba(255,255,255,0.45)', 'stroke-width':'1.5', 'stroke-dasharray':'4,3' }));
+  }
+
+  // Markers
+  positions.forEach((p, i) => {
+    const gold = p.holed;
+    svg.appendChild(mk('circle', { cx:p.x, cy:p.y, r:'8',
+      fill: gold ? 'rgba(241,196,15,0.25)' : 'rgba(46,204,113,0.2)',
+      stroke: gold ? 'rgba(241,196,15,0.9)' : 'rgba(46,204,113,0.7)',
+      'stroke-width':'1.5' }));
+    const t = mk('text', { x:p.x, y:p.y + 3.5, 'text-anchor':'middle',
+      'font-size':'8', fill:'white', 'font-weight':'800' });
+    t.textContent = gold ? '⛳' : (i + 1);
+    svg.appendChild(t);
+  });
+
+  // Shot chips strip
+  const shotsEl = document.getElementById('sum-shots');
+  shotsEl.innerHTML = s2ShotLog.length === 0
+    ? '<span class="shot-log-empty" style="padding:6px 0;font-size:11px;">No shots logged</span>'
+    : s2ShotLog.map(s => {
+        const st = s.holed ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:#F1C40F;' : '';
+        return `<div class="sl-chip" style="${st}">${s.num} · ${s.club || '?'} · ${s.yds}</div>`;
+      }).join('');
+
+  // Score row
+  const score = s2ShotCount;
+  document.getElementById('sum-score').textContent = score || '—';
+  const diff = score - 4;
+  const diffEl = document.getElementById('sum-diff');
+  diffEl.textContent = score ? (diff === 0 ? 'E' : (diff > 0 ? '+' + diff : diff)) : '—';
+  diffEl.style.color = diff < 0 ? 'var(--green)' : diff > 0 ? '#E74C3C' : 'var(--muted)';
+
+  // Auto-count putts
+  putts = Math.max(0, s2ShotLog.filter(s => s.club === 'Putter' || s.holed).length);
+  document.getElementById('pcval').textContent = putts;
+  document.getElementById('sum-putts-disp').textContent = putts || '—';
+
+  // Stats chips from toggle row state
+  function togState(rowIdx) {
+    const row = document.querySelectorAll('.trow')[rowIdx];
+    if (!row) return null;
+    const togs = [...row.querySelectorAll('.tog')];
+    const i = togs.findIndex(t => t.classList.contains('t-g') || t.classList.contains('t-y') || t.classList.contains('t-r'));
+    if (i === -1) return null;
+    const color = togs[i].classList.contains('t-g') ? 'g' : togs[i].classList.contains('t-y') ? 'y' : 'r';
+    return { idx: i, color };
+  }
+
+  const firLabels = ['FIR', 'Missed L', 'Missed R', 'Bunker'];
+  const girLabels = ['GIR', 'GIR Miss'];
+  const firSt = togState(0), girSt = togState(1);
+
+  function chipHtml(label, color) {
+    const cls = color === 'g' ? 'chip-g' : color === 'y' ? 'chip-y' : 'chip-m';
+    const icon = color === 'g' ? '✓' : '✕';
+    return `<div class="chip ${cls}">${icon} ${label}</div>`;
+  }
+
+  const chipsEl = document.getElementById('sum-stats-chips');
+  let html = '';
+  if (firSt) html += chipHtml(firLabels[firSt.idx] ?? 'FIR', firSt.color);
+  if (girSt) html += chipHtml(girLabels[girSt.idx] ?? 'GIR', girSt.color);
+  chipsEl.innerHTML = html || '<span style="font-size:11px;color:var(--muted);">No stats detected yet</span>';
+}
+
+function showSheet() {
+  buildSummaryMap();
+  document.getElementById('sheet-ov').classList.add('open');
+}
+function hideSheet() { document.getElementById('sheet-ov').classList.remove('open'); }
+function adj(d) {
+  putts = Math.max(0, Math.min(8, putts + d));
+  document.getElementById('pcval').textContent = putts;
+  document.getElementById('sum-putts-disp').textContent = putts;
+}
+
+/* ── SCORECARD OVERLAY ── */
+const SCORECARD = [
+  { h:1,  par:4, hdcp:9,  score:4,    done:true  },
+  { h:2,  par:3, hdcp:15, score:2,    done:true  },
+  { h:3,  par:4, hdcp:3,  score:5,    done:true  },
+  { h:4,  par:5, hdcp:11, score:5,    done:true  },
+  { h:5,  par:4, hdcp:1,  score:4,    done:true  },
+  { h:6,  par:3, hdcp:17, score:2,    done:true  },
+  { h:7,  par:4, hdcp:5,  score:null, done:false, active:true },
+  { h:8,  par:3, hdcp:17, score:null, done:false },
+  { h:9,  par:5, hdcp:7,  score:null, done:false },
+  { h:10, par:4, hdcp:10, score:null, done:false },
+  { h:11, par:4, hdcp:4,  score:null, done:false },
+  { h:12, par:5, hdcp:12, score:null, done:false },
+  { h:13, par:4, hdcp:2,  score:null, done:false },
+  { h:14, par:3, hdcp:16, score:null, done:false },
+  { h:15, par:4, hdcp:6,  score:null, done:false },
+  { h:16, par:4, hdcp:8,  score:null, done:false },
+  { h:17, par:5, hdcp:14, score:null, done:false },
+  { h:18, par:4, hdcp:18, score:null, done:false },
+];
+
+function buildScorecard() {
+  function makeRows(holes) {
+    return holes.map(h => {
+      const diff = h.score != null ? h.score - h.par : null;
+      let scoreCell = `<span class="sc-na">—</span>`;
+      let diffCell  = `<span class="sc-na">—</span>`;
+      if (h.active) {
+        scoreCell = `<span style="color:var(--green);font-size:9px;font-weight:800;">NOW</span>`;
+        diffCell  = `<span class="sc-na">·</span>`;
+      } else if (diff != null) {
+        const cls = diff < -1 ? 'sc-bd' : diff === -1 ? 'sc-bd' : diff === 0 ? 'sc-par' : diff === 1 ? 'sc-bo' : 'sc-db';
+        const str = diff === 0 ? 'E' : diff < 0 ? diff : '+' + diff;
+        scoreCell = `<span class="${cls}">${h.score}</span>`;
+        diffCell  = `<span class="${cls}">${str}</span>`;
+      }
+      const rc = h.active ? ' class="now"' : '';
+      return `<tr${rc}><td>${h.h}</td><td style="color:var(--muted)">${h.par}</td><td style="color:var(--dim);font-size:9px">${h.hdcp}</td><td>${scoreCell}</td><td>${diffCell}</td></tr>`;
+    }).join('');
+  }
+
+  const front = SCORECARD.slice(0, 9);
+  const back  = SCORECARD.slice(9);
+  const frontScore = front.filter(h => h.done).reduce((a, h) => a + h.score, 0);
+  const frontPar   = front.reduce((a, h) => a + h.par, 0);
+  const backPar    = back.reduce((a, h) => a + h.par, 0);
+
+  document.getElementById('scov-front').innerHTML =
+    makeRows(front) +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">OUT</td><td></td><td style="color:var(--muted)">${frontScore}</td><td style="color:var(--green)">−1</td></tr>`;
+
+  document.getElementById('scov-back').innerHTML =
+    makeRows(back) +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">IN</td><td></td><td class="sc-na">—</td><td class="sc-na">—</td></tr>` +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">TOT</td><td></td><td class="sc-na">—</td><td style="color:var(--green)">−1*</td></tr>`;
+}
+
+function openScorecard()  { document.getElementById('scov').classList.add('open'); }
+function closeScorecard() { document.getElementById('scov').classList.remove('open'); }
+
+/* ── INIT ── */
+buildScorecard();
+renderShotLog();
+</script>
+</body>
+</html>

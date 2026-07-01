@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Stats</title>
+<link rel="stylesheet" href="tc.css">
+<style>
+/* ── LAYOUT ── */
+.stats-scroller { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; min-height:0; }
+.stats-scroller::-webkit-scrollbar { display:none; }
+
+/* ── PERIOD TABS ── */
+.period-tabs { display:flex; gap:4px; margin:0 12px 10px; background:var(--surface); border-radius:10px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
+.ptab { flex:1; padding:7px; border-radius:7px; font-size:10px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; transition:all 0.15s; }
+.ptab.on { background:var(--surface2); color:#fff; border:1px solid rgba(255,255,255,0.1); }
+
+/* ── STAT CARDS ── */
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin:0 12px 8px; overflow:hidden; cursor:pointer; transition:background 0.12s; }
+.stat-card:active { background:rgba(255,255,255,0.03); }
+.sc-main { display:flex; align-items:center; gap:10px; padding:12px 14px 8px; }
+.sc-accent { width:3px; align-self:stretch; border-radius:2px; flex-shrink:0; }
+.sc-icon { font-size:20px; flex-shrink:0; width:26px; text-align:center; }
+.sc-info { flex:1; min-width:0; }
+.sc-name { font-size:13px; font-weight:800; }
+.sc-desc { font-size:10px; color:var(--muted); margin-top:2px; }
+.sc-right { text-align:right; flex-shrink:0; }
+.sc-val { font-size:22px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
+.sc-lbl { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+.sc-trend { font-size:9px; font-weight:700; margin-top:2px; }
+.sc-chips { display:flex; gap:5px; padding:0 14px 10px 50px; }
+.sc-chip { font-size:10px; font-weight:600; color:var(--muted); background:rgba(255,255,255,0.04); border-radius:4px; padding:3px 7px; white-space:nowrap; }
+
+/* ── DRILL-DOWN OVERLAY ── */
+.stat-ov { position:absolute; inset:0; z-index:60; pointer-events:none; }
+.stat-ov.open { pointer-events:all; }
+.stat-bd { position:absolute; inset:0; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.3s; }
+.stat-ov.open .stat-bd { opacity:1; }
+.stat-sheet { position:absolute; left:0; right:0; bottom:0; height:92%; background:#0A0A0F; border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
+.stat-ov.open .stat-sheet { transform:translateY(0); }
+
+/* ── DRILL-DOWN HEADER ── */
+.ds-handle { width:36px; height:4px; background:rgba(255,255,255,0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.ds-hdr { display:flex; align-items:center; padding:10px 14px 0; gap:10px; flex-shrink:0; }
+.ds-close { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.ds-close:active { opacity:0.7; }
+.ds-title { flex:1; font-size:16px; font-weight:900; text-align:center; letter-spacing:-0.3px; }
+.ds-spacer { width:60px; }
+
+/* ── PERIOD IN DRILL-DOWN ── */
+.ds-period { display:flex; gap:4px; margin:10px 14px 0; background:var(--surface); border-radius:8px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
+.ds-ptab { flex:1; padding:6px; border-radius:5px; font-size:10px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; }
+.ds-ptab.on { background:var(--surface2); color:#fff; }
+
+/* ── DRILL-DOWN BODY ── */
+.ds-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:14px; }
+.ds-body::-webkit-scrollbar { display:none; }
+
+/* ── KPI GRID ── */
+.ds-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:16px; }
+.ds-kpi-grid.c3 { grid-template-columns:1fr 1fr 1fr; }
+.ds-kpi-grid.c4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+.ds-kpi { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
+.dk-val { font-size:20px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
+.dk-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+
+/* ── SECTION LABELS ── */
+.ds-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; margin-top:16px; }
+
+/* ── HORIZONTAL BARS ── */
+.bar-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.br-lbl { font-size:11px; font-weight:600; min-width:76px; color:rgba(255,255,255,0.8); white-space:nowrap; }
+.br-track { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+.br-fill { height:6px; border-radius:3px; }
+.br-val { font-size:11px; font-weight:700; min-width:36px; text-align:right; }
+
+/* ── SG CENTERED BARS ── */
+.sg-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+.sg-lbl { font-size:11px; font-weight:600; min-width:100px; }
+.sg-track { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; position:relative; }
+.sg-center { position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; background:rgba(255,255,255,0.22); border-radius:1px; }
+.sg-fill-pos { position:absolute; left:50%; top:0; height:8px; border-radius:0 4px 4px 0; }
+.sg-fill-neg { position:absolute; right:50%; top:0; height:8px; border-radius:4px 0 0 4px; }
+.sg-val { font-size:12px; font-weight:800; min-width:38px; text-align:right; }
+
+/* ── SCORE DISTRIBUTION ── */
+.sd-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.sd-lbl { font-size:11px; min-width:64px; color:rgba(255,255,255,0.75); }
+.sd-track { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.sd-fill { height:8px; border-radius:4px; }
+.sd-count { font-size:11px; font-weight:700; min-width:24px; text-align:right; }
+.sd-pct { font-size:10px; color:var(--muted); min-width:34px; text-align:right; }
+
+/* ── PUTTING DISTANCE ── */
+.pd-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.pd-lbl { font-size:11px; min-width:60px; color:rgba(255,255,255,0.8); }
+.pd-track { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+.pd-fill { height:6px; border-radius:3px; }
+.pd-val { font-size:11px; font-weight:700; min-width:32px; text-align:right; }
+.pd-att { font-size:10px; color:var(--muted); min-width:38px; text-align:right; }
+
+/* ── HANDICAP DIFFS ── */
+.diff-row { display:flex; align-items:center; gap:8px; padding:9px 10px; background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:5px; }
+.diff-date { font-size:10px; color:var(--muted); min-width:40px; }
+.diff-course { flex:1; font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.diff-score { font-size:11px; color:var(--muted); min-width:22px; text-align:right; }
+.diff-val { font-size:13px; font-weight:900; min-width:36px; text-align:right; }
+.diff-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* ── EDIT MODE ── */
+.edit-btn { background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.edit-btn.active { background:rgba(46,204,113,0.12); color:var(--green); border-color:rgba(46,204,113,0.3); }
+.drag-handle { width:36px; min-height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:grab; color:var(--muted); font-size:18px; touch-action:none; user-select:none; letter-spacing:-2px; -webkit-user-select:none; }
+.stat-card.is-dragging { opacity:0.12; border-color:var(--border) !important; }
+.stat-card.drop-target { border-color:rgba(46,204,113,0.55) !important; background:rgba(46,204,113,0.05); }
+.edit-hint { text-align:center; font-size:10px; font-weight:600; color:var(--dim); padding:0 0 6px; flex-shrink:0; display:none; }
+</style>
+</head>
+<body data-page="stats">
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+
+<div class="flow">
+  <div class="step" onclick="navigate('login')">Sign In</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('home')">Home</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('rounds')">Rounds</div>
+  <div class="arr">→</div>
+  <div class="step on">Stats</div>
+</div>
+
+<div class="phone">
+<div class="wrap" id="wrap">
+
+<div class="page" style="overflow-y:hidden;">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- Header -->
+  <div style="padding:6px 16px 8px; flex-shrink:0; display:flex; align-items:center;">
+    <div style="flex:1;">
+      <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px;">Stats</div>
+      <div style="font-size:11px; color:var(--muted); margin-top:1px;">2026 Season · 12 rounds</div>
+    </div>
+    <button class="edit-btn" id="edit-btn" onclick="toggleEdit()">Edit</button>
+  </div>
+
+  <!-- Period tabs -->
+  <div class="period-tabs">
+    <div class="ptab" onclick="setPeriod(this)">Last 5</div>
+    <div class="ptab" onclick="setPeriod(this)">Last 10</div>
+    <div class="ptab on" onclick="setPeriod(this)">Season</div>
+    <div class="ptab" onclick="setPeriod(this)">All Time</div>
+  </div>
+
+  <!-- Edit hint -->
+  <div class="edit-hint" id="edit-hint">Drag ⠿ up or down to reorder</div>
+
+  <!-- Scrollable stat cards -->
+  <div class="stats-scroller" id="stats-scroller">
+    <div id="stat-cards"></div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tbar" style="flex-shrink:0;">
+    <div class="tbi" onclick="navigate('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tbi-lbl">Home</span>
+    </div>
+    <div class="tbi" onclick="navigate('rounds')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tbi-lbl">Rounds</span>
+    </div>
+    <div class="tbi active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="tbi-lbl">Stats</span>
+    </div>
+    <div class="tbi" onclick="navigate('courses')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      <span class="tbi-lbl">Courses</span>
+    </div>
+    <div class="tbi" onclick="navigate('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tbi-lbl">Profile</span>
+    </div>
+  </div>
+</div><!-- /page -->
+
+<!-- ── DRILL-DOWN SHEET ── -->
+<div class="stat-ov" id="stat-ov">
+  <div class="stat-bd" onclick="closeStat()"></div>
+  <div class="stat-sheet">
+    <div class="ds-handle"></div>
+    <div class="ds-hdr">
+      <button class="ds-close" onclick="closeStat()">← Back</button>
+      <div class="ds-title" id="ds-title"></div>
+      <div class="ds-spacer"></div>
+    </div>
+    <div class="ds-period" id="ds-period">
+      <div class="ds-ptab">Last 5</div>
+      <div class="ds-ptab">Last 10</div>
+      <div class="ds-ptab on">Season</div>
+      <div class="ds-ptab">All Time</div>
+    </div>
+    <div class="ds-body" id="ds-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="stats-toast"></div>
+
+</div><!-- /wrap -->
+</div><!-- /phone -->
+
+<p class="pg-note">Tap any category to drill into the full breakdown · tap Edit to reorder</p>
+
+<script src="tc-utils.js"></script>
+<script>
+
+/* ══ STATE ══ */
+let catOrder = [0,1,2,3,4,5,6,7];
+let editMode = false;
+let dragState = null;
+
+/* ══ EDIT TOGGLE ══ */
+function toggleEdit() {
+  editMode = !editMode;
+  const btn = document.getElementById('edit-btn');
+  btn.textContent = editMode ? 'Done' : 'Edit';
+  btn.classList.toggle('active', editMode);
+  document.getElementById('edit-hint').style.display = editMode ? 'block' : 'none';
+  // Lock scroll while in edit mode so drag gestures aren't stolen by the scroller
+  document.getElementById('stats-scroller').style.overflowY = editMode ? 'hidden' : 'auto';
+  renderCards();
+}
+
+/* ══ CATEGORY DEFINITIONS ══ */
+const CATS = [
+  {
+    id:'scoring',
+    name:'Scoring', icon:'📊', color:'#2ECC71',
+    val:'+0.4', lbl:'SCR AVG', trend:'▼ 0.1', tc:'g',
+    desc:'Scoring average · 12 rounds',
+    chips:['Low: −5','42% U-par','72.4 gross'],
+  },
+  {
+    id:'ott',
+    name:'Off the Tee', icon:'🏌️', color:'#2ECC71',
+    val:'67%', lbl:'FIR %', trend:'▲ 4%', tc:'g',
+    desc:'Fairways in regulation',
+    chips:['284 avg','322 max','33% miss L'],
+  },
+  {
+    id:'approach',
+    name:'Approach', icon:'🎯', color:'#E74C3C',
+    val:'62%', lbl:'GIR %', trend:'▼ 2%', tc:'r',
+    desc:'Greens in regulation',
+    chips:['18.4 ft prox','71% from FW','48% from rough'],
+  },
+  {
+    id:'atg',
+    name:'Around the Green', icon:'🌿', color:'#2ECC71',
+    val:'58%', lbl:'SCRAMBLE', trend:'▲ 3%', tc:'g',
+    desc:'Scrambling & short game',
+    chips:['54% sand save','71% fringe U&D','55% rough U&D'],
+  },
+  {
+    id:'putting',
+    name:'Putting', icon:'⛳', color:'#E74C3C',
+    val:'1.74', lbl:'PUTTS/GIR', trend:'▲ 0.04', tc:'r',
+    desc:'Putts per greens in regulation',
+    chips:['32% 1-putt','4% 3-putt','29.2 per round'],
+  },
+  {
+    id:'sg',
+    name:'Strokes Gained', icon:'📈', color:'#2ECC71',
+    val:'+1.1', lbl:'SG TOTAL', trend:'▲ 0.2', tc:'g',
+    desc:'vs. scratch baseline · all categories',
+    chips:['+0.6 App','−0.2 ATG','+0.4 OTT'],
+  },
+  {
+    id:'conditions',
+    name:'Course & Conditions', icon:'🌤️', color:'#8B8BA7',
+    val:'+0.1', lbl:'HOME AVG', trend:'', tc:'n',
+    desc:'Performance by round type & conditions',
+    chips:['AM: +0.1','Away: +0.8','Back 9: +0.1'],
+  },
+  {
+    id:'handicap',
+    name:'Handicap', icon:'🏅', color:'#2ECC71',
+    val:'+1.8', lbl:'WHS INDEX', trend:'▼ 0.3', tc:'g',
+    desc:'WHS Handicap Index · trending lower',
+    chips:['Low: +0.9','20 diffs','Playing +2'],
+  },
+];
+
+/* ══ RENDER CARDS ══ */
+function renderCards() {
+  const grid = document.getElementById('stat-cards');
+  grid.innerHTML = '';
+  catOrder.forEach((ci, pos) => {
+    const c = CATS[ci];
+    const vc = c.tc === 'g' ? 'var(--green)' : c.tc === 'r' ? 'var(--red)' : '#fff';
+    const tc = c.tc === 'g' ? 'var(--green)' : c.tc === 'r' ? 'var(--red)' : 'var(--muted)';
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.dataset.pos = pos;
+    if (editMode) {
+      card.innerHTML = `
+        <div class="sc-main">
+          <div class="drag-handle">⠿</div>
+          <div class="sc-accent" style="background:${c.color};"></div>
+          <div class="sc-icon">${c.icon}</div>
+          <div class="sc-info">
+            <div class="sc-name">${c.name}</div>
+            <div class="sc-desc">${c.desc}</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-val" style="color:${vc}">${c.val}</div>
+            <div class="sc-lbl">${c.lbl}</div>
+            ${c.trend ? `<div class="sc-trend" style="color:${tc}">${c.trend}</div>` : ''}
+          </div>
+        </div>`;
+    } else {
+      card.onclick = () => openStat(c.id);
+      card.innerHTML = `
+        <div class="sc-main">
+          <div class="sc-accent" style="background:${c.color};"></div>
+          <div class="sc-icon">${c.icon}</div>
+          <div class="sc-info">
+            <div class="sc-name">${c.name}</div>
+            <div class="sc-desc">${c.desc}</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-val" style="color:${vc}">${c.val}</div>
+            <div class="sc-lbl">${c.lbl}</div>
+            ${c.trend ? `<div class="sc-trend" style="color:${tc}">${c.trend}</div>` : ''}
+          </div>
+        </div>
+        <div class="sc-chips">${c.chips.map(ch => `<div class="sc-chip">${ch}</div>`).join('')}</div>`;
+    }
+    grid.appendChild(card);
+  });
+  if (editMode) initDragHandles();
+}
+
+/* ══ DRAG & DROP ══ */
+function initDragHandles() {
+  document.querySelectorAll('#stat-cards .drag-handle').forEach((handle, pos) => {
+    handle.addEventListener('pointerdown', e => startDrag(e, pos), { passive: false });
+  });
+}
+
+function startDrag(e, pos) {
+  if (dragState) return; // one card at a time
+  e.preventDefault();
+  e.stopPropagation();
+
+  const cards = [...document.querySelectorAll('#stat-cards .stat-card')];
+  const card = cards[pos];
+  const rect = card.getBoundingClientRect();
+
+  const ghost = card.cloneNode(true);
+  ghost.id = 'drag-ghost';
+  ghost.removeAttribute('class');
+  ghost.style.cssText = `
+    position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;
+    z-index:9999;pointer-events:none;opacity:0.96;
+    box-shadow:0 16px 48px rgba(0,0,0,0.8);
+    border:1.5px solid rgba(46,204,113,0.55);border-radius:12px;
+    background:#1C1C2E;transform:scale(1.028);transition:none;`;
+  document.body.appendChild(ghost);
+  card.classList.add('is-dragging');
+
+  dragState = {
+    pos,
+    targetPos: pos,
+    ghost,
+    card,
+    pid: e.pointerId,
+    startY: e.clientY,
+    ghostStartTop: rect.top,
+    ghostH: rect.height,
+  };
+
+  // Document-level listeners bypass any scroll container interception
+  document.addEventListener('pointermove',   onDragMove,   { passive: false });
+  document.addEventListener('pointerup',     onDragEnd,    { passive: false });
+  document.addEventListener('pointercancel', onDragEnd,    { passive: false });
+}
+
+function onDragMove(e) {
+  if (!dragState || e.pointerId !== dragState.pid) return;
+  e.preventDefault(); // stop scroll during drag
+
+  const dy = e.clientY - dragState.startY;
+  dragState.ghost.style.top = (dragState.ghostStartTop + dy) + 'px';
+
+  // Compare ghost center to each real card's center in viewport coords
+  const ghostMidY = dragState.ghostStartTop + dy + dragState.ghostH / 2;
+  const allCards  = [...document.querySelectorAll('#stat-cards .stat-card')];
+
+  let insertBefore = CATS.length;
+  for (let i = 0; i < allCards.length; i++) {
+    if (allCards[i].classList.contains('is-dragging')) continue;
+    const r = allCards[i].getBoundingClientRect();
+    if (ghostMidY < r.top + r.height / 2) { insertBefore = i; break; }
+  }
+
+  // Removing dragged card shifts indices after it down by 1
+  let newTarget = (dragState.pos < insertBefore) ? insertBefore - 1 : insertBefore;
+  dragState.targetPos = Math.min(Math.max(0, newTarget), CATS.length - 1);
+
+  const hi = dragState.pos < insertBefore ? insertBefore - 1 : insertBefore;
+  allCards.forEach((c, i) => {
+    if (!c.classList.contains('is-dragging'))
+      c.classList.toggle('drop-target', i === hi && hi < allCards.length);
+  });
+}
+
+function onDragEnd(e) {
+  if (!dragState || e.pointerId !== dragState.pid) return;
+
+  document.removeEventListener('pointermove',   onDragMove);
+  document.removeEventListener('pointerup',     onDragEnd);
+  document.removeEventListener('pointercancel', onDragEnd);
+
+  dragState.ghost.remove();
+  document.querySelectorAll('#stat-cards .stat-card').forEach(c =>
+    c.classList.remove('is-dragging', 'drop-target')
+  );
+
+  const { pos: from, targetPos: to } = dragState;
+  const moved = from !== to;
+  dragState = null;
+
+  if (moved) {
+    const item = catOrder.splice(from, 1)[0];
+    catOrder.splice(to, 0, item);
+  }
+
+  // Exit edit mode after every drop — one move at a time
+  editMode = false;
+  document.getElementById('edit-btn').textContent = 'Edit';
+  document.getElementById('edit-btn').classList.remove('active');
+  document.getElementById('edit-hint').style.display = 'none';
+  document.getElementById('stats-scroller').style.overflowY = 'auto';
+  renderCards();
+  if (moved) showToast('stats-toast', '✓ Order saved');
+}
+
+function setPeriod(el) {
+  document.querySelectorAll('.period-tabs .ptab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ══ DRILL-DOWN ══ */
+function openStat(id) {
+  const cat = CATS.find(c => c.id === id);
+  document.getElementById('ds-title').textContent = cat.name;
+  const body = document.getElementById('ds-body');
+  body.innerHTML = '';
+  body.scrollTop = 0;
+  const renders = { scoring:renderScoring, ott:renderOTT, approach:renderApproach, atg:renderATG, putting:renderPutting, sg:renderSG, conditions:renderConditions, handicap:renderHandicap };
+  if (renders[id]) renders[id](body);
+  document.getElementById('stat-ov').classList.add('open');
+  document.querySelectorAll('#ds-period .ds-ptab').forEach((t,i) => {
+    t.classList.toggle('on', i === 2);
+    t.onclick = () => { document.querySelectorAll('#ds-period .ds-ptab').forEach(x => x.classList.remove('on')); t.classList.add('on'); };
+  });
+}
+
+function closeStat() { document.getElementById('stat-ov').classList.remove('open'); }
+
+/* ══ HELPERS ══ */
+function kpi(items, cols) {
+  const cls = cols === 4 ? 'c4' : cols === 3 ? 'c3' : '';
+  return `<div class="ds-kpi-grid ${cls}">${items.map(k =>
+    `<div class="ds-kpi"><div class="dk-val" style="color:${k.c||'#fff'}">${k.v}</div><div class="dk-lbl">${k.l}</div></div>`
+  ).join('')}</div>`;
+}
+
+function hbar(lbl, pct, color, val) {
+  return `<div class="bar-row">
+    <div class="br-lbl">${lbl}</div>
+    <div class="br-track"><div class="br-fill" style="width:${pct}%;background:${color};"></div></div>
+    <div class="br-val" style="color:${color}">${val}</div>
+  </div>`;
+}
+
+function sgBar(lbl, val, maxAbs) {
+  const pct = Math.abs(val) / maxAbs * 50;
+  const pos = val >= 0;
+  const color = pos ? 'var(--green)' : 'var(--red)';
+  const str = (val > 0 ? '+' : '') + val.toFixed(1);
+  return `<div class="sg-row">
+    <div class="sg-lbl">${lbl}</div>
+    <div class="sg-track">
+      <div class="sg-center"></div>
+      <div class="${pos ? 'sg-fill-pos' : 'sg-fill-neg'}" style="width:${pct}%;background:${color};"></div>
+    </div>
+    <div class="sg-val" style="color:${color}">${str}</div>
+  </div>`;
+}
+
+function sdBar(lbl, n, total, color) {
+  const w = n / total * 100;
+  const pct = (n / total * 100).toFixed(1);
+  return `<div class="sd-row">
+    <div class="sd-lbl">${lbl}</div>
+    <div class="sd-track"><div class="sd-fill" style="width:${w}%;background:${color};"></div></div>
+    <div class="sd-count">${n}</div>
+    <div class="sd-pct">${pct}%</div>
+  </div>`;
+}
+
+function pdBar(lbl, made, att) {
+  const pct = Math.round(made / att * 100);
+  const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? '#F1C40F' : pct >= 25 ? '#E67E22' : 'var(--red)';
+  return `<div class="pd-row">
+    <div class="pd-lbl">${lbl}</div>
+    <div class="pd-track"><div class="pd-fill" style="width:${pct}%;background:${color};border-radius:3px;"></div></div>
+    <div class="pd-val" style="color:${color}">${pct}%</div>
+    <div class="pd-att">${made}/${att}</div>
+  </div>`;
+}
+
+function sec(title) { return `<div class="ds-sec">${title}</div>`; }
+
+/* ══ 1. SCORING ══ */
+function renderScoring(body) {
+  body.innerHTML =
+    kpi([
+      {v:'+0.4',lbl:'AVG TO PAR',c:'var(--green)'},
+      {v:'72.4', lbl:'GROSS AVG',  c:'#fff'},
+      {v:'−5',   lbl:'LOW ROUND',  c:'var(--green)'},
+      {v:'5/12', lbl:'UNDER PAR',  c:'var(--green)'},
+    ].map(k => ({v:k.v,l:k.lbl,c:k.c})), 4) +
+
+    sec('Score Distribution · 216 holes') +
+    sdBar('Eagle',    2,   216, '#F1C40F') +
+    sdBar('Birdie',   48,  216, 'var(--green)') +
+    sdBar('Par',      104, 216, 'rgba(255,255,255,0.35)') +
+    sdBar('Bogey',    42,  216, '#E67E22') +
+    sdBar('Double',   14,  216, 'var(--red)') +
+    sdBar('Triple+',  6,   216, '#8B0000') +
+
+    sec('Par Averages') +
+    kpi([
+      {v:'+0.1',l:'PAR 3',c:'var(--green)'},
+      {v:'+0.5',l:'PAR 4',c:'#E67E22'},
+      {v:'−0.2',l:'PAR 5',c:'var(--green)'},
+    ], 3) +
+
+    sec('9-Hole Split') +
+    kpi([
+      {v:'+0.7',l:'FRONT 9',c:'#E67E22'},
+      {v:'+0.1',l:'BACK 9', c:'var(--green)'},
+    ]) +
+
+    sec('Round Results') +
+    kpi([
+      {v:'5',l:'UNDER PAR',c:'var(--green)'},
+      {v:'2',l:'EVEN',     c:'#fff'},
+      {v:'5',l:'OVER PAR', c:'var(--red)'},
+    ], 3) +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ 2. OFF THE TEE ══ */
+function renderOTT(body) {
+  body.innerHTML =
+    kpi([
+      {v:'67%', l:'FIR %',    c:'var(--green)'},
+      {v:'284', l:'DIST AVG', c:'#fff'},
+      {v:'322', l:'DIST MAX', c:'var(--green)'},
+      {v:'22.4',l:'P3 PROX',  c:'#fff'},
+    ], 4) +
+
+    sec('Fairway Results') +
+    hbar('Fairway',    67, 'var(--green)', '67%') +
+    hbar('Miss Left',  18, 'var(--red)',   '18%') +
+    hbar('Miss Right', 15, 'var(--red)',   '15%') +
+
+    sec('Driving Distance') +
+    kpi([
+      {v:'261',l:'MIN',c:'var(--muted)'},
+      {v:'284',l:'AVG',c:'#fff'},
+      {v:'322',l:'MAX',c:'var(--green)'},
+    ], 3) +
+
+    sec('Par 3 Tee Shots') +
+    kpi([
+      {v:'22.4',l:'PROX AVG (FT)',c:'#fff'},
+      {v:'62%', l:'GIR ON PAR 3', c:'var(--green)'},
+    ]) +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ 3. APPROACH ══ */
+function renderApproach(body) {
+  body.innerHTML =
+    kpi([
+      {v:'62%',  l:'GIR %',     c:'var(--red)'},
+      {v:'18.4', l:'PROX FT',   c:'#fff'},
+      {v:'71%',  l:'FW GIR %',  c:'var(--green)'},
+      {v:'48%',  l:'ROUGH GIR', c:'var(--red)'},
+    ], 4) +
+
+    sec('GIR % by Distance') +
+    hbar('50–100 yds', 85, 'var(--green)', '85%') +
+    hbar('100–150',    72, 'var(--green)', '72%') +
+    hbar('150–175',    61, '#F1C40F',      '61%') +
+    hbar('175–200',    44, '#E67E22',      '44%') +
+    hbar('200+ yds',   28, 'var(--red)',   '28%') +
+
+    sec('Proximity by Distance (ft avg)') +
+    kpi([
+      {v:'9.2', l:'50–100 YDS',  c:'var(--green)'},
+      {v:'14.1',l:'100–150 YDS', c:'var(--green)'},
+      {v:'18.4',l:'150–175 YDS', c:'#F1C40F'},
+      {v:'24.8',l:'175–200 YDS', c:'#E67E22'},
+    ], 4) +
+
+    sec('Miss Direction') +
+    hbar('Short', 26, 'var(--red)',    '26%') +
+    hbar('Right', 20, '#E67E22',       '20%') +
+    hbar('Left',  18, '#E67E22',       '18%') +
+    hbar('Long',  12, 'var(--muted)',  '12%') +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ 4. AROUND THE GREEN ══ */
+function renderATG(body) {
+  body.innerHTML =
+    kpi([
+      {v:'58%',l:'SCRAMBLING', c:'var(--green)'},
+      {v:'54%',l:'SAND SAVE',  c:'var(--green)'},
+      {v:'61%',l:'U & DOWN',   c:'var(--green)'},
+      {v:'29', l:'ATTEMPTS',   c:'#fff'},
+    ], 4) +
+
+    sec('Up & Down % by Lie') +
+    hbar('Fringe', 71, 'var(--green)', '71%') +
+    hbar('Rough',  55, '#F1C40F',      '55%') +
+    hbar('Bunker', 54, '#F1C40F',      '54%') +
+    hbar('Other',  48, '#E67E22',      '48%') +
+
+    sec('Proximity from Around Green (ft)') +
+    kpi([
+      {v:'4.2',l:'FRINGE',c:'var(--green)'},
+      {v:'6.8',l:'ROUGH',  c:'#F1C40F'},
+      {v:'7.1',l:'BUNKER', c:'#F1C40F'},
+    ], 3) +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ 5. PUTTING ══ */
+function renderPutting(body) {
+  body.innerHTML =
+    kpi([
+      {v:'1.74',l:'PUTTS/GIR',  c:'var(--red)'},
+      {v:'29.2',l:'PER ROUND',  c:'#fff'},
+      {v:'32%', l:'1-PUTT %',   c:'var(--green)'},
+      {v:'4%',  l:'3-PUTT %',   c:'var(--red)'},
+    ], 4) +
+
+    sec('Make % by Distance') +
+    pdBar('< 3 ft',    70, 72) +
+    pdBar('3 – 6 ft',  26, 36) +
+    pdBar('6 – 10 ft', 15, 40) +
+    pdBar('10 – 15 ft', 4, 18) +
+    pdBar('15 – 20 ft', 1,  8) +
+    pdBar('20+ ft',     1, 20) +
+
+    sec('Distance Metrics') +
+    kpi([
+      {v:'22.1',l:'1ST PUTT AVG (FT)',c:'#fff'},
+      {v:'2.8', l:'AFTER MISS (FT)',  c:'#fff'},
+    ]) +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ 6. STROKES GAINED ══ */
+function renderSG(body) {
+  body.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:42px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1;">+1.1</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">SG TOTAL vs. SCRATCH</div>
+      <div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:700;">▲ 0.2 · trending up this season</div>
+    </div>` +
+
+    sec('Strokes Gained by Category') +
+    sgBar('SG: Approach',      0.6, 0.8) +
+    sgBar('SG: Tee-to-Green',  0.8, 0.8) +
+    sgBar('SG: Off the Tee',   0.4, 0.8) +
+    sgBar('SG: Putting',       0.3, 0.8) +
+    sgBar('SG: Around Green', -0.2, 0.8) +
+
+    kpi([
+      {v:'+0.4',l:'SG OTT', c:'var(--green)'},
+      {v:'+0.6',l:'SG APP', c:'var(--green)'},
+      {v:'−0.2',l:'SG ATG', c:'var(--red)'},
+      {v:'+0.3',l:'SG PUTT',c:'var(--green)'},
+    ], 4) +
+
+    `<div style="font-size:11px;color:var(--muted);line-height:1.65;margin-top:4px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+      <strong style="color:rgba(255,255,255,0.85);">Insight:</strong> Approach (+0.6) is your biggest strength — you're gaining more than half a stroke per round on the field just with your irons. Around the Green (−0.2) is the only area below scratch. Improving scrambling from 58% to 65% would flip ATG to roughly +0.2 and push SG Total above +1.3.
+    </div>
+    <div style="height:12px;"></div>`;
+}
+
+/* ══ 7. COURSE & CONDITIONS ══ */
+function renderConditions(body) {
+  body.innerHTML =
+    sec('Score Type') +
+    kpi([
+      {v:'+0.1',l:'HOME',        c:'var(--green)'},
+      {v:'+0.5',l:'COMPETITION', c:'#F1C40F'},
+      {v:'+0.8',l:'AWAY',        c:'#E67E22'},
+    ], 3) +
+
+    sec('Time of Day') +
+    kpi([
+      {v:'+0.1',l:'MORNING', c:'var(--green)'},
+      {v:'+0.7',l:'AFTERNOON',c:'#E67E22'},
+    ]) +
+
+    sec('Course Half') +
+    hbar('Back 9',  100, 'var(--green)', '+0.1') +
+    hbar('Front 9', 88,  '#E67E22',      '+0.7') +
+
+    sec('Monthly Trend · 2025') +
+    kpi([
+      {v:'+0.6',l:'APRIL',c:'#F1C40F'},
+      {v:'+0.2',l:'MAY',  c:'var(--green)'},
+      {v:'+0.4',l:'JUNE', c:'#F1C40F'},
+    ], 3) +
+
+    sec('By Hole Difficulty (stroke index)') +
+    hbar('Hdcp 15–18 (easy)', 100, 'var(--green)', '−0.4') +
+    hbar('Hdcp 8–14 (mid)',   100, '#F1C40F',      '+0.3') +
+    hbar('Hdcp 1–7 (hard)',   100, 'var(--red)',   '+0.9') +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ 8. HANDICAP ══ */
+function renderHandicap(body) {
+  const diffs = [
+    {date:'Jun 27',course:'Riviera CC',   score:'70',diff:'+0.1',good:true, used:true },
+    {date:'Jun 22',course:'Pebble Beach', score:'72',diff:'+1.8',good:false,used:true },
+    {date:'Jun 15',course:'Augusta Natl', score:'75',diff:'+2.9',good:false,used:false},
+    {date:'Jun 8', course:'TPC Sawgrass', score:'71',diff:'+0.9',good:true, used:true },
+    {date:'Jun 1', course:'Torrey Pines', score:'73',diff:'+1.9',good:false,used:true },
+    {date:'May 25',course:'LA CC',        score:'71',diff:'−0.3',good:true, used:true },
+    {date:'May 18',course:'Riviera CC',   score:'71',diff:'+0.8',good:true, used:true },
+    {date:'May 11',course:'Bethpage Blk', score:'74',diff:'+2.4',good:false,used:false},
+  ];
+
+  body.innerHTML = `
+    <div style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;">
+      <div style="font-size:46px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1;">+1.8</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">WHS HANDICAP INDEX</div>
+      <div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:700;">▼ 0.3 · trending lower (improving)</div>
+    </div>` +
+
+    kpi([
+      {v:'+0.9',l:'LOW (365 DAY)', c:'var(--green)'},
+      {v:'+1.8',l:'CURRENT',       c:'var(--green)'},
+      {v:'+2.4',l:'HIGH (365 DAY)',c:'var(--muted)'},
+      {v:'20',  l:'DIFFS TRACKED', c:'#fff'},
+    ], 4) +
+
+    `<div class="ds-sec">Recent Differentials</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span> used in index &nbsp;
+      <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15);display:inline-block;"></span> excluded
+    </div>` +
+
+    diffs.map(d => {
+      const vc = d.good ? 'var(--green)' : parseFloat(d.diff) > 2 ? 'var(--red)' : '#fff';
+      return `<div class="diff-row">
+        <div class="diff-date">${d.date}</div>
+        <div class="diff-course">${d.course}</div>
+        <div class="diff-score">${d.score}</div>
+        <div class="diff-val" style="color:${vc}">${d.diff}</div>
+        <div class="diff-dot" style="background:${d.used ? 'var(--green)' : 'rgba(255,255,255,0.15)'};"></div>
+      </div>`;
+    }).join('') +
+    '<div style="height:12px;"></div>';
+}
+
+/* ══ INIT ══ */
+renderCards();
+</script>
+</body>
+</html>

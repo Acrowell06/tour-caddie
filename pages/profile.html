@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Profile</title>
+<link rel="stylesheet" href="tc.css">
+<style>
+/* ── PROFILE HEADER ── */
+.pf-header { padding: 8px 16px 10px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.pf-avatar { width: 48px; height: 48px; border-radius: 50%; background: rgba(46,204,113,0.12); border: 2px solid rgba(46,204,113,0.3); display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 900; color: var(--green); flex-shrink: 0; }
+.pf-info { flex: 1; min-width: 0; }
+.pf-name { font-size: 15px; font-weight: 800; }
+.pf-hcp-lbl { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.pf-hcp-num { font-size: 38px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; color: var(--green); }
+
+/* ── SCROLLER ── */
+.pf-scroller { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; display: flex; flex-direction: column; min-height: 0; }
+.pf-scroller::-webkit-scrollbar { display: none; }
+
+/* ── SECTION HEADER ── */
+.sec-hdr { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); padding: 0 16px 6px; flex-shrink: 0; }
+
+/* ── FRIENDS ── */
+.friend-search-row { display: flex; gap: 8px; padding: 0 12px 8px; flex-shrink: 0; }
+.friend-search { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px; font-size: 12px; font-family: 'Inter', sans-serif; color: rgba(255,255,255,0.8); outline: none; }
+.friend-search::placeholder { color: var(--dim); }
+.friend-search:focus { border-color: rgba(46,204,113,0.3); }
+.add-friend-btn { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); border-radius: 9px; padding: 9px 12px; font-size: 12px; font-weight: 700; color: var(--green); cursor: pointer; white-space: nowrap; transition: all 0.12s; user-select: none; flex-shrink: 0; }
+.add-friend-btn:active { transform: scale(0.95); }
+
+/* friends list capped so settings buttons stay visible */
+.friends-list-wrap { max-height: 174px; overflow-y: auto; scrollbar-width: none; flex-shrink: 0; }
+.friends-list-wrap::-webkit-scrollbar { display: none; }
+
+.friend-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background 0.1s; }
+.friend-row:active { background: rgba(255,255,255,0.03); }
+.friend-av { width: 38px; height: 38px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; position: relative; }
+.online-dot { position: absolute; bottom: 1px; right: 1px; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--bg); }
+.online-dot.on  { background: var(--green); }
+.online-dot.off { background: var(--dim); }
+.friend-info { flex: 1; min-width: 0; }
+.friend-name { font-size: 13px; font-weight: 700; }
+.friend-hcp  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.friend-chev { color: var(--dim); font-size: 16px; flex-shrink: 0; }
+
+/* ── SECTION DIVIDER ── */
+.sec-div { height: 1px; background: var(--border); margin: 8px 0 12px; flex-shrink: 0; }
+
+/* ── SETTINGS ROWS ── */
+.settings-group { margin: 0 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; flex-shrink: 0; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background 0.1s; }
+.settings-row:last-child { border-bottom: none; }
+.settings-row:active { background: rgba(255,255,255,0.03); }
+.settings-row.no-tap { cursor: default; }
+.settings-row.no-tap:active { background: transparent; }
+.sr-lbl { font-size: 13px; font-weight: 600; }
+.sr-val { font-size: 12px; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.chev { color: var(--dim); font-size: 12px; }
+
+/* ── SUB-SCREENS (Golf + Account) ── */
+.sub-screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); z-index: 100; border-radius: 44px; overflow: hidden; }
+.sub-screen.open { transform: translateX(0); }
+.sub-nav { display: flex; align-items: center; padding: 8px 14px 8px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.sub-back { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--green); cursor: pointer; user-select: none; }
+.sub-back:active { opacity: 0.6; }
+.sub-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 800; }
+.sub-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; display: flex; flex-direction: column; min-height: 0; padding-top: 14px; }
+.sub-scroll::-webkit-scrollbar { display: none; }
+
+/* ── UNIT PILLS ── */
+.unit-pills { display: flex; gap: 4px; }
+.unit-pill { padding: 5px 10px; border-radius: 7px; font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.12s; user-select: none; border: 1px solid var(--border); color: var(--muted); background: var(--surface2); }
+.unit-pill.active { background: rgba(46,204,113,0.14); color: var(--green); border-color: rgba(46,204,113,0.3); }
+
+/* ── iOS TOGGLE ── */
+.ios-toggle { width: 42px; height: 24px; background: var(--dim); border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.ios-toggle.on { background: var(--green); }
+.ios-toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
+.ios-toggle.on::after { transform: translateX(18px); }
+
+/* ── SIGN OUT ── */
+.signout-btn { margin: 0 12px 20px; background: rgba(231,76,60,0.06); border: 1px solid rgba(231,76,60,0.25); border-radius: 12px; padding: 13px; font-size: 14px; font-weight: 700; color: var(--red); text-align: center; cursor: pointer; transition: opacity 0.12s; flex-shrink: 0; }
+.signout-btn:active { opacity: 0.65; }
+
+/* ── FRIEND DETAIL SHEET ── */
+.fd-header { display: flex; flex-direction: column; align-items: center; padding: 0 0 12px; }
+.fd-av { width: 52px; height: 52px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.fd-name { font-size: 15px; font-weight: 800; }
+.fd-status { font-size: 10px; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 5px; }
+.fd-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.fd-hcp { font-size: 40px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; color: var(--green); margin-top: 8px; }
+.fd-hcp-lbl { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.fd-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.fd-tab { flex: 1; text-align: center; padding: 9px 0; font-size: 11px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+.fd-tab.active { color: var(--green); border-bottom-color: var(--green); }
+.fd-scroll { max-height: 200px; overflow-y: auto; scrollbar-width: none; }
+.fd-scroll::-webkit-scrollbar { display: none; }
+.fd-round-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 2px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.fd-round-row:last-child { border-bottom: none; }
+.fd-rd-course { font-size: 11px; font-weight: 700; }
+.fd-rd-date   { font-size: 9px; color: var(--muted); margin-top: 2px; }
+.fd-rd-score  { font-size: 14px; font-weight: 900; }
+.fd-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.fd-stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.fd-sc-lbl { font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.fd-sc-val { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+
+/* ── SHEET PICKER OPTIONS ── */
+.sheet-option { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background 0.1s; }
+.sheet-option:last-child { border-bottom: none; }
+.sheet-option:active { background: rgba(46,204,113,0.04); }
+.so-name { font-size: 13px; font-weight: 700; }
+.so-sub  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.so-check { font-size: 16px; color: var(--green); font-weight: 700; }
+
+.sheet-search { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px; font-size: 12px; font-family: 'Inter', sans-serif; color: rgba(255,255,255,0.8); outline: none; margin-bottom: 10px; }
+.sheet-search::placeholder { color: var(--dim); }
+.sheet-search:focus { border-color: rgba(46,204,113,0.3); }
+</style>
+</head>
+<body data-page="profile">
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+
+<div class="flow">
+  <div class="step" onclick="navigate('home')">Home</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('rounds')">Rounds</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('stats')">Stats</div>
+  <div class="arr">→</div>
+  <div class="step" onclick="navigate('courses')">Courses</div>
+  <div class="arr">→</div>
+  <div class="step on">Profile</div>
+</div>
+
+<div class="phone">
+<div class="wrap" id="wrap">
+
+<div class="page" style="overflow-y:hidden;">
+
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- Compact horizontal header -->
+  <div class="pf-header">
+    <div class="pf-avatar">JD</div>
+    <div class="pf-info">
+      <div class="pf-name">John Doe</div>
+      <div class="pf-hcp-lbl">Handicap Index</div>
+    </div>
+    <div class="pf-hcp-num">4.2</div>
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="pf-scroller">
+
+    <!-- Friends (capped height — scrolls internally) -->
+    <div class="sec-hdr" style="padding-top:12px;">Friends</div>
+    <div class="friend-search-row">
+      <input class="friend-search" placeholder="Search friends…" oninput="filterFriends(this.value)">
+      <div class="add-friend-btn" onclick="openAddSheet()">+ Add</div>
+    </div>
+    <div class="friends-list-wrap">
+      <div id="friends-list"></div>
+    </div>
+
+    <div class="sec-div"></div>
+
+    <!-- Settings nav buttons — always visible below friends -->
+    <div class="sec-hdr">Settings</div>
+    <div class="settings-group">
+      <div class="settings-row" onclick="openGolfScreen()">
+        <div class="sr-lbl">Golf</div>
+        <div class="sr-val"><span class="chev">›</span></div>
+      </div>
+      <div class="settings-row" onclick="openAcctScreen()">
+        <div class="sr-lbl">Account</div>
+        <div class="sr-val"><span class="chev">›</span></div>
+      </div>
+      <div class="settings-row" onclick="openScorecardsScreen()">
+        <div class="sr-lbl">Scorecards</div>
+        <div class="sr-val"><span class="chev">›</span></div>
+      </div>
+    </div>
+
+  </div><!-- /pf-scroller -->
+
+  <!-- Tab Bar -->
+  <div class="tbar" style="flex-shrink:0;">
+    <div class="tbi" onclick="navigate('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tbi-lbl">Home</span>
+    </div>
+    <div class="tbi" onclick="navigate('rounds')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tbi-lbl">Rounds</span>
+    </div>
+    <div class="tbi" onclick="navigate('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="tbi-lbl">Stats</span>
+    </div>
+    <div class="tbi" onclick="navigate('courses')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      <span class="tbi-lbl">Courses</span>
+    </div>
+    <div class="tbi active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tbi-lbl">Profile</span>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ── FRIEND DETAIL SHEET ── -->
+<div class="sheet-ov" id="fd-ov">
+  <div class="sheet-bd" onclick="closeFriendSheet()"></div>
+  <div class="sheet" style="padding-bottom:24px;">
+    <div class="sh-handle"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+      <div class="sh-undo" onclick="closeFriendSheet()">✕ Close</div>
+    </div>
+    <div class="fd-header">
+      <div class="fd-av" id="fd-av"></div>
+      <div class="fd-name" id="fd-name"></div>
+      <div class="fd-status">
+        <div class="fd-status-dot" id="fd-sdot"></div>
+        <span id="fd-slbl"></span>
+      </div>
+      <div class="fd-hcp" id="fd-hcp"></div>
+      <div class="fd-hcp-lbl">Handicap Index</div>
+    </div>
+    <div class="fd-tabs">
+      <div class="fd-tab active" onclick="fdTab(this,'rounds')">Rounds</div>
+      <div class="fd-tab"        onclick="fdTab(this,'stats')">Stats</div>
+    </div>
+    <div class="fd-scroll" id="fd-content"></div>
+  </div>
+</div>
+
+<!-- ── ADD FRIEND SHEET ── -->
+<div class="sheet-ov" id="af-ov">
+  <div class="sheet-bd" onclick="closeAddSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Add Friend</div>
+      <div class="sh-undo" onclick="closeAddSheet()">✕ Close</div>
+    </div>
+    <div class="sh-sub">Search by name or username</div>
+    <input class="lg-inp" placeholder="e.g. Mike Johnson" style="margin-bottom:10px;" oninput="searchUsers(this.value)">
+    <div id="user-results" style="min-height:60px;"></div>
+  </div>
+</div>
+
+<!-- ── TEE SELECTOR SHEET ── -->
+<div class="sheet-ov" id="tee-ov">
+  <div class="sheet-bd" onclick="closeTeeSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Default Tee</div>
+      <div class="sh-undo" onclick="closeTeeSheet()">✕ Close</div>
+    </div>
+    <div class="sh-sub">Pre-selected when starting a round — change per round at any time</div>
+    <div id="tee-list"></div>
+  </div>
+</div>
+
+<!-- ── HOME COURSE SHEET ── -->
+<div class="sheet-ov" id="hc-ov">
+  <div class="sheet-bd" onclick="closeCourseSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Home Course</div>
+      <div class="sh-undo" onclick="closeCourseSheet()">✕ Close</div>
+    </div>
+    <div class="sh-sub">Your default course — shows first when starting a round</div>
+    <input class="sheet-search" id="course-search" placeholder="Search courses…" oninput="filterCourses(this.value)">
+    <div id="course-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── GOLF SUB-SCREEN ── -->
+<div class="sub-screen" id="golf-screen">
+  <div class="st" style="padding-top:32px;"><span>9:41</span><span>●●●</span></div>
+  <div class="sub-nav" style="position:relative;">
+    <div class="sub-back" onclick="closeGolfScreen()">
+      <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#2ECC71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Profile
+    </div>
+    <div class="sub-title">Golf</div>
+  </div>
+  <div class="sub-scroll">
+    <div class="sec-hdr">Tee & Course</div>
+    <div class="settings-group">
+      <div class="settings-row" onclick="openTeeSheet()">
+        <div class="sr-lbl">Default Tee</div>
+        <div class="sr-val" id="default-tee-val">Tips <span class="chev">›</span></div>
+      </div>
+      <div class="settings-row" onclick="openCourseSheet()">
+        <div class="sr-lbl">Home Course</div>
+        <div class="sr-val" id="home-course-val">Pebble Beach <span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="sec-hdr">Display</div>
+    <div class="settings-group">
+      <div class="settings-row no-tap">
+        <div class="sr-lbl">Distance Units</div>
+        <div class="unit-pills">
+          <div class="unit-pill active" id="pill-yards"  onclick="setUnit('yards')">Yards</div>
+          <div class="unit-pill"        id="pill-metres" onclick="setUnit('metres')">Metres</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACCOUNT SUB-SCREEN ── -->
+<div class="sub-screen" id="acct-screen">
+  <div class="st" style="padding-top:32px;"><span>9:41</span><span>●●●</span></div>
+  <div class="sub-nav" style="position:relative;">
+    <div class="sub-back" onclick="closeAcctScreen()">
+      <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#2ECC71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Profile
+    </div>
+    <div class="sub-title">Account</div>
+  </div>
+  <div class="sub-scroll">
+    <div class="sec-hdr">Profile</div>
+    <div class="settings-group">
+      <div class="settings-row" onclick="showToast('toast','Edit name — coming soon')">
+        <div class="sr-lbl">Display Name</div>
+        <div class="sr-val">John Doe <span class="chev">›</span></div>
+      </div>
+      <div class="settings-row" onclick="showToast('toast','Change email — coming soon')">
+        <div class="sr-lbl">Email</div>
+        <div class="sr-val">john@example.com <span class="chev">›</span></div>
+      </div>
+      <div class="settings-row" onclick="showToast('toast','Change password — coming soon')">
+        <div class="sr-lbl">Password</div>
+        <div class="sr-val">Change <span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="sec-hdr">Notifications</div>
+    <div class="settings-group">
+      <div class="settings-row no-tap">
+        <div class="sr-lbl">Push Notifications</div>
+        <div class="ios-toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row no-tap">
+        <div class="sr-lbl">Round Reminders</div>
+        <div class="ios-toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="settings-row no-tap">
+        <div class="sr-lbl">Friend Activity</div>
+        <div class="ios-toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+    <div class="sec-hdr">About</div>
+    <div class="settings-group" style="margin-bottom:14px;">
+      <div class="settings-row no-tap">
+        <div class="sr-lbl" style="color:var(--muted);">App Version</div>
+        <div class="sr-val">1.0.0</div>
+      </div>
+      <div class="settings-row" onclick="showToast('toast','Privacy policy — coming soon')">
+        <div class="sr-lbl">Privacy Policy</div>
+        <div class="sr-val"><span class="chev">›</span></div>
+      </div>
+      <div class="settings-row" onclick="showToast('toast','Terms of service — coming soon')">
+        <div class="sr-lbl">Terms of Service</div>
+        <div class="sr-val"><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="signout-btn" onclick="showToast('toast','Signed out')">Sign Out</div>
+  </div>
+</div>
+
+<!-- ── SCORECARDS SUB-SCREEN ── -->
+<div class="sub-screen" id="sc-screen">
+  <div class="st" style="padding-top:32px;"><span>9:41</span><span>●●●</span></div>
+  <div class="sub-nav" style="position:relative;">
+    <div class="sub-back" onclick="closeScorecardsScreen()">
+      <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#2ECC71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Profile
+    </div>
+    <div class="sub-title">Scorecards</div>
+  </div>
+  <div class="sub-scroll">
+    <div style="padding:14px 16px 8px;font-size:11px;color:var(--muted);line-height:1.55;">
+      Print a blank scorecard, fill it in on the course, then scan it back into Tour Caddie to update all your stats.
+    </div>
+
+    <!-- 18-Hole card -->
+    <div style="margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <div style="padding:14px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.25);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:800;letter-spacing:-0.2px;">18 Holes</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;">Two cards — Front 9 &amp; Back 9</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6;">
+          Covers every hole with tee, approach, short game and putting rows. Print on letter paper (landscape) — fits standard scorecard sleeve.
+        </div>
+      </div>
+      <div style="display:flex;border-top:1px solid rgba(255,255,255,0.04);">
+        <div onclick="window.open('scorecard.html?mode=18','_blank')" style="flex:1;padding:11px;text-align:center;font-size:12px;font-weight:800;color:var(--green);cursor:pointer;border-right:1px solid rgba(255,255,255,0.04);">
+          Print
+        </div>
+        <div onclick="navigate('scanner')" style="flex:1;padding:11px;text-align:center;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;">
+          Scan &amp; Import
+        </div>
+      </div>
+    </div>
+
+    <!-- 9-Hole card -->
+    <div style="margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <div style="padding:14px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="width:36px;height:36px;background:rgba(46,204,113,0.07);border:1px solid rgba(255,255,255,0.09);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:800;letter-spacing:-0.2px;">9 Holes</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;">Single card — holes 1–9</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6;">
+          Same full shot-by-shot layout on a single card. Great for 9-hole rounds or twilight play.
+        </div>
+      </div>
+      <div style="display:flex;border-top:1px solid rgba(255,255,255,0.04);">
+        <div onclick="window.open('scorecard.html?mode=9','_blank')" style="flex:1;padding:11px;text-align:center;font-size:12px;font-weight:800;color:var(--green);cursor:pointer;border-right:1px solid rgba(255,255,255,0.04);">
+          Print
+        </div>
+        <div onclick="navigate('scanner')" style="flex:1;padding:11px;text-align:center;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;">
+          Scan &amp; Import
+        </div>
+      </div>
+    </div>
+
+    <div style="margin:4px 16px 16px;font-size:10px;color:var(--dim);line-height:1.55;text-align:center;">
+      After filling in your card, tap <strong style="color:var(--muted);">Scan &amp; Import</strong> above or use <strong style="color:var(--muted);">Rounds → Scan &amp; Import</strong> to upload and sync all stats.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+</div><!-- /phone -->
+
+<script src="tc-utils.js"></script>
+<script>
+const FRIENDS = [
+  { initials:'TM', name:'Tom Mitchell',   hcp:'7.8',  online:true,  color:'#5B8DEE',
+    rounds:[
+      { course:'Augusta National', date:'Jun 28', score:'+3', n:3  },
+      { course:'Pebble Beach',     date:'Jun 15', score:'E',  n:0  },
+      { course:'Torrey Pines',     date:'Jun 2',  score:'+5', n:5  },
+    ]},
+  { initials:'SR', name:'Sarah Roberts',  hcp:'12.4', online:true,  color:'#E67E22',
+    rounds:[
+      { course:'St Andrews',  date:'Jun 27', score:'+6', n:6 },
+      { course:'Carnoustie',  date:'Jun 14', score:'+8', n:8 },
+    ]},
+  { initials:'JK', name:'Jake Kim',       hcp:'2.1',  online:false, color:'#9B59B6',
+    rounds:[
+      { course:'Shinnecock Hills', date:'Jun 24', score:'+1', n:1  },
+      { course:'Winged Foot',      date:'Jun 10', score:'-1', n:-1 },
+      { course:'Bethpage Black',   date:'May 30', score:'+4', n:4  },
+    ]},
+  { initials:'LC', name:'Lisa Chen',      hcp:'18.2', online:false, color:'#E74C3C',
+    rounds:[
+      { course:'Bandon Dunes', date:'Jun 20', score:'+9', n:9 },
+    ]},
+  { initials:'MP', name:'Mark Patterson', hcp:'5.6',  online:true,  color:'#1ABC9C',
+    rounds:[
+      { course:'Cypress Point', date:'Jun 29', score:'+2', n:2 },
+      { course:'Olympic Club',  date:'Jun 18', score:'+3', n:3 },
+    ]},
+];
+
+const TEES = [
+  { name:'Tips',    note:'Longest tees — maximum challenge'  },
+  { name:'Back',    note:'One step down from tips'           },
+  { name:'Middle',  note:'Standard club tees'                },
+  { name:'Forward', note:'Shorter, more accessible option'   },
+];
+
+const ALL_COURSES = [
+  { name:'Augusta National',    loc:'Augusta, GA'          },
+  { name:'Bandon Dunes',        loc:'Bandon, OR'           },
+  { name:'Bethpage Black',      loc:'Farmingdale, NY'      },
+  { name:'Carnoustie',          loc:'Carnoustie, Scotland' },
+  { name:'Cypress Point',       loc:'Pebble Beach, CA'     },
+  { name:'Medinah Country Club',loc:'Medinah, IL'          },
+  { name:'Olympic Club',        loc:'San Francisco, CA'    },
+  { name:'Pebble Beach',        loc:'Pebble Beach, CA'     },
+  { name:'Pinehurst No. 2',     loc:'Pinehurst, NC'        },
+  { name:'Shinnecock Hills',    loc:'Southampton, NY'      },
+  { name:'St Andrews',          loc:'St Andrews, Scotland' },
+  { name:'Torrey Pines',        loc:'La Jolla, CA'         },
+  { name:'Winged Foot',         loc:'Mamaroneck, NY'       },
+];
+
+let selectedTee    = 'Tips';
+let selectedCourse = 'Pebble Beach';
+let currentUnit    = 'yards';
+let activeFriend   = null;
+let activeFdTab    = 'rounds';
+
+/* ── FRIENDS LIST ── */
+function renderFriends(list) {
+  const el = document.getElementById('friends-list');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:24px 16px;">No friends found</div>';
+    return;
+  }
+  el.innerHTML = list.map(f => `
+    <div class="friend-row" onclick="openFriend(${FRIENDS.indexOf(f)})">
+      <div class="friend-av" style="color:${f.color};">
+        ${f.initials}
+        <div class="online-dot ${f.online ? 'on' : 'off'}"></div>
+      </div>
+      <div class="friend-info">
+        <div class="friend-name">${f.name}</div>
+        <div class="friend-hcp">Handicap Index · ${f.hcp}</div>
+      </div>
+      <div class="friend-chev">›</div>
+    </div>
+  `).join('');
+}
+
+function filterFriends(q) {
+  const lc = q.toLowerCase();
+  renderFriends(FRIENDS.filter(f => f.name.toLowerCase().includes(lc)));
+}
+
+/* ── FRIEND DETAIL ── */
+function openFriend(i) {
+  activeFriend = FRIENDS[i];
+  activeFdTab  = 'rounds';
+  document.getElementById('fd-av').textContent   = activeFriend.initials;
+  document.getElementById('fd-av').style.color   = activeFriend.color;
+  document.getElementById('fd-name').textContent = activeFriend.name;
+  document.getElementById('fd-hcp').textContent  = activeFriend.hcp;
+  const online = activeFriend.online;
+  document.getElementById('fd-sdot').style.background = online ? 'var(--green)' : 'var(--dim)';
+  document.getElementById('fd-slbl').textContent       = online ? 'Online now'   : 'Offline';
+  document.getElementById('fd-slbl').style.color       = online ? 'var(--green)' : 'var(--dim)';
+  document.querySelectorAll('.fd-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  renderFdContent();
+  document.getElementById('fd-ov').classList.add('open');
+}
+
+function closeFriendSheet() { document.getElementById('fd-ov').classList.remove('open'); }
+
+function fdTab(el, tab) {
+  activeFdTab = tab;
+  document.querySelectorAll('.fd-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderFdContent();
+}
+
+function renderFdContent() {
+  const el = document.getElementById('fd-content');
+  if (activeFdTab === 'rounds') {
+    el.innerHTML = activeFriend.rounds.map(r => {
+      const col = r.n < 0 ? 'var(--green)' : r.n === 0 ? '#fff' : 'var(--red)';
+      return `<div class="fd-round-row">
+        <div><div class="fd-rd-course">${r.course}</div><div class="fd-rd-date">${r.date}</div></div>
+        <div class="fd-rd-score" style="color:${col};">${r.score}</div>
+      </div>`;
+    }).join('');
+  } else {
+    el.innerHTML = `<div class="fd-stat-grid">
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Scoring Avg</div><div class="fd-sc-val">76.4</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">GIR %</div><div class="fd-sc-val" style="color:var(--green);">54%</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Fairways %</div><div class="fd-sc-val">61%</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Putts / Rd</div><div class="fd-sc-val">31.2</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Scrambling</div><div class="fd-sc-val">48%</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Low Round</div><div class="fd-sc-val" style="color:var(--green);">-1</div></div>
+    </div>`;
+  }
+}
+
+/* ── ADD FRIEND ── */
+const SEARCH_POOL = [
+  { initials:'MJ', name:'Mike Johnson', hcp:'9.3',  color:'#5B8DEE' },
+  { initials:'AS', name:'Amy Sanders',  hcp:'22.1', color:'#E67E22' },
+  { initials:'BW', name:'Ben Wilson',   hcp:'3.7',  color:'#1ABC9C' },
+  { initials:'RC', name:'Ryan Clark',   hcp:'14.5', color:'#9B59B6' },
+];
+
+function openAddSheet() {
+  document.querySelector('#af-ov .lg-inp').value = '';
+  document.getElementById('user-results').innerHTML = '';
+  document.getElementById('af-ov').classList.add('open');
+}
+function closeAddSheet() { document.getElementById('af-ov').classList.remove('open'); }
+
+function searchUsers(q) {
+  const el = document.getElementById('user-results');
+  if (!q.trim()) { el.innerHTML = ''; return; }
+  const hits = SEARCH_POOL.filter(u => u.name.toLowerCase().includes(q.toLowerCase()));
+  if (!hits.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">No results</div>';
+    return;
+  }
+  el.innerHTML = hits.map(u => `
+    <div class="friend-row" onclick="sendRequest('${u.name}')">
+      <div class="friend-av" style="color:${u.color};">${u.initials}</div>
+      <div class="friend-info">
+        <div class="friend-name">${u.name}</div>
+        <div class="friend-hcp">Handicap Index · ${u.hcp}</div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--green);">+ Add</div>
+    </div>
+  `).join('');
+}
+
+function sendRequest(name) {
+  closeAddSheet();
+  showToast('toast', `Friend request sent to ${name}`);
+}
+
+/* ── TEE SELECTOR ── */
+function openTeeSheet() {
+  document.getElementById('tee-list').innerHTML = TEES.map(t => `
+    <div class="sheet-option" onclick="selectTee('${t.name}')">
+      <div><div class="so-name">${t.name}</div><div class="so-sub">${t.note}</div></div>
+      ${t.name === selectedTee ? '<div class="so-check">✓</div>' : '<div></div>'}
+    </div>
+  `).join('');
+  document.getElementById('tee-ov').classList.add('open');
+}
+function closeTeeSheet() { document.getElementById('tee-ov').classList.remove('open'); }
+
+function selectTee(name) {
+  selectedTee = name;
+  document.getElementById('default-tee-val').innerHTML = `${name} <span class="chev">›</span>`;
+  closeTeeSheet();
+}
+
+/* ── HOME COURSE ── */
+function openCourseSheet() {
+  document.getElementById('course-search').value = '';
+  renderCourseList(ALL_COURSES);
+  document.getElementById('hc-ov').classList.add('open');
+}
+function closeCourseSheet() { document.getElementById('hc-ov').classList.remove('open'); }
+
+function filterCourses(q) {
+  const lc = q.toLowerCase();
+  renderCourseList(ALL_COURSES.filter(c =>
+    c.name.toLowerCase().includes(lc) || c.loc.toLowerCase().includes(lc)
+  ));
+}
+
+function renderCourseList(list) {
+  const el = document.getElementById('course-list');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">No courses found</div>';
+    return;
+  }
+  el.innerHTML = list.map(c => `
+    <div class="sheet-option" onclick="selectCourse('${c.name}')">
+      <div><div class="so-name">${c.name}</div><div class="so-sub">${c.loc}</div></div>
+      ${c.name === selectedCourse ? '<div class="so-check">✓</div>' : '<div></div>'}
+    </div>
+  `).join('');
+}
+
+function selectCourse(name) {
+  selectedCourse = name;
+  document.getElementById('home-course-val').innerHTML = `${name} <span class="chev">›</span>`;
+  closeCourseSheet();
+}
+
+/* ── UNITS ── */
+function setUnit(unit) {
+  currentUnit = unit;
+  document.getElementById('pill-yards').classList.toggle('active',  unit === 'yards');
+  document.getElementById('pill-metres').classList.toggle('active', unit === 'metres');
+}
+
+/* ── SUB-SCREENS ── */
+function openGolfScreen()        { document.getElementById('golf-screen').classList.add('open'); }
+function closeGolfScreen()       { document.getElementById('golf-screen').classList.remove('open'); }
+function openAcctScreen()        { document.getElementById('acct-screen').classList.add('open'); }
+function closeAcctScreen()       { document.getElementById('acct-screen').classList.remove('open'); }
+function openScorecardsScreen()  { document.getElementById('sc-screen').classList.add('open'); }
+function closeScorecardsScreen() { document.getElementById('sc-screen').classList.remove('open'); }
+
+/* ── INIT ── */
+renderFriends(FRIENDS);
+</script>
+</body>
+</html>
