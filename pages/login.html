@@ -133,8 +133,11 @@
         if (!result.session) {
           // Email confirmation is pending — there's no active session yet,
           // so don't navigate to a page that will just bounce back here.
-          showError('Check your email to confirm your account, then sign in.');
+          // toggleMode() runs first because it calls hideError() internally
+          // as its last step — calling showError() after it (not before) is
+          // what actually leaves the message visible.
           toggleMode(); // back to sign-in mode, ready for them once confirmed
+          showError('Check your email to confirm your account, then sign in.');
           return;
         }
       } else {
