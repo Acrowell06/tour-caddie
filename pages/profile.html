@@ -376,7 +376,7 @@
         <div class="sr-val"><span class="chev">›</span></div>
       </div>
     </div>
-    <div class="signout-btn" onclick="showToast('toast','Signed out')">Sign Out</div>
+    <div class="signout-btn" onclick="doSignOut()">Sign Out</div>
   </div>
 </div>
 
@@ -456,8 +456,17 @@
 </div><!-- /wrap -->
 </div><!-- /phone -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
+<script src="tc-auth.js"></script>
 <script src="tc-utils.js"></script>
 <script>
+(async () => { await TcAuth.requireAuth(); })();
+
+async function doSignOut() {
+  await TcAuth.signOut();
+  navigate('login');
+}
+
 const FRIENDS = [
   { initials:'TM', name:'Tom Mitchell',   hcp:'7.8',  online:true,  color:'#5B8DEE',
     rounds:[

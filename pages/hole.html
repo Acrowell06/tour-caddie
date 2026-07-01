@@ -461,9 +461,13 @@
 
 <p class="pg-note">Mark Shot · drag GPS pin · club picker · Hole Out → Summary → Next Hole (works for any of the 18)</p>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
+<script src="tc-auth.js"></script>
 <script src="tc-course.js"></script>
 <script src="tc-utils.js"></script>
 <script>
+(async () => { await TcAuth.requireAuth(); })();
+
 /* ── ACTIVE HOLE — resolved from round state, not hardcoded ── */
 const _round      = (() => { try { return JSON.parse(sessionStorage.getItem('tc_active_round') || 'null'); } catch { return null; } })();
 const _holeSeq    = (_round?.holeSequence && _round.holeSequence.length) ? _round.holeSequence : [1];

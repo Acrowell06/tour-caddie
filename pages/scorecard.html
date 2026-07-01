@@ -782,7 +782,11 @@ body {
 </div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
+<script src="tc-auth.js"></script>
 <script>
+(async () => { await TcAuth.requireAuth(); })();
+
 function setMode(n) {
   const is18 = n === 18;
   document.getElementById('t18').classList.toggle('on', is18);

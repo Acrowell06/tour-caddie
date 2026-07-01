@@ -222,8 +222,12 @@
 
 <p class="pg-note">Tap <strong style="color:var(--green);">Edit</strong> · tap any slot to swap stat · S = 1 stat · M = 2 · L = 3 · any combo</p>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
+<script src="tc-auth.js"></script>
 <script src="tc-utils.js"></script>
 <script>
+(async () => { await TcAuth.requireAuth(); })();
+
 /* ══ STAT CATALOGUE ══ */
 const STATS = {
   'handicap':   { name:'Handicap Index',   label:'HANDICAP',    value:'+1.8',  vc:'g', trend:'▼ 0.3',  tc:'g', sub:'WHS · Jun 27' },
