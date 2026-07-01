@@ -610,22 +610,31 @@ function mhShouldMark() { return markSteps.length > 0; }
 
 function mhDefaultPositionFor(step) {
   if (step === 'tee') return TEE_LL;
-  // Green steps default to a small offset behind the tee (or the previously
-  // placed green point), matching the same fallback spacing used elsewhere
-  // in this file for synthetic green positions — just a starting point the
-  // golfer drags into the real spot.
-  const base = markResults['green-center'] || markResults['tee'] || TEE_LL;
-  if (step === 'green-front')  return { lat: base.lat + 0.00135, lng: base.lng };
-  if (step === 'green-center') return { lat: base.lat + 0.00150, lng: base.lng };
-  return { lat: base.lat + 0.00165, lng: base.lng }; // green-back
+  // Front defaults near the tee (first green point — no closer reference
+  // exists yet). Center and back default to wherever the previous green
+  // point was just confirmed, so each step is a small nudge from the last
+  // instead of a long drag back from the tee every time.
+  if (step === 'green-front')  return markResults['tee'] || TEE_LL;
+  if (step === 'green-center') return markResults['green-front']  || markResults['tee'] || TEE_LL;
+  return markResults['green-center'] || markResults['green-front'] || markResults['tee'] || TEE_LL; // green-back
 }
 
 function mhPlacePin(ll) {
   if (markMarker) lmap.removeLayer(markMarker);
+  // Crosshair reticle, not a plain circle — the lines converge on the exact
+  // marked point so it's unambiguous, unlike a soft translucent blob where
+  // "the point" could be read as anywhere inside it.
   markMarker = L.marker([ll.lat, ll.lng], {
     icon: L.divIcon({
-      html: '<div style="background:rgba(241,196,15,0.25);border:2px solid #F1C40F;width:26px;height:26px;border-radius:50%;"></div>',
-      iconSize: [26, 26], iconAnchor: [13, 13], className: ''
+      html: `<svg width="34" height="34" viewBox="0 0 34 34" style="display:block;overflow:visible;">
+        <line x1="17" y1="1"  x2="17" y2="12" stroke="#F1C40F" stroke-width="2.5"/>
+        <line x1="17" y1="22" x2="17" y2="33" stroke="#F1C40F" stroke-width="2.5"/>
+        <line x1="1"  y1="17" x2="12" y2="17" stroke="#F1C40F" stroke-width="2.5"/>
+        <line x1="22" y1="17" x2="33" y2="17" stroke="#F1C40F" stroke-width="2.5"/>
+        <circle cx="17" cy="17" r="6" fill="rgba(241,196,15,0.15)" stroke="#F1C40F" stroke-width="2"/>
+        <circle cx="17" cy="17" r="1.5" fill="#F1C40F"/>
+      </svg>`,
+      iconSize: [34, 34], iconAnchor: [17, 17], className: ''
     }),
     draggable: true
   }).addTo(lmap);
