@@ -418,7 +418,7 @@ async function startRound() {
 
   const roundData = {
     course: sel.course,
-    tee: (sel.tee || 'white').toLowerCase(),
+    tee: (sel.tee?.name || 'white').toLowerCase(),
     holes: sel.holes === '9' ? 9 : 18,
     holes_data: null
   };
