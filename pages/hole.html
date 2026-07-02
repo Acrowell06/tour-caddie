@@ -463,6 +463,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <script src="tc-auth.js"></script>
+<script src="tc-rounds.js"></script>
 <script src="tc-course.js"></script>
 <script src="tc-utils.js"></script>
 <script>
@@ -1282,6 +1283,15 @@ function hHoleOutFromMap() {
 /* ── HOLE SUMMARY SHEET ── */
 let putts = 0;
 
+function togState(rowEl) {
+  if (!rowEl) return null;
+  const togs = [...rowEl.querySelectorAll('.tog')];
+  const i = togs.findIndex(t => t.classList.contains('t-g') || t.classList.contains('t-y') || t.classList.contains('t-r'));
+  if (i === -1) return null;
+  const color = togs[i].classList.contains('t-g') ? 'g' : togs[i].classList.contains('t-y') ? 'y' : 'r';
+  return { idx: i, color };
+}
+
 function buildSummaryMap() {
   const svg = document.getElementById('sum-svg');
   svg.querySelectorAll('[data-sum]').forEach(el => el.remove());
@@ -1348,16 +1358,6 @@ function buildSummaryMap() {
   putts = Math.max(0, hShotLog.filter(s => s.club === 'Putter' || s.holed).length);
   document.getElementById('pcval').textContent = putts;
   document.getElementById('sum-putts-disp').textContent = putts || '—';
-
-  // Stats chips from toggle row state
-  function togState(rowEl) {
-    if (!rowEl) return null;
-    const togs = [...rowEl.querySelectorAll('.tog')];
-    const i = togs.findIndex(t => t.classList.contains('t-g') || t.classList.contains('t-y') || t.classList.contains('t-r'));
-    if (i === -1) return null;
-    const color = togs[i].classList.contains('t-g') ? 'g' : togs[i].classList.contains('t-y') ? 'y' : 'r';
-    return { idx: i, color };
-  }
 
   const firLabels = ['FIR', 'Missed L', 'Missed R', 'Bunker'];
   const greenLabels = PAR === 3 ? ['GIR', 'GIR Miss', 'Bunker', 'Water'] : ['GIR', 'GIR Miss', 'Scramble', 'Sand Save'];
@@ -1484,13 +1484,53 @@ function goToPrevHole() {
   navigate('hole');
 }
 
+function buildShotsPayload() {
+  return hLoggedShots.map((pos, i) => {
+    const log = hShotLog[i] || {};
+    const prev = i > 0 ? hLoggedShots[i - 1] : null;
+    const fromLL = prev?.latlng ?? TEE_LL;
+    const distanceYards = pos.latlng
+      ? Math.round(TcCourse.haversineYds(fromLL, pos.latlng))
+      : null;
+    return {
+      shotNumber: log.num ?? (i + 1),
+      club: log.club ?? null,
+      lat: pos.latlng?.lat ?? null,
+      lng: pos.latlng?.lng ?? null,
+      result: log.holed ? 'holed' : null,
+      distanceYards
+    };
+  });
+}
+
 function hSaveAndNext() {
   const scores = (() => { try { return JSON.parse(sessionStorage.getItem('tc_round_scores') || '[]'); } catch { return []; } })();
   const updated = scores.filter(s => s.hole !== _holeNum);
   updated.push({ hole: _holeNum, par: PAR, strokes: hShotCount });
   sessionStorage.setItem('tc_round_scores', JSON.stringify(updated));
 
+  const firLabels = ['FIR', 'Missed L', 'Missed R', 'Bunker'];
+  const greenLabels = PAR === 3 ? ['GIR', 'GIR Miss', 'Bunker', 'Water'] : ['GIR', 'GIR Miss', 'Scramble', 'Sand Save'];
+  const firSt = PAR === 3 ? null : togState(document.getElementById('trow-fir'));
+  const girSt = togState(document.getElementById('trow-green'));
+  const upAndDown = (PAR !== 3 && girSt && girSt.idx !== 0) ? (girSt.idx === 2 || girSt.idx === 3) : null;
+
+  TcRounds.syncHole({
+    holeNumber: _holeNum,
+    par: PAR,
+    handicap: _holeData?.handicap ?? null,
+    strokes: hShotCount,
+    putts: Math.max(0, hShotLog.filter(s => s.club === 'Putter' || s.holed).length),
+    fir: firSt ? firSt.idx === 0 : null,
+    gir: girSt ? girSt.idx === 0 : null,
+    upAndDown,
+    fairwayDirection: firSt ? firLabels[firSt.idx] : null,
+    girDirection: girSt ? greenLabels[girSt.idx] : null,
+    shots: buildShotsPayload()
+  }).catch(err => console.error('TcRounds: syncHole failed unexpectedly', err));
+
   if (_isLastHole || !_round) {
+    TcRounds.completeRound().catch(err => console.error('TcRounds: completeRound failed unexpectedly', err));
     window.location.href = 'scorecard.html';
     return;
   }
@@ -1498,6 +1538,8 @@ function hSaveAndNext() {
   sessionStorage.setItem('tc_active_round', JSON.stringify(_round));
   navigate('hole');
 }
+
+TcRounds.drainPendingSyncs();
 
 /* ── LIVE HEADER DATA — everything here reads from the active hole, nothing is hole-specific hardcoding ── */
 (function initHeader() {
