@@ -444,8 +444,8 @@ function renderRounds(filterYear = '2026', filterMonth = '') {
     card.innerHTML = `
       <div class="rc-top">
         <div class="rc-date-col">
-          <div class="rc-date">${r.date.split(' ')[0].toUpperCase()}</div>
-          <div class="rc-month">${r.date.split(' ')[1]}</div>
+          <div class="rc-date">${escHtml(r.date.split(' ')[0].toUpperCase())}</div>
+          <div class="rc-month">${escHtml(r.date.split(' ')[1] || '')}</div>
         </div>
         <div class="rc-course">
           <div class="rc-name">${escHtml(r.course)}</div>
@@ -457,8 +457,8 @@ function renderRounds(filterYear = '2026', filterMonth = '') {
         </div>
       </div>
       <div class="rc-chips">
-        ${r.chips.map(ch => `<div class="rc-chip">${ch}</div>`).join('')}
-        <div class="rc-chip" style="color:${r.diff == null ? 'var(--muted)' : parseFloat(r.diff) <= 1 ? 'var(--green)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--red)'}">Diff ${r.diff == null ? '—' : r.diff}</div>
+        ${r.chips.map(ch => `<div class="rc-chip">${escHtml(ch)}</div>`).join('')}
+        <div class="rc-chip" style="color:${r.diff == null ? 'var(--muted)' : parseFloat(r.diff) <= 1 ? 'var(--green)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--red)'}">Diff ${r.diff == null ? '—' : escHtml(String(r.diff))}</div>
       </div>`;
     list.appendChild(card);
   });
