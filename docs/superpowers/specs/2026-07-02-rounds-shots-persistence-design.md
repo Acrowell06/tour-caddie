@@ -1,5 +1,7 @@
 # Rounds/Shots Persistence — Design Spec
 
+> **Addendum (during Task 1 execution):** the live Supabase project already had `rounds`, `round_holes`, and `shots` tables — real prior design work (join-based RLS already in place, `round_holes` capturing `fairway_direction`/`gir_direction` miss-side detail this spec didn't plan for), not disposable scaffolding, discovered only once the migration below failed with a "relation already exists" error. The schema in this document was adapted in place (via `ALTER TABLE`, not `CREATE TABLE`) to reuse that existing structure — table names, several column names, and two bonus columns differ from what's written below as a result. The **architecture** (three write triggers, offline retry queue, `courses.html` reading real data with `sg`/`diff` staying `null`) is unchanged. See `docs/superpowers/plans/2026-07-02-rounds-shots-persistence.md` Task 1 for the actual schema that shipped.
+
 ## Context
 
 Tour Caddie is a plain HTML/JS/CSS prototype backed by a real Supabase project (see `docs/superpowers/specs/2026-07-01-real-authentication-design.md` for the auth layer, already merged). Round and shot data currently lives only in `sessionStorage` for the duration of a round (`tc_active_round`, `tc_round_scores`, an in-memory shot log in `pages/hole.html`) and is discarded once the browser tab closes. `pages/courses.html` — the round-history browsing screen — reads from a hardcoded static `ROUNDS` array of 12 demo rounds instead of real data, even though it already has the Supabase client and `TcAuth.requireAuth()` wired in.

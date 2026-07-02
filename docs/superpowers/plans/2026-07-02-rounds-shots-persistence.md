@@ -13,112 +13,78 @@
 - No build step — plain `<script src="...">` tags only; no ES modules, no bundler, no npm install.
 - Supabase project URL: `https://cfuxiifpvuzvysjxztax.supabase.co` (already embedded in `pages/tc-auth.js`; reuse `TcAuth.client`, never create a second Supabase client).
 - The Supabase UMD CDN script (`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js`, `integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9"`, `crossorigin="anonymous"`) and `tc-auth.js` are already loaded on `rounds.html`, `hole.html`, and `courses.html` from the real-authentication sub-project — this plan adds `tc-rounds.js` after `tc-auth.js` on those three pages, nothing else.
-- Every new table (`rounds`, `hole_results`, `shots`) carries a denormalized `user_id` column and RLS policies scoped to `auth.uid() = user_id` — no policy may rely on a join/subquery to determine ownership.
+- **Schema note (discovered during Task 1):** the live project already had `rounds`, `round_holes`, and `shots` tables from earlier, real design work — not disposable scaffolding. This plan adapts to that existing schema (`ALTER TABLE`, not `CREATE TABLE`) instead of the invented table/column names an earlier draft of this plan used. Table names, RLS style, and exact columns are as shown in Task 1 — this is the authoritative schema for the rest of this plan.
+- `rounds` uses flat `user_id` RLS (`auth.uid() = user_id`, already in place). `round_holes` and `shots` use join-based RLS through `rounds` (already in place for `select`/`insert`; Task 1 adds the missing `update` policy on `round_holes` and `delete` policy on `shots`) — this is the existing project's established pattern for these two tables, kept as-is rather than retrofitted to a denormalized `user_id`.
 - No mid-round resume across browser sessions. `sessionStorage.tc_active_round` / `tc_round_scores` remain the live in-round buffer exactly as today; Supabase is a write-behind mirror populated at hole boundaries.
-- No fabricated Strokes Gained or handicap-differential values. `courses.html` shows `sg: null` and `diff: null` (rendered as placeholders) until the future Strokes Gained and WHS handicap engine sub-projects exist to compute them.
+- No fabricated Strokes Gained or handicap-differential values. `courses.html` shows `sg: null` and `diff: null` (rendered as placeholders) until the future Strokes Gained and WHS handicap engine sub-projects exist to compute them. (`rounds.differential` already exists in the live schema for this — leave it unwritten for now.)
 - Hole-end sync must never block or show an error to the golfer on failure — failures queue silently for retry (see Task 2).
 
 ---
 
-### Task 1: Database migration — `rounds`, `hole_results`, `shots` tables
+### Task 1: Database migration — adapt existing `rounds`/`round_holes`/`shots` tables
 
 **Files:**
-- Create: `supabase/migrations/0002_create_rounds_shots.sql`
+- Create: `supabase/migrations/0002_adapt_rounds_shots.sql`
 
 **Interfaces:**
-- Produces: `public.rounds`, `public.hole_results`, `public.shots` tables (exact columns below) with RLS enabled and `select`/`insert`/`update` policies scoped to `auth.uid() = user_id` on all three, plus a `delete` policy on `shots` only (needed by Task 2's idempotent resync — see that task's design).
+- Produces (final column set after this migration):
+  - `public.rounds`: `id, user_id, course_id* , tee_id*, course_name (new), tee_name (new), tee_yardage (new), played_at, status, gross_score, adjusted_score, differential, weather, notes, hole_count, created_at` (`*` = now nullable; app never populates these, sources course data live from OpenStreetMap instead).
+  - `public.round_holes`: `id, round_id, hole_number, gross_score, putts, fairway_hit, gir, fairway_direction, gir_direction, scramble, par (new), handicap (new)`, plus a new `unique (round_id, hole_number)` constraint.
+  - `public.shots`: unchanged columns — `id, round_id, hole_number, shot_number, club, distance_yds, lie, result, lat, lng, created_at` (references `rounds` + `hole_number` directly; no separate hole-row foreign key).
+  - New RLS policies: `round_holes` gets an `update` policy (it only had `select`/`insert`); `shots` gets a `delete` policy (it only had `select`/`insert`) — both join-based through `rounds`, matching the existing policies' style exactly.
 - This task's SQL must be run against the live Supabase project by the user via the dashboard's SQL Editor — there is no database connection string or CLI access available in this session to apply it directly. If you are an agentic implementer with no way to prompt a human synchronously, stop and report NEEDS_CONTEXT asking the controller to relay this step to the user and confirm completion before continuing to Step 3.
 
 - [ ] **Step 1: Write the migration file**
 
 ```sql
--- supabase/migrations/0002_create_rounds_shots.sql
-create table public.rounds (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id),
-  course_name text not null,
-  tee_name text,
-  tee_yardage int,
-  round_type text not null default 'Home',   -- 'Home' | 'Away' | 'Competition'
-  hole_count int not null,                    -- 9 | 18
-  status text not null default 'in_progress', -- 'in_progress' | 'complete'
-  started_at timestamptz not null default now(),
-  completed_at timestamptz
-);
+-- supabase/migrations/0002_adapt_rounds_shots.sql
 
-create table public.hole_results (
-  id uuid primary key default gen_random_uuid(),
-  round_id uuid not null references public.rounds(id) on delete cascade,
-  user_id uuid not null references auth.users(id),
-  hole_number int not null,
-  par int not null,
-  handicap int,
-  strokes int not null,
-  putts int not null,
-  fir boolean,           -- null on par 3 (not tracked) or if never toggled
-  gir boolean,           -- null only if never toggled (edge case)
-  up_and_down boolean,   -- null when not applicable (e.g. GIR hit, or par 3)
-  unique (round_id, hole_number)
-);
+-- rounds: course_id/tee_id are NOT NULL foreign keys into courses/tees
+-- tables this app never writes to (course/hole data is sourced live from
+-- OpenStreetMap via tc-course.js, never persisted to Supabase). Make them
+-- optional and add the plain-text fields the app actually has.
+alter table public.rounds alter column course_id drop not null;
+alter table public.rounds alter column tee_id drop not null;
+alter table public.rounds add column course_name text;
+alter table public.rounds add column tee_name text;
+alter table public.rounds add column tee_yardage int;
+alter table public.rounds alter column status set default 'in_progress';
+alter table public.rounds alter column played_at set default current_date;
 
-create table public.shots (
-  id uuid primary key default gen_random_uuid(),
-  hole_result_id uuid not null references public.hole_results(id) on delete cascade,
-  user_id uuid not null references auth.users(id),
-  shot_number int not null,
-  club text,
-  lat double precision,
-  lng double precision,
-  result text,            -- 'holed' | null (only 'holed' is populated today; the
-                           -- column allows future lie categories like 'fairway'/'rough')
-  distance_yards numeric
-);
+-- round_holes: add the two columns this app needs that don't exist yet,
+-- and a uniqueness constraint so hole-end syncs can safely upsert on retry.
+alter table public.round_holes add column par int;
+alter table public.round_holes add column handicap int;
+alter table public.round_holes add constraint round_holes_round_hole_unique unique (round_id, hole_number);
 
-alter table public.rounds enable row level security;
-alter table public.hole_results enable row level security;
-alter table public.shots enable row level security;
+-- Existing RLS only covers select/insert on round_holes and shots — add
+-- what's missing, matching the existing join-through-rounds policy style.
+create policy "users update own round holes"
+  on public.round_holes for update
+  using (exists (select 1 from public.rounds r where r.id = round_holes.round_id and r.user_id = auth.uid()));
 
-create policy "Users can view their own rounds"
-  on public.rounds for select using (auth.uid() = user_id);
-create policy "Users can insert their own rounds"
-  on public.rounds for insert with check (auth.uid() = user_id);
-create policy "Users can update their own rounds"
-  on public.rounds for update using (auth.uid() = user_id);
-
-create policy "Users can view their own hole results"
-  on public.hole_results for select using (auth.uid() = user_id);
-create policy "Users can insert their own hole results"
-  on public.hole_results for insert with check (auth.uid() = user_id);
-create policy "Users can update their own hole results"
-  on public.hole_results for update using (auth.uid() = user_id);
-
-create policy "Users can view their own shots"
-  on public.shots for select using (auth.uid() = user_id);
-create policy "Users can insert their own shots"
-  on public.shots for insert with check (auth.uid() = user_id);
-create policy "Users can update their own shots"
-  on public.shots for update using (auth.uid() = user_id);
-create policy "Users can delete their own shots"
-  on public.shots for delete using (auth.uid() = user_id);
+create policy "users delete own shots"
+  on public.shots for delete
+  using (exists (select 1 from public.rounds r where r.id = shots.round_id and r.user_id = auth.uid()));
 ```
 
 - [ ] **Step 2: Ask the user to apply the migration**
 
 Tell the user:
 
-> "Open your Supabase project dashboard at https://supabase.com/dashboard/project/cfuxiifpvuzvysjxztax, go to the **SQL Editor** in the left sidebar, paste the contents of `supabase/migrations/0002_create_rounds_shots.sql`, and click **Run**. Let me know once it's run successfully (or paste any error it shows)."
+> "Open your Supabase project dashboard at https://supabase.com/dashboard/project/cfuxiifpvuzvysjxztax, go to the **SQL Editor** in the left sidebar, paste the contents of `supabase/migrations/0002_adapt_rounds_shots.sql`, and click **Run**. Let me know once it's run successfully (or paste any error it shows)."
 
 Wait for the user's confirmation before proceeding to Step 3. If they report an error, read it, fix the SQL file, and ask them to run the corrected version.
 
-- [ ] **Step 3: Verify the tables exist**
+- [ ] **Step 3: Verify the changes**
 
-Ask the user to confirm via the Supabase dashboard's **Table Editor** that `rounds`, `hole_results`, and `shots` tables now exist with the columns listed above.
+Ask the user to confirm via the Supabase dashboard's **Table Editor** that `rounds` now has `course_name`/`tee_name`/`tee_yardage` columns and `course_id`/`tee_id` are nullable, and that `round_holes` now has `par`/`handicap` columns.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/0002_create_rounds_shots.sql
-git commit -m "feat: add rounds/hole_results/shots tables migration with RLS"
+git add supabase/migrations/0002_adapt_rounds_shots.sql
+git commit -m "feat: adapt existing rounds/round_holes/shots tables for app persistence"
 ```
 
 ---
@@ -132,16 +98,17 @@ git commit -m "feat: add rounds/hole_results/shots tables migration with RLS"
 - Consumes: `TcAuth.client`, `TcAuth.getSession()` from `pages/tc-auth.js` (Task 1 requires this file be loaded first on any page using `TcRounds`).
 - Produces: `window.TcRounds` object with:
   - `TcRounds.createRound({ courseName, teeName, teeYardage, holeCount })` → `Promise<string|null>` — inserts a `rounds` row, returns its `id`, or `null` if it fails (offline/error; caller proceeds without one).
-  - `TcRounds.syncHole({ holeNumber, par, handicap, strokes, putts, fir, gir, upAndDown, shots })` → `Promise<void>` — queues this hole's result + shots for sync and attempts immediate delivery; never throws.
+  - `TcRounds.syncHole({ holeNumber, par, handicap, strokes, putts, fir, gir, upAndDown, fairwayDirection, girDirection, shots })` → `Promise<void>` — queues this hole's result + shots for sync and attempts immediate delivery; never throws. `fairwayDirection`/`girDirection` are the raw toggle label text (e.g. `'Missed L'`, `'Sand Save'`) — richer detail the existing schema already has a column for.
   - `TcRounds.completeRound()` → `Promise<void>` — queues a "mark round complete" step behind any pending hole syncs for the current active round; never throws.
   - `TcRounds.drainPendingSyncs()` → `Promise<void>` — attempts to flush anything still queued in `sessionStorage.tc_pending_syncs`; safe to call anytime, no-ops if nothing is queued or a drain is already in flight.
   - `TcRounds.fetchUserRounds()` → `Promise<Array|null>` — fetches the signed-in user's completed rounds (newest first), each transformed into the exact object shape `pages/courses.html`'s `ROUNDS` array already expects (see Task 5). Returns `null` on fetch failure (network/auth error) so the caller can distinguish "failed" from "genuinely zero rounds" (`[]`).
 - Reads/writes `sessionStorage.tc_active_round` (for `roundId`/course/tee/hole-count context during the repair path — see Step 1) and `sessionStorage.tc_pending_syncs` (the retry queue) — same storage keys `rounds.html`/`hole.html` already use.
+- Writes to the real schema from Task 1: `rounds` (`course_name`, `tee_name`, `tee_yardage`, `hole_count`, `status`, `played_at` default), `round_holes` (`round_id`, `hole_number`, `par`, `handicap`, `gross_score`, `putts`, `fairway_hit`, `gir`, `fairway_direction`, `gir_direction`, `scramble`), `shots` (`round_id`, `hole_number`, `shot_number`, `club`, `lat`, `lng`, `result`, `distance_yds`). `round_holes`/`shots` have no `user_id` column — their RLS is join-based through `rounds`, so writes to them never include `user_id`.
 
 - [ ] **Step 1: Create `pages/tc-rounds.js`**
 
 ```js
-/* tc-rounds.js — Rounds/hole-results/shots persistence to Supabase.
+/* tc-rounds.js — Rounds/round-holes/shots persistence to Supabase.
    Requires tc-auth.js to be loaded first (uses TcAuth.client / TcAuth.getSession()). */
 window.TcRounds = (() => {
   let draining = false;
@@ -201,22 +168,20 @@ window.TcRounds = (() => {
   }
 
   async function writeHoleResult(roundId, payload) {
-    const session = await TcAuth.getSession();
-    if (!session) return false;
-
     const { data, error } = await TcAuth.client
-      .from('hole_results')
+      .from('round_holes')
       .upsert({
         round_id: roundId,
-        user_id: session.user.id,
         hole_number: payload.holeNumber,
         par: payload.par,
         handicap: payload.handicap,
-        strokes: payload.strokes,
+        gross_score: payload.strokes,
         putts: payload.putts,
-        fir: payload.fir,
+        fairway_hit: payload.fir,
         gir: payload.gir,
-        up_and_down: payload.upAndDown
+        fairway_direction: payload.fairwayDirection,
+        gir_direction: payload.girDirection,
+        scramble: payload.upAndDown
       }, { onConflict: 'round_id,hole_number' })
       .select('id')
       .single();
@@ -224,19 +189,23 @@ window.TcRounds = (() => {
 
     // Idempotent under retries: clear any shots from a prior partial attempt
     // for this hole before re-inserting, so a retry never double-writes shots.
-    const { error: delError } = await TcAuth.client.from('shots').delete().eq('hole_result_id', data.id);
+    const { error: delError } = await TcAuth.client
+      .from('shots')
+      .delete()
+      .eq('round_id', roundId)
+      .eq('hole_number', payload.holeNumber);
     if (delError) { console.error('TcRounds: failed to clear old shots before resync', delError); return false; }
 
     if (payload.shots && payload.shots.length > 0) {
       const shotRows = payload.shots.map(s => ({
-        hole_result_id: data.id,
-        user_id: session.user.id,
+        round_id: roundId,
+        hole_number: payload.holeNumber,
         shot_number: s.shotNumber,
         club: s.club,
         lat: s.lat,
         lng: s.lng,
         result: s.result,
-        distance_yards: s.distanceYards
+        distance_yds: s.distanceYards
       }));
       const { error: shotsError } = await TcAuth.client.from('shots').insert(shotRows);
       if (shotsError) { console.error('TcRounds: failed to sync shots', shotsError); return false; }
@@ -249,7 +218,7 @@ window.TcRounds = (() => {
     if (!session) return false;
     const { error } = await TcAuth.client
       .from('rounds')
-      .update({ status: 'complete', completed_at: new Date().toISOString() })
+      .update({ status: 'complete' })
       .eq('id', roundId)
       .eq('user_id', session.user.id);
     if (error) { console.error('TcRounds: failed to complete round', error); return false; }
@@ -295,32 +264,32 @@ window.TcRounds = (() => {
   }
 
   function transformRound(row) {
-    const holesData = [...row.hole_results].sort((a, b) => a.hole_number - b.hole_number);
-    const holes = holesData.map(h => h.strokes);
+    const holesData = [...row.round_holes].sort((a, b) => a.hole_number - b.hole_number);
+    const holes = holesData.map(h => h.gross_score);
     const pars  = holesData.map(h => h.par);
     const gross = holes.reduce((a, b) => a + b, 0);
     const totalPar = pars.reduce((a, b) => a + b, 0);
     const score = gross - totalPar;
 
     const pct = (arr, pred) => arr.length ? Math.round(arr.filter(pred).length / arr.length * 100) : 0;
-    const firHoles = holesData.filter(h => h.fir !== null);
+    const firHoles = holesData.filter(h => h.fairway_hit !== null);
     const girHoles = holesData.filter(h => h.gir !== null);
-    const udHoles  = holesData.filter(h => h.up_and_down !== null);
-    const fir = pct(firHoles, h => h.fir);
+    const udHoles  = holesData.filter(h => h.scramble !== null);
+    const fir = pct(firHoles, h => h.fairway_hit);
     const gir = pct(girHoles, h => h.gir);
-    const upDown = pct(udHoles, h => h.up_and_down);
+    const upDown = pct(udHoles, h => h.scramble);
     const putts = holesData.reduce((a, h) => a + (h.putts || 0), 0);
 
-    const started = new Date(row.started_at);
-    const date  = started.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const month = started.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const played = new Date(row.played_at);
+    const date  = played.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const month = played.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
     return {
       id: row.id,
-      course: row.course_name,
+      course: row.course_name || 'Unknown Course',
       date, month,
       tee: row.tee_name ? `${row.tee_name}${row.tee_yardage ? ' · ' + row.tee_yardage.toLocaleString() + ' yds' : ''}` : '—',
-      type: row.round_type || 'Home',
+      type: 'Home', // no round_type column in the live schema; nothing in the UI sets this yet
       score, gross, diff: null,
       fir, gir, putts, up_down: upDown,
       sg: null,
@@ -334,10 +303,10 @@ window.TcRounds = (() => {
     if (!session) return null;
     const { data, error } = await TcAuth.client
       .from('rounds')
-      .select('id, course_name, tee_name, tee_yardage, round_type, started_at, completed_at, status, hole_results(hole_number, par, strokes, putts, fir, gir, up_and_down)')
+      .select('id, course_name, tee_name, tee_yardage, played_at, status, round_holes(hole_number, par, gross_score, putts, fairway_hit, gir, scramble)')
       .eq('user_id', session.user.id)
       .eq('status', 'complete')
-      .order('started_at', { ascending: false });
+      .order('played_at', { ascending: false });
     if (error) { console.error('TcRounds: failed to fetch rounds', error); return null; }
     return data.map(transformRound);
   }
@@ -566,7 +535,7 @@ function buildShotsPayload() {
     const prev = i > 0 ? hLoggedShots[i - 1] : null;
     const fromLL = prev?.latlng ?? TEE_LL;
     const distanceYards = pos.latlng
-      ? Math.round(TcCourse.haversineYds(fromLL, pos.latlng) * 10) / 10
+      ? Math.round(TcCourse.haversineYds(fromLL, pos.latlng))
       : null;
     return {
       shotNumber: log.num ?? (i + 1),
@@ -610,6 +579,8 @@ function hSaveAndNext() {
   updated.push({ hole: _holeNum, par: PAR, strokes: hShotCount });
   sessionStorage.setItem('tc_round_scores', JSON.stringify(updated));
 
+  const firLabels = ['FIR', 'Missed L', 'Missed R', 'Bunker'];
+  const greenLabels = PAR === 3 ? ['GIR', 'GIR Miss', 'Bunker', 'Water'] : ['GIR', 'GIR Miss', 'Scramble', 'Sand Save'];
   const firSt = PAR === 3 ? null : togState(document.getElementById('trow-fir'));
   const girSt = togState(document.getElementById('trow-green'));
   const upAndDown = (PAR !== 3 && girSt && girSt.idx !== 0) ? (girSt.idx === 2 || girSt.idx === 3) : null;
@@ -623,6 +594,8 @@ function hSaveAndNext() {
     fir: firSt ? firSt.idx === 0 : null,
     gir: girSt ? girSt.idx === 0 : null,
     upAndDown,
+    fairwayDirection: firSt ? firLabels[firSt.idx] : null,
+    girDirection: girSt ? greenLabels[girSt.idx] : null,
     shots: buildShotsPayload()
   }).catch(err => console.error('TcRounds: syncHole failed unexpectedly', err));
 
@@ -636,6 +609,8 @@ function hSaveAndNext() {
   navigate('hole');
 }
 ```
+
+(`firLabels`/`greenLabels` here are duplicated from the identical arrays already defined inside `buildSummaryMap` — they're small, local, and `buildSummaryMap` isn't guaranteed to have run before every `hSaveAndNext` call, so this keeps `hSaveAndNext` self-contained rather than reaching into another function's scope.)
 
 - [ ] **Step 5: Attempt to drain any stuck pending syncs on page load**
 
@@ -675,7 +650,7 @@ Expected: no visible errors during play; the browser devtools console shows no `
 
 With devtools open, start a round, play hole 1 normally, then enable devtools' offline mode (Network tab → Offline) before confirming hole 1's score. Confirm the hole-out flow completes without any visible error or delay. Disable offline mode, then confirm hole 2.
 
-Expected: hole 1 confirms and hole 2 confirms with no visible difference in behavior from Step 7. Check the Supabase dashboard's Table Editor after both holes are confirmed: both hole 1 and hole 2 should have a row in `hole_results` (hole 1's synced once connectivity returned, either via the `online` listener or via hole 2's own `syncHole` call draining the queue first).
+Expected: hole 1 confirms and hole 2 confirms with no visible difference in behavior from Step 7. Check the Supabase dashboard's Table Editor after both holes are confirmed: both hole 1 and hole 2 should have a row in `round_holes` (hole 1's synced once connectivity returned, either via the `online` listener or via hole 2's own `syncHole` call draining the queue first).
 
 - [ ] **Step 9: Commit**
 
@@ -1010,9 +985,9 @@ git commit -m "feat: courses.html — load real rounds from Supabase instead of 
 
 | Spec requirement | Task |
 |---|---|
-| `rounds`/`hole_results`/`shots` schema, denormalized `user_id`, RLS | Task 1 |
+| `rounds`/`round_holes`/`shots` schema (adapted to existing live tables), RLS | Task 1 |
 | Round-start insert | Task 3 |
-| Hole-end batch insert (hole_results + shots) | Task 4, `TcRounds.syncHole` (Task 2) |
+| Hole-end batch insert (round_holes + shots) | Task 4, `TcRounds.syncHole` (Task 2) |
 | Round-complete update on last hole | Task 4, `TcRounds.completeRound` (Task 2) |
 | Offline retry queue, drain on reconnect + on next hole-end | Task 2 (`drainPendingSyncs`, `online` listener), Task 4 Step 5 (drain on page load) |
 | Round-start insert failure doesn't block play; repaired later | Task 2 `ensureRoundId` |
@@ -1023,9 +998,7 @@ git commit -m "feat: courses.html — load real rounds from Supabase instead of 
 
 **Note on RLS cross-account verification:** the spec's verification step 5 ("a second test account cannot read the first account's rounds") isn't automatable from this session (no direct DB access) and isn't exercised by the single-account browser walkthrough in Task 5 Step 13. If you want this checked, ask the user to run, in the Supabase SQL Editor while authenticated as a second test user: `select * from rounds;` — expect zero rows returned for any account other than the one that created them.
 
-**Refinements made beyond the spec's schema sketch (both narrower in effect, not contradicting it):**
-- Added a `delete` RLS policy on `shots` only (not `rounds`/`hole_results`) — needed internally by `writeHoleResult`'s idempotent resync (delete-then-insert), not a user-facing delete feature.
-- Relaxed `hole_results.gir` from `not null` to nullable, matching `fir`'s existing nullability, to avoid a constraint violation in the rare edge case where a hole is confirmed with the green toggle never touched.
+**Schema deviation from the spec (discovered executing Task 1, not a refinement — see the spec's addendum and this plan's Global Constraints):** the live Supabase project already had real `rounds`/`round_holes`/`shots` tables with join-based RLS on `round_holes`/`shots`. This plan adapts to that schema via `ALTER TABLE` rather than creating the spec's invented `hole_results` table with flat `user_id` RLS. Net effect on the design is cosmetic (table/column names, RLS style) — the architecture (three write triggers, offline queue, `courses.html` read path, no fabricated `sg`/`diff`) is unchanged. Two RLS gaps in the existing tables were filled (added `update` on `round_holes`, `delete` on `shots`) since the sync logic needs both and neither existed yet.
 
 **Placeholder scan:** no TBD/TODO; every step has literal code or an exact verification procedure.
 
