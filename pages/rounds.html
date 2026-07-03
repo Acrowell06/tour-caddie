@@ -384,13 +384,59 @@ const COURSES_FAV = [
   { name:'TPC Sawgrass',         location:'Ponte Vedra Beach, FL', lat:30.1975, lng:-81.3965,  fav:false },
   { name:'Bethpage Black',       location:'Farmingdale, NY',       lat:40.7282, lng:-73.4562,  fav:false },
 ];
-const TEES = [
-  { name:'Black',  color:'#1a1a2e', yds:7322, rating:76.1, slope:145 },
-  { name:'Blue',   color:'#1a3a8f', yds:6982, rating:74.2, slope:140 },
-  { name:'White',  color:'#e0e0e0', yds:6451, rating:71.8, slope:133 },
-  { name:'Gold',   color:'#c9a227', yds:5980, rating:69.4, slope:125 },
-  { name:'Red',    color:'#c0392b', yds:5320, rating:70.2, slope:128 },
+const TEE_CANONICAL = [
+  { key:'tips',  name:'Black', color:'#1a1a2e' },
+  { key:'blue',  name:'Blue',  color:'#1a3a8f' },
+  { key:'white', name:'White', color:'#e0e0e0' },
+  { key:'gold',  name:'Gold',  color:'#c9a227' },
+  { key:'red',   name:'Red',   color:'#c0392b' },
 ];
+
+let teeCourseData = null; // holes_data for the selected course, once TcCourse.loadNear resolves
+
+function sameLatLng(a, b) {
+  return !!a && !!b && a.lat === b.lat && a.lng === b.lng;
+}
+
+// Groups the 5 canonical tee keys by identical 18-hole position sequence.
+// A key only gets a computed yardage if its sequence is unique among the 5 —
+// shared sequences mean OSM's "fill missing tees from any available one"
+// fallback duplicated one real position across multiple canonical names,
+// and there's no way to tell which (if any) name it actually belongs to.
+function computeTeeYardages(holesData) {
+  const result = {};
+  if (!holesData || holesData.length === 0) {
+    TEE_CANONICAL.forEach(t => { result[t.key] = null; });
+    return result;
+  }
+
+  const sequences = TEE_CANONICAL.map(t => holesData.map(h => h.tees?.[t.key] ?? null));
+  const groupOf = {};
+  TEE_CANONICAL.forEach((t, i) => {
+    let group = t.key;
+    for (let j = 0; j < i; j++) {
+      const same = sequences[i].every((pos, h) => sameLatLng(pos, sequences[j][h]));
+      if (same) { group = groupOf[TEE_CANONICAL[j].key]; break; }
+    }
+    groupOf[t.key] = group;
+  });
+  const groupCounts = {};
+  Object.values(groupOf).forEach(g => { groupCounts[g] = (groupCounts[g] || 0) + 1; });
+
+  TEE_CANONICAL.forEach((t, i) => {
+    if (groupCounts[groupOf[t.key]] > 1) { result[t.key] = null; return; }
+    let total = 0;
+    let complete = true;
+    for (let h = 0; h < holesData.length; h++) {
+      const teePos = sequences[i][h];
+      const greenCtr = holesData[h].green?.center;
+      if (!teePos || !greenCtr) { complete = false; break; }
+      total += TcCourse.haversineYds(teePos, greenCtr);
+    }
+    result[t.key] = complete ? Math.round(total) : null;
+  });
+  return result;
+}
 
 function today() {
   const d = new Date();
@@ -442,7 +488,7 @@ async function startRound() {
   const holesCount = sel.holes === 9 ? 9 : sel.holes === 'custom' ? (sel.customHoles || 18) : 18;
   const roundData = {
     course: sel.course,
-    tee: (sel.tee?.name || 'white').toLowerCase(),
+    tee: sel.tee?.key || 'white',
     teeYardage: sel.tee?.yds || null,
     holes: holesCount,
     holes_data: null,
@@ -649,6 +695,13 @@ function renderCourseList(list, container) {
       document.querySelectorAll('.course-row').forEach(r => r.classList.remove('selected'));
       row.classList.add('selected');
       document.getElementById('setup-next-btn').disabled = false;
+      teeCourseData = null;
+      if (c.lat && c.lng) {
+        TcCourse.loadNear(c.lat, c.lng).then(data => {
+          teeCourseData = data?.holes ?? null;
+          renderTeeList();
+        }).catch(() => { teeCourseData = null; });
+      }
     };
     container.appendChild(row);
   });
@@ -735,6 +788,33 @@ function renderHoles(body) {
 }
 
 /* ── STEP: ROUND DETAILS (tee, starting hole, score type, date, handicap — all one page) ── */
+function renderTeeList() {
+  const teeList = document.getElementById('rd-tee-list');
+  if (!teeList) return;
+  const yardages = computeTeeYardages(teeCourseData);
+  teeList.innerHTML = '';
+  TEE_CANONICAL.forEach(t => {
+    const yds = yardages[t.key];
+    const d = document.createElement('div');
+    d.className = 'radio-opt' + (sel.tee && sel.tee.key === t.key ? ' selected' : '');
+    d.innerHTML = `
+      <div class="ro-dot"></div>
+      <div class="tee-swatch" style="background:${t.color};border:1px solid rgba(255,255,255,0.2);"></div>
+      <div class="ro-info">
+        <div class="ro-name">${t.name}</div>
+        <div class="ro-sub">${yds != null ? yds.toLocaleString() + ' yds' : 'Yardage unknown'}</div>
+      </div>`;
+    d.onclick = () => {
+      sel.tee = { name: t.name, key: t.key, color: t.color, yds };
+      teeList.querySelectorAll('.radio-opt').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+      updateRatingSlopePrompt();
+      document.getElementById('setup-next-btn').disabled = !canAdvance();
+    };
+    teeList.appendChild(d);
+  });
+}
+
 function renderRoundDetails(body) {
   sel.startHole = sel.startHole || 1;
 
@@ -871,27 +951,7 @@ function renderRoundDetails(body) {
     </div>
     <div style="height:16px;"></div>`;
 
-  /* Tees */
-  const teeList = document.getElementById('rd-tee-list');
-  TEES.forEach(t => {
-    const d = document.createElement('div');
-    d.className = 'radio-opt' + (sel.tee && sel.tee.name === t.name ? ' selected' : '');
-    d.innerHTML = `
-      <div class="ro-dot"></div>
-      <div class="tee-swatch" style="background:${t.color};border:1px solid rgba(255,255,255,0.2);"></div>
-      <div class="ro-info">
-        <div class="ro-name">${t.name}</div>
-        <div class="ro-sub">${t.yds} yds · Rating ${t.rating} · Slope ${t.slope}</div>
-      </div>`;
-    d.onclick = () => {
-      sel.tee = t;
-      teeList.querySelectorAll('.radio-opt').forEach(x => x.classList.remove('selected'));
-      d.classList.add('selected');
-      updateRatingSlopePrompt();
-      document.getElementById('setup-next-btn').disabled = !canAdvance();
-    };
-    teeList.appendChild(d);
-  });
+  renderTeeList();
 
   /* Starting hole chips — all 18, default highlighted on 1 */
   const chipsEl = document.getElementById('hole-chips');
