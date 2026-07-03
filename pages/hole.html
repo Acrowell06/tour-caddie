@@ -1530,7 +1530,10 @@ function hSaveAndNext() {
   }).catch(err => console.error('TcRounds: syncHole failed unexpectedly', err));
 
   if (_isLastHole || !_round) {
-    TcRounds.completeRound().catch(err => console.error('TcRounds: completeRound failed unexpectedly', err));
+    TcRounds.completeRound({
+      courseRating: _round?.ratingSlope?.rating ?? null,
+      slopeRating: _round?.ratingSlope?.slope ?? null
+    }).catch(err => console.error('TcRounds: completeRound failed unexpectedly', err));
     window.location.href = 'scorecard.html';
     return;
   }
