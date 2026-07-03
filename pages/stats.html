@@ -218,6 +218,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <script src="tc-auth.js"></script>
+<script src="tc-rounds.js"></script>
+<script src="tc-handicap.js"></script>
 <script src="tc-utils.js"></script>
 <script>
 (async () => { await TcAuth.requireAuth(); })();
@@ -293,9 +295,9 @@ const CATS = [
   {
     id:'handicap',
     name:'Handicap', icon:'🏅', color:'#2ECC71',
-    val:'+1.8', lbl:'WHS INDEX', trend:'▼ 0.3', tc:'g',
-    desc:'WHS Handicap Index · trending lower',
-    chips:['Low: +0.9','20 diffs','Playing +2'],
+    val:'—', lbl:'WHS INDEX', trend:null, tc:'g',
+    desc:'WHS Handicap Index',
+    chips:[],
   },
 ];
 
@@ -750,46 +752,81 @@ function renderConditions(body) {
 }
 
 /* ══ 8. HANDICAP ══ */
-function renderHandicap(body) {
-  const diffs = [
-    {date:'Jun 27',course:'Riviera CC',   score:'70',diff:'+0.1',good:true, used:true },
-    {date:'Jun 22',course:'Pebble Beach', score:'72',diff:'+1.8',good:false,used:true },
-    {date:'Jun 15',course:'Augusta Natl', score:'75',diff:'+2.9',good:false,used:false},
-    {date:'Jun 8', course:'TPC Sawgrass', score:'71',diff:'+0.9',good:true, used:true },
-    {date:'Jun 1', course:'Torrey Pines', score:'73',diff:'+1.9',good:false,used:true },
-    {date:'May 25',course:'LA CC',        score:'71',diff:'−0.3',good:true, used:true },
-    {date:'May 18',course:'Riviera CC',   score:'71',diff:'+0.8',good:true, used:true },
-    {date:'May 11',course:'Bethpage Blk', score:'74',diff:'+2.4',good:false,used:false},
-  ];
+function escHtmlStats(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function renderHandicap(body) {
+  body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Loading…</div>';
+
+  const session = await TcAuth.getSession();
+  if (!session) { body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Sign in to see your handicap.</div>'; return; }
+
+  const { data: profile } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
+  const currentIndex = profile?.handicap_index ?? null;
+
+  const { data: rounds, error } = await TcAuth.client
+    .from('rounds')
+    .select('id, course_name, gross_score, hole_count, differential, played_at, completed_at')
+    .eq('user_id', session.user.id)
+    .eq('status', 'complete')
+    .not('differential', 'is', null)
+    .order('completed_at', { ascending: false, nullsFirst: false })
+    .limit(50);
+
+  if (error || !rounds || rounds.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">No handicap-eligible rounds yet.</div>';
+    return;
+  }
+
+  const entries = TcHandicap.pairNineHoleDifferentials(rounds);
+  const { usedRoundIds } = TcHandicap.computeHandicapIndex(entries);
+
+  // Low/High here are the lowest/highest individual round differential in the
+  // last 365 days — a simplification of WHS's real "lowest/highest the index
+  // itself has been," which would require reconstructing the index at every
+  // historical point in time. Out of scope for this sub-project.
+  const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const recentDiffs = rounds
+    .filter(r => new Date(r.completed_at || r.played_at).getTime() >= oneYearAgo)
+    .map(r => r.differential);
+  const low  = recentDiffs.length ? Math.min(...recentDiffs) : null;
+  const high = recentDiffs.length ? Math.max(...recentDiffs) : null;
+  const fmtSigned = v => v == null ? '—' : (v >= 0 ? '+' : '') + v;
+
+  const indexLabel = currentIndex == null ? '—' : fmtSigned(currentIndex);
+  const trackedCount = Math.min(rounds.length, 20);
 
   body.innerHTML = `
     <div style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;">
-      <div style="font-size:46px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1;">+1.8</div>
+      <div style="font-size:46px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1;">${indexLabel}</div>
       <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">WHS HANDICAP INDEX</div>
-      <div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:700;">▼ 0.3 · trending lower (improving)</div>
     </div>` +
 
     kpi([
-      {v:'+0.9',l:'LOW (365 DAY)', c:'var(--green)'},
-      {v:'+1.8',l:'CURRENT',       c:'var(--green)'},
-      {v:'+2.4',l:'HIGH (365 DAY)',c:'var(--muted)'},
-      {v:'20',  l:'DIFFS TRACKED', c:'#fff'},
+      {v:fmtSigned(low),  l:'LOW (365 DAY)', c:'var(--green)'},
+      {v:indexLabel,      l:'CURRENT',       c:'var(--green)'},
+      {v:fmtSigned(high), l:'HIGH (365 DAY)',c:'var(--muted)'},
+      {v:String(trackedCount), l:'DIFFS TRACKED', c:'#fff'},
     ], 4) +
 
     `<div class="ds-sec">Recent Differentials</div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
       <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span> used in index &nbsp;
-      <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15);display:inline-block;"></span> excluded
+      <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15);display:inline-block;"></span> excluded / pending
     </div>` +
 
-    diffs.map(d => {
-      const vc = d.good ? 'var(--green)' : parseFloat(d.diff) > 2 ? 'var(--red)' : '#fff';
+    rounds.map(r => {
+      const dateObj = new Date(r.played_at);
+      const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const vc = r.differential < 0 ? 'var(--green)' : r.differential > 2 ? 'var(--red)' : '#fff';
+      const used = usedRoundIds.has(r.id);
       return `<div class="diff-row">
-        <div class="diff-date">${d.date}</div>
-        <div class="diff-course">${d.course}</div>
-        <div class="diff-score">${d.score}</div>
-        <div class="diff-val" style="color:${vc}">${d.diff}</div>
-        <div class="diff-dot" style="background:${d.used ? 'var(--green)' : 'rgba(255,255,255,0.15)'};"></div>
+        <div class="diff-date">${dateLabel}</div>
+        <div class="diff-course">${escHtmlStats(r.course_name)}${r.hole_count === 9 ? ' (9)' : ''}</div>
+        <div class="diff-score">${r.gross_score ?? '—'}</div>
+        <div class="diff-val" style="color:${vc}">${fmtSigned(r.differential)}</div>
+        <div class="diff-dot" style="background:${used ? 'var(--green)' : 'rgba(255,255,255,0.15)'};"></div>
       </div>`;
     }).join('') +
     '<div style="height:12px;"></div>';
