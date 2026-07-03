@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tour Caddie — Interactive Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0A0A0F; --surface: #141420; --surface2: #1C1C2E;
+  --border: #1E1E2E; --green: #2ECC71; --gold: #F1C40F;
+  --white: #FFFFFF; --muted: #8B8BA7; --dim: #5A5A7A; --red: #E74C3C;
+}
+body {
+  background: #030305; font-family: 'Inter', sans-serif; color: #fff;
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 36px 20px 60px; gap: 18px;
+}
+h1 { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--dim); }
+h2 { font-size: 26px; font-weight: 900; }
+h2 span { color: var(--green); }
+.sub { color: var(--muted); font-size: 13px; }
+.flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.step { padding: 5px 11px; border-radius: 99px; font-size: 11px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.2s; user-select: none; }
+.step:hover { border-color: rgba(46,204,113,0.3); color: rgba(255,255,255,0.7); }
+.step.on { background: rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.4); color: var(--green); }
+.arr { color: var(--dim); font-size: 11px; }
+
+/* Phone */
+.phone { width: 320px; height: 693px; background: var(--bg); border-radius: 44px; border: 1.5px solid #2A2A3E; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.04) inset; flex-shrink: 0; }
+.phone::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 28px; background: #000; border-radius: 0 0 18px 18px; z-index: 300; }
+.wrap { position: absolute; inset: 0; border-radius: 44px; overflow: hidden; }
+.scr { position: absolute; inset: 0; display: flex; flex-direction: column; padding-top: 28px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; transform: translateX(100%); }
+.scr::-webkit-scrollbar { display: none; }
+.scr.show { transform: translateX(0); }
+.st { display: flex; justify-content: space-between; padding: 5px 22px 2px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.55); flex-shrink: 0; }
+
+/* Score bar */
+.sb { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.sb-l { display: flex; flex-direction: column; }
+.stp { font-size: 22px; font-weight: 900; line-height: 1; }
+.neg { color: var(--green); } .pos { color: var(--red); } .evn { color: #fff; }
+.sth { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0.5px; margin-top: 1px; }
+.sdv { width: 1px; height: 36px; background: var(--border); }
+.sb-r { display: flex; flex-direction: column; align-items: flex-end; }
+.shl { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; }
+.shd { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 1px; }
+.dots { display: flex; gap: 4px; margin-top: 3px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; border: 1.5px solid var(--border); }
+.d-ok { background: rgba(46,204,113,0.2); border-color: var(--green); color: var(--green); }
+.d-cur { border-style: dashed; border-color: #fff; }
+.d-gld { border-style: dashed; border-color: var(--gold); }
+
+/* Undo bar */
+.undo-bar { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 6px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.undo-ctx { font-size: 11px; color: var(--muted); font-weight: 500; }
+.undo-ctx strong { color: rgba(255,255,255,0.75); font-weight: 700; }
+.undo-btn { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 7px; background: rgba(231,76,60,0.08); border: 1px solid rgba(231,76,60,0.3); font-size: 11px; font-weight: 700; color: var(--red); cursor: pointer; transition: all 0.12s; user-select: none; }
+.undo-btn:active { transform: scale(0.94); }
+.undo-btn.dim { opacity: 0.25; pointer-events: none; }
+
+/* Map */
+.map { position: relative; overflow: hidden; flex-shrink: 0; background: #0B1210; }
+.map svg { display: block; width: 100%; }
+.dpill { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(10,10,15,0.88); border: 1px solid var(--green); border-radius: 50px; padding: 5px 14px; font-size: 11px; font-weight: 700; color: var(--green); white-space: nowrap; backdrop-filter: blur(8px); transition: all 0.2s; }
+.dpill-w { border-color: rgba(255,255,255,0.25); color: #fff; }
+.mbtns { position: absolute; bottom: 10px; right: 10px; display: flex; flex-direction: column; gap: 6px; z-index: 10; }
+.mbtn { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid transparent; white-space: nowrap; transition: transform 0.1s, opacity 0.1s; }
+.mbtn:active { transform: scale(0.96); opacity: 0.85; }
+.mbtn-g { background: var(--green); color: #000; box-shadow: 0 2px 10px rgba(46,204,113,0.3); }
+.mbtn-gold { background: var(--gold); color: #000; box-shadow: 0 2px 10px rgba(241,196,15,0.3); }
+.mbtn-s { background: rgba(20,20,32,0.9); border-color: var(--border); color: #fff; backdrop-filter: blur(8px); }
+.mchips { position: absolute; top: 8px; left: 10px; display: flex; gap: 5px; z-index: 10; }
+.mc { background: rgba(10,10,15,0.88); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 4px 8px; backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; }
+.mc-lbl { font-size: 8px; color: var(--muted); font-weight: 600; }
+.mc-val { font-size: 14px; font-weight: 900; line-height: 1.1; }
+.mc-grn { border-color: rgba(46,204,113,0.3); }
+.mc-grn .mc-lbl { color: var(--green); }
+.mc-grn .mc-val { color: var(--green); font-size: 11px; }
+.map-view-toggle { position:absolute; top:8px; right:10px; z-index:11; display:flex; gap:2px; background:rgba(10,10,15,0.82); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:3px; backdrop-filter:blur(8px); }
+.mvt-btn { padding:4px 11px; border-radius:6px; font-size:10px; font-weight:700; color:var(--muted); cursor:pointer; transition:all 0.15s; user-select:none; }
+.mvt-btn.active { background:rgba(46,204,113,0.18); color:var(--green); }
+
+/* ─── GPS ADJUSTMENT BAR ─── */
+.gps-bar {
+  position: relative; z-index: 20;
+  max-height: 0; overflow: hidden; margin-bottom: 0;
+  transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1), margin-bottom 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.gps-bar.show { max-height: 160px; margin-bottom: -160px; }
+.gps-bar-inner {
+  padding: 10px 12px 13px;
+  background: rgba(8,8,14,0.97);
+  border-top: 1px solid rgba(46,204,113,0.35);
+}
+.gps-bar-top {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+}
+.gps-dot { width: 8px; height: 8px; background: var(--gold); border-radius: 50%; box-shadow: 0 0 6px rgba(241,196,15,0.6); flex-shrink: 0; }
+.gps-lbl { font-size: 12px; font-weight: 700; color: var(--gold); }
+.gps-acc { font-size: 10px; color: var(--muted); margin-left: auto; }
+.gps-bar-hint { font-size: 10px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.gps-bar-hint strong { color: rgba(255,255,255,0.8); }
+.gps-actions { display: flex; gap: 8px; }
+.gps-cancel { flex: 1; background: rgba(231,76,60,0.08); border: 1px solid rgba(231,76,60,0.3); border-radius: 9px; padding: 9px; font-size: 12px; font-weight: 700; color: var(--red); cursor: pointer; transition: all 0.12s; }
+.gps-cancel:active { transform: scale(0.96); }
+.gps-confirm { flex: 1.6; background: var(--green); border: none; border-radius: 9px; padding: 9px; font-size: 12px; font-weight: 700; color: #000; cursor: pointer; transition: all 0.12s; }
+.gps-confirm:active { transform: scale(0.97); }
+
+/* Toggles */
+.tsec { padding: 8px 12px 4px; flex-shrink: 0; }
+.tgl { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.trow { display: flex; gap: 6px; margin-bottom: 6px; }
+.tog { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 4px; text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+.tog:active { transform: scale(0.96); }
+.t-g { background: rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.4); color: var(--green); }
+.t-y { background: rgba(241,196,15,0.1); border-color: rgba(241,196,15,0.35); color: var(--gold); }
+.t-r { background: rgba(231,76,60,0.1); border-color: rgba(231,76,60,0.35); color: var(--red); }
+
+/* Putts */
+.prow { display: flex; align-items: center; gap: 8px; padding: 2px 12px 8px; flex-shrink: 0; }
+.plbl { font-size: 11px; color: var(--muted); font-weight: 600; flex-shrink: 0; }
+.pbtns { display: flex; gap: 5px; }
+.pb { width: 28px; height: 28px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); font-size: 12px; font-weight: 700; color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.12s; }
+.pb:active { transform: scale(0.93); }
+.pb-on { background: rgba(46,204,113,0.12); border-color: var(--green); color: var(--green); }
+.pb-off { opacity: 0.35; pointer-events: none; }
+.phint { font-size: 10px; color: var(--dim); margin-left: 4px; }
+
+/* CTA */
+.cta { margin: 4px 12px 12px; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.12s; flex-shrink: 0; }
+.cta:active { transform: scale(0.98); }
+.cta-g { background: var(--green); color: #000; box-shadow: 0 2px 12px rgba(46,204,113,0.25); }
+.cta-gold { background: var(--gold); color: #000; box-shadow: 0 2px 12px rgba(241,196,15,0.25); }
+.cta-dim { background: var(--surface2); color: var(--dim); border: 1px solid var(--border); pointer-events: none; }
+
+/* Toast */
+.toast { position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%); background: rgba(20,20,32,0.96); border: 1px solid rgba(231,76,60,0.3); border-radius: 10px; padding: 8px 14px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9); white-space: nowrap; z-index: 150; backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.toast.show { opacity: 1; }
+
+/* ─── LOGIN ─── */
+.lg-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(39,174,96,0.18) 0%, transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(46,204,113,0.08) 0%, transparent 50%), linear-gradient(165deg, #050F08 0%, #0A0A0F 40%, #06100A 100%); z-index: 0; }
+.lg-con { position: relative; z-index: 2; display: flex; flex-direction: column; padding: 0 24px 18px; height: 100%; }
+.lg-logo { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-bottom: 6px; }
+.lg-badge { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.2); border-radius: 50px; padding: 4px 12px; font-size: 10px; color: var(--green); font-weight: 600; margin-bottom: 14px; }
+.lg-icon { width: 62px; height: 62px; background: linear-gradient(135deg, rgba(46,204,113,0.2), rgba(39,174,96,0.08)); border: 1px solid rgba(46,204,113,0.3); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(46,204,113,0.15); }
+.lg-ttl { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; }
+.lg-sub { font-size: 13px; color: var(--muted); }
+.lg-form { display: flex; flex-direction: column; gap: 9px; }
+.lg-inp { background: rgba(20,20,32,0.8); border: 1px solid rgba(46,204,113,0.15); border-radius: 11px; padding: 13px 15px; color: var(--muted); font-size: 14px; font-family: 'Inter',sans-serif; width: 100%; outline: none; }
+.lg-inp:focus { border-color: rgba(46,204,113,0.5); color: #fff; }
+.lg-btn { background: var(--green); border: none; border-radius: 11px; padding: 14px; font-size: 15px; font-weight: 700; color: #000; cursor: pointer; box-shadow: 0 4px 20px rgba(46,204,113,0.3); transition: all 0.12s; }
+.lg-btn:active { transform: scale(0.98); }
+.lg-div { display: flex; align-items: center; gap: 10px; margin: 8px 0 6px; }
+.lg-dl { flex: 1; height: 1px; background: rgba(46,204,113,0.08); }
+.lg-dt { font-size: 11px; color: var(--dim); font-weight: 500; }
+.orow { display: flex; gap: 8px; }
+.obtn { flex: 1; background: rgba(20,20,32,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 11px; padding: 11px 8px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.75); display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.12s; }
+.obtn:active { transform: scale(0.97); }
+.lg-ft { text-align: center; font-size: 11px; color: var(--dim); margin-top: 10px; }
+.lg-ft span { color: var(--green); font-weight: 600; cursor: pointer; }
+
+/* ─── GREEN SHEET ─── */
+.sheet-ov { position: absolute; inset: 0; z-index: 200; pointer-events: none; border-radius: 44px; }
+.sheet-ov.open { pointer-events: all; }
+.sheet-bd { position: absolute; inset: 0; background: transparent; transition: background 0.4s; border-radius: 44px; }
+.sheet-ov.open .sheet-bd { background: rgba(0,0,0,0.5); }
+.sheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 20px 20px 0 0; border-top: 1px solid rgba(46,204,113,0.15); padding: 0 14px 20px; transform: translateY(100%); transition: transform 0.42s cubic-bezier(0.4,0,0.2,1); }
+.sheet-ov.open .sheet { transform: translateY(0); }
+.sh-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 12px; }
+.sh-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+.sh-ttl { font-size: 14px; font-weight: 800; }
+.sh-undo { display: flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 7px; background: rgba(231,76,60,0.08); border: 1px solid rgba(231,76,60,0.3); font-size: 10px; font-weight: 700; color: var(--red); cursor: pointer; transition: all 0.12s; }
+.sh-undo:active { transform: scale(0.95); }
+.sh-sub { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+.gmap { height: 132px; background: #0C160C; border-radius: 10px; position: relative; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--border); }
+.gmap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pcrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.pclbl { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.pc { display: flex; align-items: center; gap: 12px; }
+.pcbtn { width: 32px; height: 32px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; font-size: 18px; font-weight: 300; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.1s; }
+.pcbtn:active { transform: scale(0.9); }
+.pcval { font-size: 30px; font-weight: 900; min-width: 24px; text-align: center; }
+.pmeta { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.7; }
+.pmeta span { color: var(--green); font-weight: 700; }
+.adlbl { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.chip { padding: 4px 9px; border-radius: 6px; font-size: 10px; font-weight: 600; border: 1px solid transparent; }
+.chip-g { background: rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.3); color: var(--green); }
+.chip-m { background: var(--surface2); border-color: var(--border); color: var(--muted); }
+.cfm { width: 100%; background: var(--green); border: none; border-radius: 11px; padding: 13px; font-size: 14px; font-weight: 700; color: #000; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.12s; }
+.cfm:active { transform: scale(0.98); }
+.h8hint { margin: 0 12px 8px; background: rgba(46,204,113,0.05); border: 1px dashed rgba(46,204,113,0.2); border-radius: 10px; padding: 9px 12px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.h8hint strong { color: var(--green); }
+.spacer { flex: 1; min-height: 8px; }
+
+/* Draggable cursor on pending markers */
+.draggable-marker { cursor: grab; }
+.draggable-marker:active { cursor: grabbing; }
+
+/* ─── BOTTOM TAB BAR ─── */
+.tbar { display:flex; background:rgba(8,8,14,0.97); border-top:1px solid var(--border); padding:5px 0 8px; position:sticky; bottom:0; z-index:50; flex-shrink:0; }
+.tbi { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:4px 0; color:var(--dim); transition:color 0.15s; user-select:none; }
+.tbi.active { color:var(--green); }
+.tbi svg { width:18px; height:18px; }
+.tbi-lbl { font-size:9px; font-weight:600; letter-spacing:0.3px; }
+
+/* ─── HOME WIDGETS ─── */
+.stat-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; flex-shrink:0; }
+.stat-grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; flex-shrink:0; }
+.scard { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 12px; flex-shrink:0; }
+.scard-mini { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 6px; text-align:center; flex-shrink:0; }
+.sc-lbl { font-size:8.5px; color:var(--muted); font-weight:600; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+.sc-num { font-size:22px; font-weight:900; letter-spacing:-0.5px; line-height:1.05; }
+.sc-sub { font-size:9.5px; color:var(--muted); margin-top:2px; }
+.sc-sub2 { font-size:8.5px; color:var(--dim); margin-top:1px; }
+.sc-trend { font-size:9px; font-weight:700; margin-top:3px; }
+.trend-up { color:var(--green); }
+.trend-dn { color:var(--red); }
+.sg-row { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; text-align:center; }
+.sg-cell { display:flex; flex-direction:column; gap:2px; }
+.sg-cat { font-size:8px; color:var(--muted); font-weight:600; }
+.sg-val { font-size:14px; font-weight:900; }
+.hw-content { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; display:flex; flex-direction:column; gap:8px; padding:0 12px 4px; }
+.hw-content::-webkit-scrollbar { display:none; }
+</style>
+</head>
+<body>
+
+<h1>Interactive Prototype</h1>
+<h2>Tour <span>Caddie</span></h2>
+<p class="sub" style="margin-bottom:4px;">↩ Undo on every screen · GPS adjust after every Mark Shot · drag the yellow pin to fine-tune</p>
+
+<div class="flow">
+  <div class="step on" id="fl-login" onclick="go('login')">Sign In</div>
+  <div class="arr">→</div>
+  <div class="step" id="fl-home" onclick="go('home')">Home</div>
+  <div class="arr">→</div>
+  <div class="step" id="fl-s2" onclick="go('s2')">Shot 2 · Fairway</div>
+  <div class="arr">→</div>
+  <div class="step" id="fl-h8" onclick="go('h8')">Hole 8</div>
+</div>
+
+<div class="phone">
+<div class="wrap">
+
+<!-- ═══ LOGIN ═══ -->
+<div class="scr show" id="scr-login">
+  <div class="lg-bg"></div>
+  <svg style="position:absolute;bottom:0;left:0;right:0;height:190px;z-index:1;opacity:0.14;" viewBox="0 0 320 190" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,150Q40,105 80,120Q120,135 160,95Q200,55 240,82Q280,108 320,72L320,190L0,190Z" fill="#1A4A1A"/>
+    <path d="M0,168Q60,140 100,153Q140,166 180,136Q220,105 260,122Q290,135 320,112L320,190L0,190Z" fill="#0F2F0F"/>
+    <ellipse cx="60" cy="116" rx="9" ry="15" fill="#0A1E0A"/>
+    <rect x="58" y="130" width="3" height="9" fill="#0A1E0A"/>
+    <ellipse cx="248" cy="80" rx="8" ry="13" fill="#0A1E0A"/>
+    <line x1="160" y1="95" x2="160" y2="73" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+    <polygon points="160,73 171,80 160,87" fill="rgba(231,76,60,0.38)"/>
+  </svg>
+  <svg style="position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:0.03;" viewBox="0 0 320 693">
+    <defs><pattern id="g" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0L0 0 0 32" fill="none" stroke="rgba(46,204,113,1)" stroke-width="0.5"/></pattern></defs>
+    <rect width="100%" height="100%" fill="url(#g)"/>
+  </svg>
+  <div class="lg-con">
+    <div class="st" style="position:relative;z-index:2;color:rgba(255,255,255,0.4);"><span>9:41</span><span>●●●</span></div>
+    <div class="lg-logo" style="position:relative;z-index:2;">
+      <div class="lg-badge">⛳ PGA-Level Stat Tracking</div>
+      <div class="lg-icon">⛳</div>
+      <div class="lg-ttl">Tour Caddie</div>
+      <div class="lg-sub">Track your game like a pro</div>
+    </div>
+    <div class="lg-form" style="position:relative;z-index:2;">
+      <input class="lg-inp" type="email" placeholder="Email address">
+      <input class="lg-inp" type="password" placeholder="Password">
+      <button class="lg-btn" onclick="go('home')">Sign In</button>
+      <div class="lg-div"><div class="lg-dl"></div><span class="lg-dt">or continue with</span><div class="lg-dl"></div></div>
+      <div class="orow">
+        <button class="obtn" onclick="go('home')"><span style="font-size:13px;font-weight:800;color:#4285F4;">G</span> Google</button>
+        <button class="obtn" onclick="go('home')"><span style="font-size:13px;">🍎</span> Apple</button>
+      </div>
+      <div class="lg-ft">Don't have an account? <span>Sign Up</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HOME DASHBOARD ═══ -->
+<div class="scr" id="scr-home">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <!-- Greeting -->
+  <div style="padding:6px 16px 4px;flex-shrink:0;">
+    <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.8px;margin-bottom:1px;">GOOD MORNING</div>
+    <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px;line-height:1.2;">John Doe</div>
+  </div>
+
+  <!-- Scrollable widget area -->
+  <div class="hw-content">
+
+    <!-- Handicap Index — hero card -->
+    <div style="background:linear-gradient(135deg,rgba(46,204,113,0.10),rgba(39,174,96,0.04));border:1px solid rgba(46,204,113,0.22);border-radius:14px;padding:12px 14px;flex-shrink:0;">
+      <div style="font-size:8.5px;color:var(--green);font-weight:700;letter-spacing:1.5px;margin-bottom:5px;">HANDICAP INDEX · WHS</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:3px;">
+        <div style="font-size:40px;font-weight:900;letter-spacing:-2px;line-height:0.9;">+1.8</div>
+        <div style="padding-bottom:2px;">
+          <div style="font-size:11px;font-weight:700;color:var(--green);">▼ 0.3</div>
+          <div style="font-size:9px;color:var(--muted);">past 30 days</div>
+        </div>
+      </div>
+      <div style="font-size:8.5px;color:var(--muted);">Best 8 of last 20 differentials · Updated Jun 27</div>
+    </div>
+
+    <!-- Last Round + Season row -->
+    <div class="stat-grid2">
+      <div class="scard">
+        <div class="sc-lbl">Last Round</div>
+        <div class="sc-num" style="color:var(--green);">-2</div>
+        <div style="font-size:10px;font-weight:600;color:#fff;margin-top:2px;">70 gross</div>
+        <div class="sc-sub">Riviera CC</div>
+        <div class="sc-sub2">Jun 27 · CR 72.4/139</div>
+      </div>
+      <div class="scard">
+        <div class="sc-lbl">2025 Season</div>
+        <div class="sc-num">12</div>
+        <div style="font-size:10px;font-weight:600;color:#fff;margin-top:2px;">rounds played</div>
+        <div class="sc-sub">Avg: +0.4 to par</div>
+        <div class="sc-sub2">Low: 67 (−5) · May 14</div>
+      </div>
+    </div>
+
+    <!-- Quick stat row -->
+    <div class="stat-grid3">
+      <div class="scard-mini">
+        <div class="sc-lbl">FIR %</div>
+        <div style="font-size:18px;font-weight:900;">67%</div>
+        <div class="sc-trend trend-up">▲ 4%</div>
+      </div>
+      <div class="scard-mini">
+        <div class="sc-lbl">GIR %</div>
+        <div style="font-size:18px;font-weight:900;">62%</div>
+        <div class="sc-trend trend-dn">▼ 2%</div>
+      </div>
+      <div class="scard-mini">
+        <div class="sc-lbl">Putts/GIR</div>
+        <div style="font-size:18px;font-weight:900;">1.74</div>
+        <div class="sc-trend trend-up">▲ 0.04</div>
+      </div>
+    </div>
+
+    <!-- Strokes Gained mini card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 13px;flex-shrink:0;">
+      <div style="font-size:8.5px;color:var(--muted);font-weight:700;letter-spacing:1.2px;margin-bottom:9px;">STROKES GAINED · 2025</div>
+      <div class="sg-row">
+        <div class="sg-cell"><div class="sg-cat">OTT</div><div class="sg-val" style="color:var(--green);">+0.4</div></div>
+        <div class="sg-cell"><div class="sg-cat">APP</div><div class="sg-val" style="color:var(--green);">+0.6</div></div>
+        <div class="sg-cell"><div class="sg-cat">ATG</div><div class="sg-val" style="color:var(--red);">−0.2</div></div>
+        <div class="sg-cell"><div class="sg-cat">PUTT</div><div class="sg-val" style="color:var(--green);">+0.3</div></div>
+      </div>
+    </div>
+
+    <!-- Start Round CTA -->
+    <button class="cta cta-g" onclick="go('s2')" style="margin:0;font-size:14px;">⛳ Start Round</button>
+
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="tbar">
+    <div class="tbi active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tbi-lbl">Home</span>
+    </div>
+    <div class="tbi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tbi-lbl">Rounds</span>
+    </div>
+    <div class="tbi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="tbi-lbl">Stats</span>
+    </div>
+    <div class="tbi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      <span class="tbi-lbl">Courses</span>
+    </div>
+    <div class="tbi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tbi-lbl">Profile</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHOT 2 — FAIRWAY ═══ -->
+<div class="scr" id="scr-s2">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+  <div class="sb">
+    <div class="sb-l"><div class="stp neg">-1</div><div class="sth">THRU 6 HOLES</div></div>
+    <div class="sdv"></div>
+    <div class="sb-r">
+      <div class="shl">HOLE 7 · PAR 4 · 412 YDS</div>
+      <div class="shd">Hdcp 5 · Shot <span id="s2-shot-num" style="color:var(--green);font-weight:800;">1</span></div>
+      <div class="dots" id="s2-dots">
+        <div class="dot d-cur"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div>
+        <span style="font-size:9px;color:var(--muted);margin-left:2px;">putts</span>
+      </div>
+    </div>
+  </div>
+  <div class="undo-bar">
+    <span class="undo-ctx" id="s2-undo-ctx">No shots logged yet</span>
+    <div class="undo-btn dim" id="s2-undo-btn" onclick="undoLastS2()">↩ Undo Shot</div>
+  </div>
+  <div class="map" style="height:242px;" id="s2-map">
+    <svg viewBox="0 0 320 242" height="242" id="s2-svg" xmlns="http://www.w3.org/2000/svg" style="touch-action:none;">
+      <rect width="320" height="242" fill="#0B1210"/>
+      <ellipse cx="160" cy="121" rx="96" ry="113" fill="#0D1A0D" opacity="0.9"/>
+      <path d="M133 235Q126 188 116 141Q110 109 118 70Q126 40 146 25Q160 14 170 20Q178 26 172 44Q163 65 158 93Q151 125 156 165Q160 200 163 235Z" fill="#184A18"/>
+      <path d="M138 235Q131 192 122 145Q116 112 124 73Q131 44 148 30Q159 18 166 24Q172 29 167 47Q159 68 155 95Q148 127 152 167Q156 203 160 235Z" fill="#1E5C1E" opacity="0.55"/>
+      <ellipse cx="97" cy="65" rx="20" ry="12" fill="#0A1E3A"/>
+      <ellipse cx="97" cy="65" rx="16" ry="9" fill="#0D2545" opacity="0.8"/>
+      <text x="97" y="69" text-anchor="middle" font-size="8" fill="rgba(52,152,219,0.55)">💧</text>
+      <ellipse cx="193" cy="123" rx="17" ry="11" fill="#2A2510"/>
+      <ellipse cx="150" cy="24" rx="19" ry="13" fill="#1A7A1A"/>
+      <ellipse cx="150" cy="24" rx="15" ry="9" fill="#22A022" opacity="0.9"/>
+      <line x1="150" y1="24" x2="150" y2="7" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+      <polygon points="150,7 162,13 150,19" fill="#E74C3C"/>
+      <rect x="146" y="230" width="18" height="9" rx="4" fill="#2A3A1A"/>
+      <circle cx="155" cy="234" r="7" fill="rgba(10,10,15,0.85)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="155" y="238" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.55)" font-weight="700">T</text>
+      <line x1="158" y1="113" x2="150" y2="36" stroke="rgba(46,204,113,0.35)" stroke-width="1" stroke-dasharray="3,3"/>
+      <rect x="107" y="68" width="40" height="13" rx="6.5" fill="rgba(46,204,113,0.12)" stroke="rgba(46,204,113,0.4)" stroke-width="1"/>
+      <text x="127" y="77" text-anchor="middle" font-size="8.5" fill="var(--green)" font-weight="700">143 yds</text>
+      <!-- Pending GPS marker (hidden by default) -->
+      <g id="s2-pending" style="opacity:0;pointer-events:none;" class="draggable-marker">
+        <circle cx="158" cy="115" r="18" fill="rgba(241,196,15,0.1)"/>
+        <circle cx="158" cy="115" r="11" fill="rgba(241,196,15,0.25)" stroke="rgba(241,196,15,0.9)" stroke-width="2" id="s2-pcirc"/>
+        <text x="158" y="119" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+        <text id="s2-ydlbl" x="172" y="116" font-size="10" fill="rgba(241,196,15,1)" font-weight="800" paint-order="stroke" stroke="rgba(10,10,15,0.95)" stroke-width="3.5" stroke-linejoin="round">143 yds</text>
+      </g>
+    </svg>
+    <!-- Green top-down view (hidden until toggled) -->
+    <svg viewBox="0 0 320 242" height="242" id="s2-green-svg" xmlns="http://www.w3.org/2000/svg" style="display:none;touch-action:none;">
+      <rect width="320" height="242" fill="#060D06"/>
+      <ellipse cx="160" cy="121" rx="148" ry="118" fill="#12361A"/>
+      <ellipse cx="160" cy="121" rx="137" ry="109" fill="#1A5820"/>
+      <ellipse cx="160" cy="121" rx="127" ry="101" fill="#1D6523" opacity="0.8"/>
+      <ellipse cx="160" cy="100" rx="112" ry="106" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="3,3"/>
+      <ellipse cx="160" cy="100" rx="74" ry="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3"/>
+      <ellipse cx="160" cy="100" rx="37" ry="35" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="235" y="103" font-size="8" fill="rgba(255,255,255,0.2)" font-weight="600">20 ft</text>
+      <text x="197" y="103" font-size="8" fill="rgba(255,255,255,0.25)" font-weight="600">10 ft</text>
+      <circle cx="160" cy="100" r="5.5" fill="#0A0A0F" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/>
+      <line x1="160" y1="100" x2="160" y2="63" stroke="rgba(255,255,255,0.88)" stroke-width="1.5"/>
+      <polygon points="160,63 175,71 160,79" fill="#E74C3C"/>
+      <g id="s2-gpen" style="opacity:0;pointer-events:none;" class="draggable-marker">
+        <circle cx="160" cy="145" r="18" fill="rgba(241,196,15,0.08)"/>
+        <circle cx="160" cy="145" r="11" fill="rgba(241,196,15,0.25)" stroke="rgba(241,196,15,0.9)" stroke-width="2"/>
+        <text id="s2-gpen-num" x="160" y="149" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+        <text id="s2-gylbl" x="174" y="146" font-size="10" fill="rgba(241,196,15,1)" font-weight="800" paint-order="stroke" stroke="rgba(10,10,15,0.95)" stroke-width="3.5" stroke-linejoin="round">18 ft</text>
+      </g>
+    </svg>
+    <div class="map-view-toggle">
+      <div class="mvt-btn active" id="s2-view-hole" onclick="s2SetView('hole')">⛳ Hole</div>
+      <div class="mvt-btn" id="s2-view-green" onclick="s2SetView('green')">🟢 Green</div>
+    </div>
+    <div class="dpill" id="s2-dpill">📍 Mark your tee shot</div>
+    <div class="mbtns" id="s2-mbtns">
+      <div class="mbtn mbtn-g" id="s2-markbtn" onclick="s2Mark()">📍 Mark Shot</div>
+      <div class="mbtn mbtn-s">⊕ Zoom</div>
+    </div>
+    <div class="mchips">
+      <div class="mc"><div class="mc-lbl">HOLE</div><div class="mc-val">7</div></div>
+      <div class="mc"><div class="mc-lbl">PAR</div><div class="mc-val">4</div></div>
+      <div class="mc"><div class="mc-lbl">SHOT</div><div class="mc-val" id="s2-shot-chip" style="color:var(--green)">1</div></div>
+    </div>
+  </div>
+  <div class="gps-bar" id="s2-gpsbar">
+    <div class="gps-bar-inner">
+      <div class="gps-bar-top">
+        <div class="gps-dot"></div>
+        <div class="gps-lbl" id="s2-gps-lbl">GPS Placed — Shot 1</div>
+        <div class="gps-acc">±3 yds accuracy</div>
+      </div>
+      <div class="gps-bar-hint">
+        <strong>Drag the yellow marker</strong> to fine-tune if GPS is off.<br>
+        Tap Confirm when position looks right.
+      </div>
+      <div class="gps-actions">
+        <button class="gps-cancel" onclick="s2CancelGPS()">↩ Re-place</button>
+        <button class="gps-confirm" onclick="s2ConfirmGPS()">✓ Confirm Shot Position</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="s2-toast"></div>
+  <div class="tsec">
+    <div class="tgl">Tee Shot / Fairway</div>
+    <div class="trow">
+      <div class="tog t-g" onclick="tt(this)">✓ FIR</div>
+      <div class="tog" onclick="tt(this)">Missed L</div>
+      <div class="tog" onclick="tt(this)">Missed R</div>
+      <div class="tog t-y" onclick="tt(this)">Bunker</div>
+    </div>
+    <div class="tgl">Green / Scoring</div>
+    <div class="trow">
+      <div class="tog" onclick="tt(this)">GIR</div>
+      <div class="tog" onclick="tt(this)">Missed</div>
+      <div class="tog" onclick="tt(this)">Scramble</div>
+      <div class="tog t-r" onclick="tt(this)">Sand Save</div>
+    </div>
+  </div>
+  <div class="prow">
+    <span class="plbl">Putts</span>
+    <div class="pbtns" id="pbtns2">
+      <div class="pb" onclick="sp(this,'pbtns2')">1</div>
+      <div class="pb pb-on" onclick="sp(this,'pbtns2')">2</div>
+      <div class="pb" onclick="sp(this,'pbtns2')">3</div>
+      <div class="pb" onclick="sp(this,'pbtns2')">3+</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <button class="cta cta-gold" id="s2-holecta" onclick="showSheet()">Hole Out → Green Summary</button>
+  <!-- GREEN SUMMARY SHEET -->
+  <div class="sheet-ov" id="sheet-ov">
+    <div class="sheet-bd" onclick="hideSheet()"></div>
+    <div class="sheet">
+      <div class="sh-handle"></div>
+      <div class="sh-top">
+        <div class="sh-ttl">Hole 7 — Green Summary</div>
+        <div class="sh-undo" onclick="hideSheet()">↩ Undo Hole Out</div>
+      </div>
+      <div class="sh-sub">Drag markers · adjust putts · Confirm to advance to Hole 8</div>
+      <div class="gmap">
+        <svg viewBox="0 0 292 132" xmlns="http://www.w3.org/2000/svg">
+          <rect width="292" height="132" fill="#0C160C"/>
+          <ellipse cx="146" cy="66" rx="110" ry="55" fill="#1A6A1A" opacity="0.9"/>
+          <ellipse cx="146" cy="66" rx="96" ry="45" fill="#1E7A1E" opacity="0.8"/>
+          <ellipse cx="146" cy="66" rx="110" ry="55" fill="none" stroke="#258A25" stroke-width="4" opacity="0.35"/>
+          <circle cx="146" cy="48" r="4.5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.28)" stroke-width="1"/>
+          <circle cx="146" cy="48" r="2" fill="white"/>
+          <line x1="146" y1="48" x2="146" y2="23" stroke="rgba(255,255,255,0.65)" stroke-width="1.5"/>
+          <polygon points="146,23 157,29 146,35" fill="#E74C3C" opacity="0.9"/>
+          <circle cx="90" cy="82" r="8" fill="rgba(46,204,113,0.2)" stroke="rgba(46,204,113,0.6)" stroke-width="1.5"/>
+          <text x="90" y="86" text-anchor="middle" font-size="9" fill="white" font-weight="800">A</text>
+          <text x="90" y="97" text-anchor="middle" font-size="7" fill="rgba(139,139,167,0.8)">22ft</text>
+          <path d="M90 82Q116 63 140 51" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3,2"/>
+          <circle cx="140" cy="51" r="7" fill="rgba(241,196,15,0.2)" stroke="rgba(241,196,15,0.65)" stroke-width="1.5"/>
+          <text x="140" y="55" text-anchor="middle" font-size="9" fill="white" font-weight="800">1</text>
+          <text x="140" y="66" text-anchor="middle" font-size="7" fill="rgba(139,139,167,0.8)">3ft</text>
+          <path d="M140 51Q143 49 146 48" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-dasharray="2,2"/>
+          <circle cx="146" cy="48" r="4" fill="rgba(46,204,113,0.3)" stroke="var(--green)" stroke-width="1.5"/>
+          <rect x="168" y="74" width="54" height="14" rx="4" fill="rgba(10,10,15,0.7)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+          <text x="195" y="84" text-anchor="middle" font-size="7" fill="rgba(139,139,167,0.7)">drag to move</text>
+        </svg>
+      </div>
+      <div class="pcrow">
+        <div>
+          <div class="pclbl">Putts This Hole</div>
+          <div class="pc">
+            <div class="pcbtn" onclick="adj(-1)">−</div>
+            <div class="pcval" id="pcval">2</div>
+            <div class="pcbtn" onclick="adj(1)">+</div>
+          </div>
+        </div>
+        <div class="pmeta">1st putt: <span>22 ft</span><br>Remaining: <span>3 ft</span><br>Made 2nd putt</div>
+      </div>
+      <div class="adlbl">Auto-Detected This Hole</div>
+      <div class="chips">
+        <div class="chip chip-g">✓ FIR</div>
+        <div class="chip chip-m">GIR: Miss</div>
+        <div class="chip chip-g">✓ Scramble</div>
+        <div class="chip chip-m">No Bunker</div>
+      </div>
+      <button class="cfm" onclick="go('h8');hideSheet()">Confirm · Next Hole (8) →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HOLE 8 — TEE ═══ -->
+<div class="scr" id="scr-h8">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+  <div class="sb">
+    <div class="sb-l"><div class="stp evn">E</div><div class="sth">THRU 7 HOLES</div></div>
+    <div class="sdv"></div>
+    <div class="sb-r">
+      <div class="shl">HOLE 8 · PAR 3 · 185 YDS</div>
+      <div class="shd" id="h8-detail">Hdcp 17 · Shot <span style="color:var(--green);font-weight:800;">1</span></div>
+      <div class="dots" id="h8-dots"><div class="dot d-cur"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+  <div class="undo-bar">
+    <span class="undo-ctx" id="h8-undo-ctx">Last: <strong>Hole 7 confirmed (par)</strong></span>
+    <div class="undo-btn" id="h8-undo-btn" onclick="undoH8()">↩ Undo</div>
+  </div>
+  <div class="map" style="height:242px;" id="h8-map">
+    <svg viewBox="0 0 320 242" height="242" id="h8-svg" xmlns="http://www.w3.org/2000/svg" style="touch-action:none;">
+      <rect width="320" height="242" fill="#0B1210"/>
+      <ellipse cx="160" cy="115" rx="83" ry="106" fill="#0D1A0D" opacity="0.9"/>
+      <path d="M128 235Q120 186 122 140Q124 101 132 63Q140 33 152 20Q162 8 170 15Q176 22 170 49Q162 78 162 116Q162 158 165 235Z" fill="#184A18"/>
+      <ellipse cx="155" cy="28" rx="24" ry="17" fill="#1A7A1A"/>
+      <ellipse cx="155" cy="28" rx="20" ry="13" fill="#24A024" opacity="0.9"/>
+      <ellipse cx="120" cy="40" rx="14" ry="10" fill="#2A2510"/>
+      <ellipse cx="190" cy="40" rx="14" ry="10" fill="#2A2510"/>
+      <line x1="155" y1="28" x2="155" y2="8" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+      <polygon points="155,8 167,14 155,20" fill="#E74C3C"/>
+      <rect x="143" y="227" width="22" height="10" rx="4" fill="#2A3A1A"/>
+      <circle cx="154" cy="232" r="11" fill="rgba(46,204,113,0.07)" stroke="rgba(46,204,113,0.28)" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="154" y="236" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.45)">TEE</text>
+      <line x1="154" y1="227" x2="155" y2="45" stroke="rgba(46,204,113,0.28)" stroke-width="1" stroke-dasharray="3,3"/>
+      <rect x="108" y="128" width="42" height="13" rx="6.5" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1"/>
+      <text x="129" y="137" text-anchor="middle" font-size="8.5" fill="var(--green)" font-weight="700">185 yds</text>
+      <line x1="145" y1="232" x2="163" y2="232" stroke="rgba(46,204,113,0.45)" stroke-width="1"/>
+      <line x1="154" y1="224" x2="154" y2="240" stroke="rgba(46,204,113,0.45)" stroke-width="1"/>
+      <!-- Pending GPS marker (hidden) -->
+      <g id="h8-pending" style="opacity:0;pointer-events:none;" class="draggable-marker">
+        <circle cx="154" cy="105" r="18" fill="rgba(241,196,15,0.08)"/>
+        <circle cx="154" cy="105" r="11" fill="rgba(241,196,15,0.25)" stroke="rgba(241,196,15,0.9)" stroke-width="2" id="h8-pcirc"/>
+        <text x="154" y="109" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+        <text id="h8-ydlbl" x="167" y="106" font-size="10" fill="rgba(241,196,15,1)" font-weight="800" paint-order="stroke" stroke="rgba(10,10,15,0.95)" stroke-width="3.5" stroke-linejoin="round">-- yds</text>
+      </g>
+    </svg>
+    <div class="dpill dpill-w" id="h8-pill">↑ 185 yds to pin · 7i</div>
+    <div class="mbtns" id="h8-mbtns">
+      <div class="mbtn mbtn-g" id="h8-markbtn" onclick="h8Mark()">📍 Mark Shot</div>
+      <div class="mbtn mbtn-s">⊕ Zoom</div>
+    </div>
+    <div class="mchips">
+      <div class="mc"><div class="mc-lbl">HOLE</div><div class="mc-val">8</div></div>
+      <div class="mc"><div class="mc-lbl">PAR</div><div class="mc-val">3</div></div>
+      <div class="mc"><div class="mc-lbl" id="h8-clbl">SHOT</div><div class="mc-val" id="h8-cval" style="color:var(--green)">1</div></div>
+    </div>
+  </div>
+  <div class="gps-bar" id="h8-gpsbar">
+    <div class="gps-bar-inner">
+      <div class="gps-bar-top">
+        <div class="gps-dot"></div>
+        <div class="gps-lbl">GPS Placed — Shot 1</div>
+        <div class="gps-acc">±4 yds accuracy</div>
+      </div>
+      <div class="gps-bar-hint">
+        <strong>Drag the yellow marker</strong> on the map to fine-tune ball position.<br>Tap Confirm when happy.
+      </div>
+      <div class="gps-actions">
+        <button class="gps-cancel" onclick="h8CancelGPS()">↩ Re-place</button>
+        <button class="gps-confirm" onclick="h8ConfirmGPS()">✓ Confirm Shot Position</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="h8-toast"></div>
+  <div class="h8hint" id="h8-hint"><strong>Par 3 — Tee Shot</strong> · Stand at your ball and tap <strong>📍 Mark Shot</strong>. GPS logs yardage automatically.</div>
+  <div class="tsec">
+    <div class="tgl">Green / Scoring</div>
+    <div class="trow">
+      <div class="tog" onclick="tt(this)">GIR</div>
+      <div class="tog" onclick="tt(this)">Missed</div>
+      <div class="tog" onclick="tt(this)">Scramble</div>
+      <div class="tog" onclick="tt(this)">Sand Save</div>
+    </div>
+  </div>
+  <div class="prow">
+    <span class="plbl">Putts</span>
+    <div class="pbtns" id="pbtns8">
+      <div class="pb pb-off">1</div><div class="pb pb-off">2</div>
+      <div class="pb pb-off">3</div><div class="pb pb-off">3+</div>
+    </div>
+    <span class="phint" id="h8-phint">set on green</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="cta cta-dim" id="h8-cta">Hole Out → Green Summary</button>
+</div>
+
+</div></div>
+<p style="font-size:11px;color:var(--dim);text-align:center;">Tap buttons · jump via flow steps · drag yellow GPS markers to adjust position</p>
+
+<script>
+const ORDER = ['login','home','s2','h8'];
+let cur = 'login';
+let putts = 2;
+
+function setSteps(name) {
+  ['login','home','s2','gs','h8'].forEach(k => {
+    const el = document.getElementById('fl-'+k);
+    if (el) el.classList.toggle('on', k === name);
+  });
+}
+
+function go(name) {
+  if (name === 'gs') {
+    if (cur !== 's2' && cur !== 'gs') { go('s2'); setTimeout(showSheet, 400); return; }
+    showSheet(); return;
+  }
+  if (cur === name) return;
+  const fromName = (cur === 'gs') ? 's2' : cur;
+  if (fromName === name) { cur = name; setSteps(name); return; }
+  const fromEl = document.getElementById('scr-'+fromName);
+  const toEl = document.getElementById('scr-'+name);
+  if (!fromEl || !toEl) return;
+  const fi = ORDER.indexOf(fromName), ti = ORDER.indexOf(name);
+  const fwd = ti >= fi;
+  hideSheet();
+  document.querySelectorAll('.gps-bar.show').forEach(b => b.classList.remove('show'));
+  toEl.style.transition = 'none';
+  toEl.style.transform = fwd ? 'translateX(100%)' : 'translateX(-100%)';
+  toEl.offsetHeight;
+  const T = '0.38s cubic-bezier(0.4,0,0.2,1)';
+  toEl.style.transition = `transform ${T}`;
+  fromEl.style.transition = `transform ${T}`;
+  toEl.style.transform = 'translateX(0)';
+  fromEl.style.transform = fwd ? 'translateX(-100%)' : 'translateX(100%)';
+  setTimeout(() => {
+    fromEl.classList.remove('show'); toEl.classList.add('show');
+    fromEl.style.cssText = ''; toEl.style.cssText = '';
+  }, 400);
+  cur = name;
+  setSteps(name);
+}
+
+function showSheet() {
+  document.getElementById('sheet-ov').classList.add('open');
+  cur = 'gs'; setSteps('gs');
+}
+function hideSheet() {
+  document.getElementById('sheet-ov').classList.remove('open');
+  if (cur === 'gs') { cur = 's2'; setSteps('s2'); }
+}
+function adj(d) {
+  putts = Math.max(1, Math.min(6, putts + d));
+  document.getElementById('pcval').textContent = putts;
+}
+function tt(el) {
+  const cls = ['t-g','t-y','t-r'];
+  if (cls.some(c => el.classList.contains(c))) cls.forEach(c => el.classList.remove(c));
+  else el.classList.add('t-g');
+}
+function sp(el, id) {
+  if (el.classList.contains('pb-off')) return;
+  document.querySelectorAll('#'+id+' .pb').forEach(b => b.classList.remove('pb-on'));
+  el.classList.add('pb-on');
+}
+function showToast(id, msg, ms=2800) {
+  const t = document.getElementById(id);
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+/* ── DRAGGABLE GPS MARKERS WITH LIVE YARDAGE ── */
+function px2(x1, y1, x2, y2) { return Math.sqrt((x1-x2)**2 + (y1-y2)**2); }
+
+function makeDraggable(groupId, svgId, cfg) {
+  // cfg: baseX/Y = SVG coords of marker center at GPS drop
+  //      pinX/Y  = SVG coords of the hole / pin
+  //      scale   = real-world units per SVG unit
+  //      pillId, format(val)→string, originalText
+  const svg = document.getElementById(svgId);
+  const group = document.getElementById(groupId);
+  if (!svg || !group) return { reset() {}, showInitial() {} };
+
+  let tx = 0, ty = 0, dragging = false, startPt = null, origTx = 0, origTy = 0;
+
+  function toSVG(cx, cy) {
+    const pt = svg.createSVGPoint();
+    pt.x = cx; pt.y = cy;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  function refreshPill() {
+    const d = px2(cfg.baseX + tx, cfg.baseY + ty, cfg.pinX, cfg.pinY);
+    const val = Math.max(1, Math.round(d * cfg.scale));
+    const pill = document.getElementById(cfg.pillId);
+    if (pill) pill.textContent = cfg.format(val);
+    if (cfg.labelId) {
+      const lbl = document.getElementById(cfg.labelId);
+      if (lbl) lbl.textContent = cfg.labelFormat(val);
+    }
+  }
+
+  group.addEventListener('pointerdown', e => {
+    dragging = true;
+    group.setPointerCapture(e.pointerId);
+    startPt = toSVG(e.clientX, e.clientY);
+    origTx = tx; origTy = ty;
+    e.preventDefault();
+  });
+  group.addEventListener('pointermove', e => {
+    if (!dragging || !startPt) return;
+    const p = toSVG(e.clientX, e.clientY);
+    tx = origTx + (p.x - startPt.x);
+    ty = origTy + (p.y - startPt.y);
+    group.setAttribute('transform', `translate(${tx},${ty})`);
+    refreshPill();
+    e.preventDefault();
+  });
+  group.addEventListener('pointerup',     () => { dragging = false; });
+  group.addEventListener('pointercancel', () => { dragging = false; });
+
+  return {
+    reset() {
+      tx = 0; ty = 0;
+      group.setAttribute('transform', '');
+      const pill = document.getElementById(cfg.pillId);
+      if (pill) pill.textContent = cfg.originalText;
+      if (cfg.labelId) {
+        const lbl = document.getElementById(cfg.labelId);
+        if (lbl) {
+          const d = px2(cfg.baseX, cfg.baseY, cfg.pinX, cfg.pinY);
+          lbl.textContent = cfg.labelFormat(Math.max(1, Math.round(d * cfg.scale)));
+        }
+      }
+    },
+    showInitial() { refreshPill(); },
+    getPosition() { return { x: cfg.baseX + tx, y: cfg.baseY + ty }; },
+    setPosition(x, y) {
+      tx = x - cfg.baseX; ty = y - cfg.baseY;
+      group.setAttribute('transform', `translate(${tx},${ty})`);
+      refreshPill();
+    }
+  };
+}
+
+// Shot 1 — tee shot: measure distance FROM tee (155,234). After confirm, switch to pin mode.
+const s2DragCfg = {
+  baseX: 158, baseY: 115, pinX: 155, pinY: 234,
+  scale: 412 / px2(155, 234, 150, 24),
+  pillId: 's2-dpill', format: v => `↑ ${v} yds from tee · Dr`,
+  originalText: '📍 Mark your tee shot',
+  labelId: 's2-ydlbl', labelFormat: v => `${v} yds`
+};
+const s2Drag = makeDraggable('s2-pending', 's2-svg', s2DragCfg);
+
+// Green view drag — measures feet from landing spot to pin (cup at 160,100)
+const s2GreenDragCfg = {
+  baseX: 160, baseY: 145, pinX: 160, pinY: 100,
+  scale: 18 / px2(160, 145, 160, 100),
+  pillId: 's2-dpill', format: v => `🟢 On Green — ${v} ft to pin`,
+  originalText: '🟢 On Green — drag to place',
+  labelId: 's2-gylbl', labelFormat: v => `${v} ft`
+};
+const s2GreenDrag = makeDraggable('s2-gpen', 's2-green-svg', s2GreenDragCfg);
+makePannable('s2-green-svg', 's2-gpsbar');
+
+let s2ViewMode = 'hole';
+function s2SetView(mode) {
+  s2ViewMode = mode;
+  document.getElementById('s2-view-hole').classList.toggle('active', mode === 'hole');
+  document.getElementById('s2-view-green').classList.toggle('active', mode === 'green');
+  document.getElementById('s2-svg').style.display = mode === 'hole' ? '' : 'none';
+  document.getElementById('s2-green-svg').style.display = mode === 'green' ? '' : 'none';
+  if (mode === 'green') {
+    const gpenNum = document.getElementById('s2-gpen-num');
+    if (gpenNum) gpenNum.textContent = s2ShotCount + 1;
+  }
+  s2CancelGPS();
+}
+
+// Hole 8 — par 3: GPS drops at (154,105), pin at (155,8); scale from full hole 185 yds / tee-to-pin dist
+const h8Drag = makeDraggable('h8-pending', 'h8-svg', {
+  baseX: 154, baseY: 105, pinX: 155, pinY: 8,
+  scale: 185 / px2(154, 232, 155, 8),
+  pillId: 'h8-pill', format: v => `↑ ${v} yds to pin · 7i`,
+  originalText: '↑ 185 yds to pin · 7i',
+  labelId: 'h8-ydlbl', labelFormat: v => `${v} yds`
+});
+
+/* ── SHOT MARKER + LINE HELPERS ── */
+function addShotMarker(svgId, x, y, num) {
+  const svg = document.getElementById(svgId);
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+  g.setAttribute('data-shot', num);
+  g.innerHTML =
+    `<circle cx="${x}" cy="${y}" r="9" fill="rgba(46,204,113,0.15)" stroke="rgba(46,204,113,0.55)" stroke-width="1.5"/>` +
+    `<text x="${x}" y="${y+4}" text-anchor="middle" font-size="10" fill="white" font-weight="800">${num}</text>`;
+  svg.appendChild(g);
+  return g;
+}
+function addShotLine(svgId, x1, y1, x2, y2) {
+  const svg = document.getElementById(svgId);
+  const ns = 'http://www.w3.org/2000/svg';
+  const line = document.createElementNS(ns, 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', 'rgba(255,255,255,0.4)');
+  line.setAttribute('stroke-width', '1.5');
+  line.setAttribute('stroke-dasharray', '4,3');
+  svg.appendChild(line);
+  return line;
+}
+
+/* ── MAP PAN (viewBox shift so UI overlays stay fixed) ── */
+function makePannable(svgId, gpsBarId) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  let panX = 0, panY = 0, panning = false, startCX, startCY, origPX, origPY;
+  function svgScale() { return 320 / svg.getBoundingClientRect().width; }
+  svg.addEventListener('pointerdown', e => {
+    if (e.target.closest('.draggable-marker')) return;
+    if (gpsBarId && document.getElementById(gpsBarId)?.classList.contains('show')) return;
+    panning = true;
+    svg.setPointerCapture(e.pointerId);
+    startCX = e.clientX; startCY = e.clientY;
+    origPX = panX; origPY = panY;
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!panning) return;
+    const s = svgScale();
+    panX = origPX - (e.clientX - startCX) * s;
+    panY = origPY - (e.clientY - startCY) * s;
+    svg.setAttribute('viewBox', `${panX} ${panY} 320 242`);
+    e.preventDefault();
+  });
+  svg.addEventListener('pointerup',     () => { panning = false; });
+  svg.addEventListener('pointercancel', () => { panning = false; });
+}
+
+makePannable('s2-svg', 's2-gpsbar');
+makePannable('h8-svg', 'h8-gpsbar');
+
+function addTapToPlace(svgId, gpsBarId, getDragFn) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  svg.addEventListener('pointerdown', e => {
+    if (!document.getElementById(gpsBarId)?.classList.contains('show')) return;
+    if (e.target.closest('.draggable-marker')) return;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    getDragFn().setPosition(p.x, p.y);
+    e.preventDefault();
+  });
+}
+addTapToPlace('s2-svg',       's2-gpsbar', () => s2Drag);
+addTapToPlace('s2-green-svg', 's2-gpsbar', () => s2GreenDrag);
+addTapToPlace('h8-svg',       'h8-gpsbar', () => h8Drag);
+
+/* ── SHOT 2 GPS FLOW ── */
+let s2ShotCount = 0;
+const s2LoggedShots = []; // dynamic confirmed shot elements for undo
+function s2Mark() {
+  const btn = document.getElementById('s2-markbtn');
+  btn.textContent = '📍 GPS Dropped…';
+  btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+  document.getElementById('s2-gpsbar').classList.add('show');
+  if (s2ViewMode === 'green') {
+    const p = document.getElementById('s2-gpen');
+    p.style.opacity = '1'; p.style.pointerEvents = 'all';
+    p.setAttribute('transform', '');
+    s2GreenDrag.showInitial();
+  } else {
+    const p = document.getElementById('s2-pending');
+    p.style.opacity = '1'; p.style.pointerEvents = 'all';
+    p.setAttribute('transform', '');
+    s2Drag.showInitial();
+  }
+}
+function s2CancelGPS() {
+  document.getElementById('s2-pending').style.opacity = '0';
+  document.getElementById('s2-pending').style.pointerEvents = 'none';
+  document.getElementById('s2-gpen').style.opacity = '0';
+  document.getElementById('s2-gpen').style.pointerEvents = 'none';
+  document.getElementById('s2-gpsbar').classList.remove('show');
+  s2Drag.reset();
+  s2GreenDrag.reset();
+  const btn = document.getElementById('s2-markbtn');
+  btn.textContent = '📍 Mark Shot';
+  btn.style.opacity = ''; btn.style.pointerEvents = '';
+}
+function s2ConfirmGPS() {
+  s2ShotCount++;
+
+  if (s2ViewMode === 'green') {
+    const pos = s2GreenDrag.getPosition();
+    const prev = s2LoggedShots.length > 0 ? s2LoggedShots[s2LoggedShots.length - 1] : null;
+    const line = prev?.svgId === 's2-green-svg'
+      ? addShotLine('s2-green-svg', prev.x, prev.y, pos.x, pos.y) : null;
+    const el = addShotMarker('s2-green-svg', pos.x, pos.y, s2ShotCount);
+    s2LoggedShots.push({ el, line, x: pos.x, y: pos.y, svgId: 's2-green-svg' });
+    document.getElementById('s2-gpen').style.opacity = '0';
+    document.getElementById('s2-gpen').style.pointerEvents = 'none';
+    const gpenNum = document.getElementById('s2-gpen-num');
+    if (gpenNum) gpenNum.textContent = s2ShotCount + 1;
+    s2GreenDrag.reset();
+  } else {
+    const pos = s2Drag.getPosition();
+    const prev = s2LoggedShots.length > 0 ? s2LoggedShots[s2LoggedShots.length - 1] : null;
+    const line = prev?.svgId === 's2-svg'
+      ? addShotLine('s2-svg', prev.x, prev.y, pos.x, pos.y) : null;
+    const el = addShotMarker('s2-svg', pos.x, pos.y, s2ShotCount);
+    s2LoggedShots.push({ el, line, x: pos.x, y: pos.y, svgId: 's2-svg' });
+    document.getElementById('s2-pending').style.opacity = '0';
+    document.getElementById('s2-pending').style.pointerEvents = 'none';
+    // After tee shot confirmed, switch drag reference to pin for all approach shots
+    if (s2ShotCount === 1) {
+      s2DragCfg.pinX = 150; s2DragCfg.pinY = 24;
+      s2DragCfg.scale = 143 / px2(158, 115, 150, 24);
+      s2DragCfg.format = v => `↑ ${v} yds to pin · 6i`;
+      s2DragCfg.originalText = '↑ 143 yds to pin · 6i';
+    }
+    s2Drag.reset();
+  }
+
+  document.getElementById('s2-gpsbar').classList.remove('show');
+
+  // Update pending marker label for next shot
+  const pendingNumTxt = document.querySelectorAll('#s2-pending text')[0];
+  if (pendingNumTxt) pendingNumTxt.textContent = s2ShotCount + 1;
+
+  // Update score bar shot number + chip + GPS label
+  const snum = document.getElementById('s2-shot-num');
+  if (snum) { snum.textContent = s2ShotCount + 1; snum.style.color = 'var(--gold)'; }
+  const chip = document.getElementById('s2-shot-chip');
+  if (chip) { chip.textContent = s2ShotCount + 1; chip.style.color = 'var(--gold)'; }
+  const gpsLbl = document.getElementById('s2-gps-lbl');
+  if (gpsLbl) gpsLbl.textContent = `GPS Placed — Shot ${s2ShotCount + 1}`;
+
+  // Update undo bar
+  document.getElementById('s2-undo-ctx').innerHTML = `Last: <strong>Shot ${s2ShotCount} confirmed</strong>`;
+  const undoBtn = document.getElementById('s2-undo-btn');
+  undoBtn.classList.remove('dim');
+  undoBtn.onclick = undoLastS2;
+
+  // Re-arm Mark Shot for next shot
+  const markBtn = document.getElementById('s2-markbtn');
+  markBtn.textContent = '📍 Mark Shot';
+  markBtn.style.opacity = ''; markBtn.style.pointerEvents = '';
+
+  document.getElementById('s2-dpill').textContent = `Shot ${s2ShotCount} locked · walk to next ball`;
+  document.getElementById('s2-dpill').style.borderColor = '';
+  document.getElementById('s2-dpill').style.color = '';
+}
+
+/* ── UNDO S2 ── */
+// Wire initial undo button to this
+function undoLastS2() {
+  if (s2LoggedShots.length > 0) {
+    const last = s2LoggedShots.pop();
+    last.line?.remove();
+    last.el.remove();
+    s2ShotCount--;
+    const snum = document.getElementById('s2-shot-num');
+    if (snum) { snum.textContent = s2ShotCount + 1; snum.style.color = s2ShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+    const chip = document.getElementById('s2-shot-chip');
+    if (chip) { chip.textContent = s2ShotCount + 1; chip.style.color = s2ShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+    const pendingNumTxt = document.querySelectorAll('#s2-pending text')[0];
+    if (pendingNumTxt) pendingNumTxt.textContent = s2ShotCount + 1;
+    const gpenNum = document.getElementById('s2-gpen-num');
+    if (gpenNum) gpenNum.textContent = s2ShotCount + 1;
+    const noShots = s2LoggedShots.length === 0;
+    document.getElementById('s2-undo-ctx').innerHTML = noShots
+      ? 'No shots logged yet'
+      : `Last: <strong>Shot ${s2ShotCount} confirmed</strong>`;
+    if (noShots) document.getElementById('s2-undo-btn').classList.add('dim');
+    if (s2ShotCount === 0) {
+      // Restore tee-shot measure mode
+      s2DragCfg.pinX = 155; s2DragCfg.pinY = 234;
+      s2DragCfg.scale = 412 / px2(155, 234, 150, 24);
+      s2DragCfg.format = v => `↑ ${v} yds from tee · Dr`;
+      s2DragCfg.originalText = '📍 Mark your tee shot';
+    }
+    const gpsLbl = document.getElementById('s2-gps-lbl');
+    if (gpsLbl) gpsLbl.textContent = `GPS Placed — Shot ${s2ShotCount + 1}`;
+    s2CancelGPS();
+    showToast('s2-toast', `↩ Shot ${s2ShotCount + 1} removed`);
+  } else {
+    showToast('s2-toast', 'Nothing to undo yet');
+  }
+}
+
+/* ── HOLE 8 GPS FLOW ── */
+let h8marked = false;
+function h8Mark() {
+  if (h8marked) return;
+  h8marked = true;
+  const btn = document.getElementById('h8-markbtn');
+  btn.textContent = '📍 GPS Dropped…';
+  btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+  const p = document.getElementById('h8-pending');
+  p.style.opacity = '1'; p.style.pointerEvents = 'all';
+  p.setAttribute('transform', '');
+  document.getElementById('h8-gpsbar').classList.add('show');
+  h8Drag.showInitial();
+}
+function h8CancelGPS() {
+  h8marked = false;
+  document.getElementById('h8-gpsbar').classList.remove('show');
+  document.getElementById('h8-pending').style.opacity = '0';
+  document.getElementById('h8-pending').style.pointerEvents = 'none';
+  h8Drag.reset();
+  const btn = document.getElementById('h8-markbtn');
+  btn.textContent = '📍 Mark Shot';
+  btn.style.opacity = ''; btn.style.pointerEvents = '';
+}
+let h8ShotCount = 0;
+const h8LoggedShots = [];
+
+function h8ConfirmGPS() {
+  h8ShotCount++;
+  h8marked = false;
+
+  const pos = h8Drag.getPosition();
+  const prev = h8LoggedShots.length > 0 ? h8LoggedShots[h8LoggedShots.length - 1] : null;
+  const line = prev ? addShotLine('h8-svg', prev.x, prev.y, pos.x, pos.y) : null;
+  const el = addShotMarker('h8-svg', pos.x, pos.y, h8ShotCount);
+  h8LoggedShots.push({ el, line, x: pos.x, y: pos.y, svgId: 'h8-svg' });
+
+  document.getElementById('h8-gpsbar').classList.remove('show');
+  document.getElementById('h8-pending').style.opacity = '0';
+  document.getElementById('h8-pending').style.pointerEvents = 'none';
+
+  // Update pending marker number for next shot
+  const pendingNumTxt = document.querySelectorAll('#h8-pending text')[0];
+  if (pendingNumTxt) pendingNumTxt.textContent = h8ShotCount + 1;
+
+  // Score bar
+  document.getElementById('h8-detail').innerHTML =
+    `Shot <span style="color:var(--gold);font-weight:800;">${h8ShotCount + 1}</span> — next`;
+  document.getElementById('h8-cval').textContent = h8ShotCount + 1;
+  document.getElementById('h8-cval').style.color = 'var(--gold)';
+  const dots = '<div class="dot d-ok">✓</div>'.repeat(h8ShotCount) +
+    '<div class="dot d-cur"></div>' +
+    '<div class="dot"></div>'.repeat(Math.max(0, 2 - h8ShotCount));
+  document.getElementById('h8-dots').innerHTML = dots;
+
+  // Hint + pill
+  document.getElementById('h8-hint').innerHTML =
+    `<strong>Shot ${h8ShotCount} logged</strong> · Walk to your ball and tap Mark Shot for Shot ${h8ShotCount + 1}.`;
+  h8Drag.reset();
+  document.getElementById('h8-pill').textContent = `Shot ${h8ShotCount} locked · walk to next ball`;
+  document.getElementById('h8-pill').classList.remove('dpill-w');
+
+  // Undo bar
+  document.getElementById('h8-undo-ctx').innerHTML = `Last: <strong>Shot ${h8ShotCount} confirmed</strong>`;
+  document.getElementById('h8-undo-btn').textContent = '↩ Undo Shot';
+  document.getElementById('h8-undo-btn').onclick = undoH8Shot;
+
+  // Re-arm Mark Shot
+  const markBtn = document.getElementById('h8-markbtn');
+  markBtn.textContent = '📍 Mark Shot';
+  markBtn.style.opacity = ''; markBtn.style.pointerEvents = '';
+
+  // First shot: activate Hole Out
+  if (h8ShotCount === 1) {
+    document.getElementById('h8-cta').className = 'cta cta-gold';
+    document.getElementById('h8-cta').textContent = '🚩 Hole Out → Green Summary';
+    document.getElementById('h8-cta').style.pointerEvents = 'auto';
+    document.getElementById('h8-cta').onclick = () =>
+      showToast('h8-toast', '✓ Flow complete! Great round ⛳', 4000);
+    document.querySelectorAll('#pbtns8 .pb').forEach(b => b.classList.remove('pb-off'));
+    document.getElementById('h8-phint').textContent = '';
+    const row = document.getElementById('h8-mbtns');
+    if (!document.getElementById('h8-holeout')) {
+      const nb = document.createElement('div');
+      nb.id = 'h8-holeout'; nb.className = 'mbtn mbtn-gold'; nb.textContent = '🚩 Hole Out';
+      nb.onclick = () => showToast('h8-toast', '✓ Flow complete! Great round ⛳', 4000);
+      row.insertBefore(nb, row.firstChild);
+    }
+  }
+}
+
+function undoH8Shot() {
+  if (h8LoggedShots.length > 0) {
+    const last = h8LoggedShots.pop();
+    last.line?.remove();
+    last.el.remove();
+    h8ShotCount--;
+    const pendingNumTxt = document.querySelectorAll('#h8-pending text')[0];
+    if (pendingNumTxt) pendingNumTxt.textContent = h8ShotCount + 1;
+    document.getElementById('h8-detail').innerHTML =
+      h8ShotCount > 0
+        ? `Shot <span style="color:var(--gold);font-weight:800;">${h8ShotCount + 1}</span> — next`
+        : `Hdcp 17 · Shot <span style="color:var(--green);font-weight:800;">1</span>`;
+    document.getElementById('h8-cval').textContent = h8ShotCount > 0 ? h8ShotCount + 1 : 1;
+    document.getElementById('h8-cval').style.color = h8ShotCount > 0 ? 'var(--gold)' : 'var(--green)';
+    document.getElementById('h8-undo-ctx').innerHTML =
+      h8ShotCount > 0
+        ? `Last: <strong>Shot ${h8ShotCount} confirmed</strong>`
+        : 'Last: <strong>Hole 7 confirmed (par)</strong>';
+    h8CancelGPS();
+    showToast('h8-toast', `↩ Shot ${h8ShotCount + 1} removed`);
+    if (h8ShotCount === 0) {
+      document.getElementById('h8-pill').textContent = '↑ 185 yds to pin · 7i';
+      document.getElementById('h8-pill').classList.add('dpill-w');
+      document.getElementById('h8-hint').innerHTML =
+        '<strong>Par 3 — Tee Shot</strong> · Stand at your ball and tap <strong>📍 Mark Shot</strong>.';
+      document.getElementById('h8-cta').className = 'cta cta-dim';
+      document.getElementById('h8-cta').textContent = 'Hole Out → Green Summary';
+      document.getElementById('h8-cta').style.pointerEvents = '';
+      document.querySelectorAll('#pbtns8 .pb').forEach(b => b.classList.add('pb-off'));
+      document.getElementById('h8-phint').textContent = 'set on green';
+      const hob = document.getElementById('h8-holeout');
+      if (hob) hob.remove();
+      document.getElementById('h8-undo-btn').textContent = '↩ Undo';
+      document.getElementById('h8-undo-btn').onclick = undoH8;
+    }
+  }
+}
+
+function undoH8() {
+  // Go back to hole 7 green summary
+  go('gs');
+}
+</script>
+</body>
+</html>

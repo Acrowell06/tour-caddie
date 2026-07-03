@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tour Caddie — Revised Screens</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0F; --surface: #141420; --surface2: #1C1C2E;
+    --border: #1E1E2E; --green: #2ECC71; --green-dark: #27AE60;
+    --gold: #F1C40F; --white: #FFFFFF; --muted: #8B8BA7; --dim: #5A5A7A;
+    --red: #E74C3C; --orange: #F39C12; --blue: #3498DB;
+  }
+  body {
+    background: #050508;
+    font-family: 'Inter', sans-serif;
+    color: var(--white);
+    padding: 40px 20px 80px;
+  }
+  .page-header {
+    text-align: center; margin-bottom: 52px;
+  }
+  .page-header h1 { font-size: 12px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .page-header h2 { font-size: 38px; font-weight: 800; }
+  .page-header .g { color: var(--green); }
+  .page-header p { color: var(--muted); font-size: 15px; margin-top: 8px; }
+
+  .gallery {
+    display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; max-width: 1600px; margin: 0 auto;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .screen-label { font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--dim); }
+
+  .phone {
+    width: 320px; height: 693px;
+    background: var(--bg); border-radius: 44px;
+    border: 1.5px solid #2A2A3E; overflow: hidden; position: relative;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+  .phone::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 28px; background: #000; border-radius: 0 0 18px 18px; z-index: 100;
+  }
+  .screen { width: 100%; height: 100%; overflow: hidden; padding-top: 36px; display: flex; flex-direction: column; }
+  .status { display: flex; justify-content: space-between; padding: 6px 22px 0; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); }
+
+  /* ─── SCREEN 1: LOGIN (HERO GRADIENT) ─── */
+  .login-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(39,174,96,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 70%, rgba(46,204,113,0.08) 0%, transparent 50%),
+      linear-gradient(165deg, #050F08 0%, #0A0A0F 40%, #06100A 100%);
+    z-index: 0;
+  }
+  /* Fairway silhouette */
+  .login-silhouette {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 260px; z-index: 1; opacity: 0.18;
+  }
+  .login-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    padding: 0 26px 24px;
+    height: 100%;
+  }
+  .login-logo-area {
+    flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding-top: 12px;
+  }
+  .login-icon {
+    width: 68px; height: 68px;
+    background: linear-gradient(135deg, rgba(46,204,113,0.2), rgba(39,174,96,0.08));
+    border: 1px solid rgba(46,204,113,0.3);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px; margin-bottom: 16px;
+    box-shadow: 0 8px 32px rgba(46,204,113,0.15);
+  }
+  .login-title {
+    font-size: 30px; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #FFFFFF 0%, rgba(255,255,255,0.85) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .login-sub { font-size: 13px; color: rgba(139,139,167,0.9); margin-top: 5px; }
+  .login-form { display: flex; flex-direction: column; gap: 10px; }
+  .login-input {
+    background: rgba(20,20,32,0.8);
+    border: 1px solid rgba(46,204,113,0.15);
+    border-radius: 12px; padding: 14px 16px;
+    color: var(--muted); font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    backdrop-filter: blur(10px);
+  }
+  .login-input.focused { border-color: rgba(46,204,113,0.5); color: white; }
+  .login-btn {
+    background: var(--green);
+    border: none; border-radius: 12px;
+    padding: 15px; font-size: 16px; font-weight: 700;
+    color: #000; margin-top: 4px;
+    box-shadow: 0 4px 24px rgba(46,204,113,0.35);
+    letter-spacing: 0.2px;
+  }
+  .login-divider {
+    display: flex; align-items: center; gap: 10px; margin: 14px 0 10px;
+  }
+  .login-divider-line { flex: 1; height: 1px; background: rgba(46,204,113,0.1); }
+  .login-divider-text { font-size: 11px; color: var(--dim); font-weight: 500; }
+  .oauth-row { display: flex; gap: 8px; }
+  .oauth-btn {
+    flex: 1; background: rgba(20,20,32,0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 12px 8px;
+    font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    backdrop-filter: blur(10px);
+  }
+  .login-footer { text-align: center; font-size: 12px; color: var(--dim); margin-top: 16px; }
+  .login-footer span { color: var(--green); font-weight: 600; }
+
+  /* ─── SCREEN 2: ROUND LOGGING (MAIN) ─── */
+  .score-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+  }
+  .score-left { display: flex; flex-direction: column; }
+  .score-topar { font-size: 22px; font-weight: 900; color: var(--green); line-height: 1; }
+  .score-topar.even { color: var(--white); }
+  .score-topar.over { color: var(--red); }
+  .score-thru { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 500; letter-spacing: 0.5px; }
+  .score-right { display: flex; flex-direction: column; align-items: flex-end; }
+  .hole-label { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+  .hole-detail { font-size: 13px; font-weight: 700; margin-top: 1px; }
+  .hole-score-dots { display: flex; gap: 5px; margin-top: 4px; align-items: center; }
+  .score-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+  }
+  .score-dot.filled { background: rgba(46,204,113,0.2); border-color: var(--green); color: var(--green); }
+  .score-dot.current { border-color: var(--white); border-style: dashed; }
+
+  /* PGA-style map */
+  .hole-map {
+    position: relative; overflow: hidden; flex-shrink: 0;
+    height: 295px;
+  }
+  .hole-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .dist-pill {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,10,15,0.85);
+    border: 1px solid var(--green);
+    border-radius: 50px; padding: 5px 14px;
+    font-size: 12px; font-weight: 700; color: var(--green);
+    backdrop-filter: blur(8px); white-space: nowrap;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .map-btn-row {
+    position: absolute; bottom: 10px; right: 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .map-btn {
+    background: rgba(20,20,32,0.9);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 7px 10px;
+    font-size: 10px; font-weight: 600; color: var(--white);
+    backdrop-filter: blur(8px); display: flex; align-items: center; gap: 5px;
+    white-space: nowrap;
+  }
+  .map-btn.primary { background: var(--green); color: #000; border-color: transparent; }
+
+  /* Stat toggles */
+  .stat-toggles {
+    padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    flex-shrink: 0;
+  }
+  .toggle-row { display: flex; gap: 7px; }
+  .toggle-label { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+  .tog {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 6px; text-align: center;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+  }
+  .tog.on { background: rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.4); color: var(--green); }
+  .tog.on-gold { background: rgba(241,196,15,0.1); border-color: rgba(241,196,15,0.35); color: var(--gold); }
+  .tog.on-red { background: rgba(231,76,60,0.1); border-color: rgba(231,76,60,0.35); color: var(--red); }
+
+  .putt-row {
+    display: flex; align-items: center; gap: 10px; padding: 6px 0 0;
+  }
+  .putt-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .putt-btns { display: flex; gap: 5px; }
+  .putt-btn {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    font-size: 13px; font-weight: 700; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .putt-btn.sel { background: rgba(46,204,113,0.12); border-color: var(--green); color: var(--green); }
+  .putt-num { font-size: 20px; font-weight: 800; color: var(--white); margin-left: 4px; }
+
+  .next-hole-btn {
+    background: var(--green); color: #000; border: none;
+    border-radius: 10px; padding: 12px;
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin: 4px 14px 0;
+  }
+
+  /* ─── SCREEN 3: GREEN SUMMARY SHEET ─── */
+  .green-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid rgba(46,204,113,0.2);
+    padding: 0 16px 24px;
+    z-index: 20;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 10px auto 14px;
+  }
+  .sheet-title { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+  .sheet-sub { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+
+  /* Green close-up map */
+  .green-map {
+    height: 140px; background: #0C160C;
+    border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .green-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .putt-summary {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+  }
+  .putt-counter { display: flex; align-items: center; gap: 12px; }
+  .counter-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-size: 20px; font-weight: 300; color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .counter-val { font-size: 28px; font-weight: 900; }
+  .putt-meta { font-size: 11px; color: var(--muted); text-align: right; }
+  .putt-meta span { color: var(--green); font-weight: 700; }
+
+  .hole-summary-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .summary-chip {
+    padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .chip-green { background: rgba(46,204,113,0.12); border-color: rgba(46,204,113,0.3); color: var(--green); }
+  .chip-gold { background: rgba(241,196,15,0.1); border-color: rgba(241,196,15,0.3); color: var(--gold); }
+  .chip-muted { background: var(--surface2); border-color: var(--border); color: var(--muted); }
+
+  .confirm-btn {
+    background: var(--green); color: #000; border: none;
+    border-radius: 12px; padding: 14px;
+    font-size: 15px; font-weight: 700; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+
+  /* ─── SCREEN 4: LOGIN with form focused ─── */
+  .glass-pill {
+    background: rgba(46,204,113,0.08);
+    border: 1px solid rgba(46,204,113,0.15);
+    border-radius: 50px; padding: 4px 12px;
+    font-size: 10px; color: var(--green); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px; margin-bottom: 14px;
+  }
+
+  /* Decorative corner accent */
+  .corner-accent {
+    position: absolute; top: 40px; right: 20px;
+    width: 80px; height: 80px; z-index: 1; opacity: 0.12;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Revised Design Preview</h1>
+  <h2>Tour <span class="g">Caddie</span></h2>
+  <p>Updated Sign In &amp; Round Logging screens based on your feedback</p>
+</div>
+
+<div class="gallery">
+
+  <!-- ═══ SCREEN 1A: LOGIN — HERO GRADIENT ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Sign In — Hero Gradient</div>
+    <div class="phone">
+      <div class="screen" style="background:transparent; position:relative;">
+        <!-- Background gradient -->
+        <div class="login-bg"></div>
+
+        <!-- Fairway silhouette SVG -->
+        <svg class="login-silhouette" viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+          <!-- Rolling hills / fairway outline -->
+          <path d="M0,200 Q40,140 80,160 Q120,180 160,130 Q200,80 240,120 Q280,155 320,100 L320,260 L0,260 Z" fill="#1A4A1A"/>
+          <path d="M0,220 Q60,180 100,195 Q140,210 180,170 Q220,130 260,150 Q290,165 320,140 L320,260 L0,260 Z" fill="#0F300F"/>
+          <!-- Tree silhouettes -->
+          <ellipse cx="60" cy="155" rx="12" ry="18" fill="#0A200A"/>
+          <rect x="58" y="170" width="4" height="12" fill="#0A200A"/>
+          <ellipse cx="250" cy="118" rx="10" ry="15" fill="#0A200A"/>
+          <rect x="248" y="130" width="4" height="10" fill="#0A200A"/>
+          <ellipse cx="290" cy="138" rx="8" ry="12" fill="#0A200A"/>
+          <!-- Flag -->
+          <line x1="160" y1="128" x2="160" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+          <polygon points="160,100 174,107 160,114" fill="rgba(231,76,60,0.5)"/>
+        </svg>
+
+        <!-- Subtle grid lines -->
+        <svg style="position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:0.04;" viewBox="0 0 320 693">
+          <defs><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(46,204,113,1)" stroke-width="0.5"/></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#grid)"/>
+        </svg>
+
+        <div class="login-content">
+          <div style="position:relative;z-index:2;">
+            <div class="status" style="color:rgba(255,255,255,0.5);">
+              <span>9:41</span><span style="letter-spacing:2px;">•••</span>
+            </div>
+          </div>
+
+          <div class="login-logo-area" style="position:relative;z-index:2;">
+            <div class="glass-pill">⛳ PGA-Level Stat Tracking</div>
+            <div class="login-icon">⛳</div>
+            <div class="login-title">Tour Caddie</div>
+            <div class="login-sub">Track your game like a pro</div>
+          </div>
+
+          <div class="login-form" style="position:relative;z-index:2;">
+            <input class="login-input focused" placeholder="Email address" readonly style="color:rgba(255,255,255,0.9);">
+            <input class="login-input" placeholder="Password" readonly>
+            <button class="login-btn">Sign In</button>
+
+            <div class="login-divider">
+              <div class="login-divider-line"></div>
+              <span class="login-divider-text">or continue with</span>
+              <div class="login-divider-line"></div>
+            </div>
+
+            <div class="oauth-row">
+              <button class="oauth-btn">
+                <span style="font-size:14px;font-weight:800;color:#4285F4;">G</span> Google
+              </button>
+              <button class="oauth-btn">
+                <span style="font-size:14px;">🍎</span> Apple
+              </button>
+            </div>
+
+            <div class="login-footer">
+              Don't have an account? <span>Sign Up</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 2: ROUND LOGGING — SHOT TRACKING ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Round Logging — Shot View</div>
+    <div class="phone">
+      <div class="screen" style="background:var(--bg);">
+        <div class="status" style="padding-top:4px;">
+          <span>9:41</span><span>●●●</span>
+        </div>
+
+        <!-- Score bar -->
+        <div class="score-bar">
+          <div class="score-left">
+            <div class="score-topar">-1</div>
+            <div class="score-thru">THRU 6 HOLES</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--border);"></div>
+          <div class="score-right">
+            <div class="hole-label">HOLE 7 · PAR 4 · 412 YDS</div>
+            <div class="hole-detail" style="color:var(--muted);font-size:12px;">Hdcp 5 · Shot <span style="color:var(--green);font-weight:800;">2</span> of 4</div>
+            <div class="hole-score-dots">
+              <div class="score-dot filled">✓</div>
+              <div class="score-dot current"></div>
+              <div class="score-dot"></div>
+              <div class="score-dot"></div>
+              <div style="font-size:10px;color:var(--muted);margin-left:2px;">putts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PGA TOUR-STYLE MAP -->
+        <div class="hole-map">
+          <svg viewBox="0 0 320 295" xmlns="http://www.w3.org/2000/svg">
+            <!-- Sky / terrain background -->
+            <rect width="320" height="295" fill="#0B1210"/>
+
+            <!-- Rough texture -->
+            <ellipse cx="160" cy="148" rx="100" ry="140" fill="#0D1A0D" opacity="0.9"/>
+            <ellipse cx="155" cy="145" rx="85" ry="130" fill="#0F1F0F" opacity="0.7"/>
+
+            <!-- Fairway (main) -->
+            <path d="M 135 285 Q 128 230 118 175 Q 112 140 120 95 Q 128 60 148 42 Q 162 30 172 36 Q 180 42 174 62 Q 165 85 160 115 Q 153 150 158 195 Q 162 240 165 285 Z"
+                  fill="#184A18"/>
+            <!-- Fairway lighter highlight -->
+            <path d="M 140 285 Q 133 232 124 178 Q 118 144 126 100 Q 133 65 150 47 Q 161 35 168 41 Q 174 46 169 65 Q 161 88 157 118 Q 150 152 154 198 Q 158 242 162 285 Z"
+                  fill="#1E5C1E" opacity="0.6"/>
+
+            <!-- Water hazard (left) -->
+            <ellipse cx="100" cy="90" rx="22" ry="13" fill="#0A1E3A"/>
+            <ellipse cx="100" cy="90" rx="18" ry="10" fill="#0D2545" opacity="0.8"/>
+            <text x="100" y="94" text-anchor="middle" font-size="9" fill="rgba(52,152,219,0.6)" font-weight="600">💧</text>
+
+            <!-- Bunker (right of fairway) -->
+            <ellipse cx="195" cy="155" rx="18" ry="12" fill="#2A2510"/>
+            <ellipse cx="195" cy="155" rx="14" ry="9" fill="#3A3515" opacity="0.8"/>
+
+            <!-- Green -->
+            <ellipse cx="152" cy="40" rx="20" ry="15" fill="#1A7A1A"/>
+            <ellipse cx="152" cy="40" rx="16" ry="11" fill="#22A022" opacity="0.9"/>
+            <ellipse cx="152" cy="40" rx="12" ry="8" fill="#28B828" opacity="0.6"/>
+
+            <!-- Pin -->
+            <line x1="152" y1="40" x2="152" y2="22" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+            <polygon points="152,22 164,28 152,34" fill="#E74C3C"/>
+
+            <!-- Tee box -->
+            <rect x="148" y="280" width="20" height="10" rx="4" fill="#2A3A1A" opacity="0.9"/>
+            <rect x="149" y="281" width="18" height="8" rx="3" fill="#1E2E12" opacity="0.6"/>
+
+            <!-- ── SHOT PATHS (PGA Tour style) ── -->
+            <!-- Shot 1 path: tee to fairway (dashed arc) -->
+            <path d="M 158 283 Q 185 200 155 145" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <!-- Shot 2 path: fairway to (landing) -->
+            <path d="M 155 145 Q 148 95 152 58" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+            <!-- Shot 1 landing marker (PGA Tour numbered circle) -->
+            <!-- Tee shot -->
+            <circle cx="158" cy="283" r="9" fill="rgba(10,10,15,0.8)" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+            <text x="158" y="287" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.7)" font-weight="700">T</text>
+
+            <!-- Shot 1 end / Shot 2 start (current position) -->
+            <!-- Pulsing ring -->
+            <circle cx="155" cy="145" r="14" fill="rgba(46,204,113,0.08)" stroke="rgba(46,204,113,0.2)" stroke-width="1"/>
+            <circle cx="155" cy="145" r="9" fill="rgba(46,204,113,0.15)" stroke="rgba(46,204,113,0.5)" stroke-width="1.5"/>
+            <text x="155" y="149" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+
+            <!-- Shot number label (PGA Tour style floating label) -->
+            <rect x="115" y="132" width="34" height="16" rx="4" fill="rgba(10,10,15,0.85)" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+            <text x="132" y="143" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.7)">287 yds</text>
+
+            <!-- Distance dotted line to pin -->
+            <line x1="155" y1="143" x2="152" y2="55" stroke="rgba(46,204,113,0.5)" stroke-width="1" stroke-dasharray="3,3"/>
+
+            <!-- Distance pill between current pos and green -->
+            <rect x="108" y="92" width="42" height="16" rx="8" fill="rgba(46,204,113,0.12)" stroke="rgba(46,204,113,0.4)" stroke-width="1"/>
+            <text x="129" y="103" text-anchor="middle" font-size="9" fill="var(--green)" font-weight="700">143 yds</text>
+
+            <!-- Faint course boundary -->
+            <ellipse cx="160" cy="148" rx="100" ry="140" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          </svg>
+
+          <!-- Dist pill overlay -->
+          <div class="dist-pill">
+            ↑ 143 yds to pin · 6i
+          </div>
+
+          <!-- Map action buttons -->
+          <div class="map-btn-row">
+            <div class="map-btn primary">📍 Mark Shot</div>
+            <div class="map-btn">⊕ Zoom</div>
+          </div>
+
+          <!-- Hole info top-left -->
+          <div style="position:absolute;top:8px;left:10px;display:flex;gap:5px;">
+            <div style="background:rgba(10,10,15,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 8px;backdrop-filter:blur(8px);">
+              <div style="font-size:8px;color:var(--muted);font-weight:600;">HOLE</div>
+              <div style="font-size:14px;font-weight:900;">7</div>
+            </div>
+            <div style="background:rgba(10,10,15,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 8px;backdrop-filter:blur(8px);">
+              <div style="font-size:8px;color:var(--muted);font-weight:600;">PAR</div>
+              <div style="font-size:14px;font-weight:900;">4</div>
+            </div>
+            <div style="background:rgba(10,10,15,0.8);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 8px;backdrop-filter:blur(8px);">
+              <div style="font-size:8px;color:var(--muted);font-weight:600;">SHOT</div>
+              <div style="font-size:14px;font-weight:900;color:var(--green);">2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat toggles -->
+        <div class="stat-toggles">
+          <div>
+            <div class="toggle-label">Tee Shot / Fairway</div>
+            <div class="toggle-row">
+              <div class="tog on">✓ FIR</div>
+              <div class="tog">Missed L</div>
+              <div class="tog">Missed R</div>
+              <div class="tog on-gold">Bunker</div>
+            </div>
+          </div>
+          <div>
+            <div class="toggle-label">Green / Scoring</div>
+            <div class="toggle-row">
+              <div class="tog">GIR</div>
+              <div class="tog">Missed</div>
+              <div class="tog">Scramble</div>
+              <div class="tog on-red">Sand Save</div>
+            </div>
+          </div>
+          <div class="putt-row">
+            <span class="putt-label">Putts</span>
+            <div class="putt-btns">
+              <div class="putt-btn">1</div>
+              <div class="putt-btn sel">2</div>
+              <div class="putt-btn">3</div>
+              <div class="putt-btn">3+</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="next-hole-btn">Hole Out → Green Summary</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 3: GREEN SUMMARY SHEET ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Green Summary — After Hole Out</div>
+    <div class="phone">
+      <div class="screen" style="background:var(--bg);">
+        <div class="status" style="padding-top:4px;"><span>9:41</span><span>●●●</span></div>
+
+        <!-- Score bar (dimmed, showing completed hole) -->
+        <div class="score-bar" style="opacity:0.6;">
+          <div class="score-left">
+            <div class="score-topar" style="color:var(--white);">E</div>
+            <div class="score-thru">THRU 7 HOLES</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--border);"></div>
+          <div class="score-right">
+            <div class="hole-label">HOLE 7 COMPLETE</div>
+            <div class="hole-detail" style="color:var(--green);font-size:13px;font-weight:800;">PAR ●</div>
+          </div>
+        </div>
+
+        <!-- Blurred map behind sheet -->
+        <div class="hole-map" style="height:220px;filter:blur(1px);opacity:0.35;">
+          <svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="220" fill="#0B1210"/>
+            <ellipse cx="160" cy="110" rx="90" ry="105" fill="#0F1F0F"/>
+            <path d="M 135 215 Q 125 165 118 125 Q 112 95 125 65 Q 138 40 152 35 Q 165 30 168 50 Q 162 70 158 100 Q 153 130 158 175 Q 162 200 164 215 Z" fill="#1A5A1A"/>
+            <ellipse cx="152" cy="35" rx="18" ry="13" fill="#22A022"/>
+            <line x1="152" y1="35" x2="152" y2="18" stroke="white" stroke-width="1.5" opacity="0.8"/>
+            <polygon points="152,18 163,24 152,30" fill="#E74C3C" opacity="0.8"/>
+          </svg>
+        </div>
+
+        <!-- GREEN SUMMARY SHEET slides up -->
+        <div class="green-sheet" style="height:380px;">
+          <div class="sheet-handle"></div>
+          <div class="sheet-title">Hole 7 — Green Summary</div>
+          <div class="sheet-sub">Drag markers to where each putt started · Confirm to continue</div>
+
+          <!-- Green close-up map with putt markers -->
+          <div class="green-map">
+            <svg viewBox="0 0 288 140" xmlns="http://www.w3.org/2000/svg">
+              <rect width="288" height="140" fill="#0C160C"/>
+              <!-- Green surface -->
+              <ellipse cx="144" cy="70" rx="110" ry="60" fill="#1A6A1A" opacity="0.9"/>
+              <ellipse cx="144" cy="70" rx="95" ry="48" fill="#1E7A1E" opacity="0.8"/>
+              <!-- Fringe -->
+              <ellipse cx="144" cy="70" rx="110" ry="60" fill="none" stroke="#258A25" stroke-width="4" opacity="0.5"/>
+              <!-- Grain lines -->
+              <line x1="40" y1="50" x2="250" y2="50" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="40" y1="70" x2="250" y2="70" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="40" y1="90" x2="250" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+              <!-- Pin -->
+              <circle cx="144" cy="52" r="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+              <circle cx="144" cy="52" r="2" fill="white"/>
+              <line x1="144" y1="52" x2="144" y2="25" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+              <polygon points="144,25 155,31 144,37" fill="#E74C3C" opacity="0.9"/>
+
+              <!-- Approach shot end (first putt start) -->
+              <circle cx="90" cy="85" r="8" fill="rgba(46,204,113,0.2)" stroke="rgba(46,204,113,0.6)" stroke-width="1.5"/>
+              <text x="90" y="89" text-anchor="middle" font-size="9" fill="white" font-weight="800">A</text>
+              <text x="90" y="100" text-anchor="middle" font-size="7" fill="rgba(139,139,167,0.8)">22ft</text>
+
+              <!-- Putt path 1: approach end → first putt end -->
+              <path d="M 90 85 Q 115 65 138 55" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1" stroke-dasharray="3,2"/>
+
+              <!-- First putt end / second putt start -->
+              <circle cx="138" cy="55" r="7" fill="rgba(241,196,15,0.2)" stroke="rgba(241,196,15,0.6)" stroke-width="1.5"/>
+              <text x="138" y="59" text-anchor="middle" font-size="9" fill="white" font-weight="800">1</text>
+              <text x="138" y="69" text-anchor="middle" font-size="7" fill="rgba(139,139,167,0.8)">3ft</text>
+
+              <!-- Putt path 2: first putt end → hole -->
+              <path d="M 138 55 Q 141 53 144 52" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1" stroke-dasharray="2,2"/>
+
+              <!-- Hole out indicator -->
+              <circle cx="144" cy="52" r="4" fill="rgba(46,204,113,0.3)" stroke="var(--green)" stroke-width="1.5"/>
+
+              <!-- "Drag to reposition" hint -->
+              <rect x="168" y="78" width="56" height="16" rx="4" fill="rgba(10,10,15,0.75)" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+              <text x="196" y="89" text-anchor="middle" font-size="7.5" fill="rgba(139,139,167,0.8)">drag to move</text>
+            </svg>
+          </div>
+
+          <!-- Putt counter -->
+          <div class="putt-summary">
+            <div>
+              <div style="font-size:10px;color:var(--muted);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Putts This Hole</div>
+              <div class="putt-counter">
+                <div class="counter-btn">−</div>
+                <div class="counter-val">2</div>
+                <div class="counter-btn">+</div>
+              </div>
+            </div>
+            <div class="putt-meta">
+              First putt: <span>22 ft</span><br>
+              Remaining: <span>3 ft</span><br>
+              Made 2nd putt
+            </div>
+          </div>
+
+          <!-- Auto-detected stat chips -->
+          <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Auto-Detected This Hole</div>
+          <div class="hole-summary-chips">
+            <div class="summary-chip chip-green">✓ FIR</div>
+            <div class="summary-chip chip-muted">GIR: Miss</div>
+            <div class="summary-chip chip-green">✓ Scramble</div>
+            <div class="summary-chip chip-muted">No Bunker</div>
+          </div>
+
+          <button class="confirm-btn">Confirm · Next Hole (8) →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCREEN 4: ROUND LOGGING — MULTI-SHOT HISTORY ═══ -->
+  <div class="phone-wrap">
+    <div class="screen-label">Round Logging — After 3 Shots</div>
+    <div class="phone">
+      <div class="screen" style="background:var(--bg);">
+        <div class="status" style="padding-top:4px;"><span>9:41</span><span>●●●</span></div>
+
+        <!-- Score bar -->
+        <div class="score-bar">
+          <div class="score-left">
+            <div class="score-topar" style="color:var(--red);">+1</div>
+            <div class="score-thru">THRU 6 HOLES</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--border);"></div>
+          <div class="score-right">
+            <div class="hole-label">HOLE 7 · PAR 4 · 412 YDS</div>
+            <div class="hole-detail" style="color:var(--muted);font-size:12px;">Shot <span style="color:var(--gold);font-weight:800;">3</span> — Near Green</div>
+            <div class="hole-score-dots">
+              <div class="score-dot filled">✓</div>
+              <div class="score-dot filled">✓</div>
+              <div class="score-dot current" style="border-color:var(--gold);"></div>
+              <div class="score-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map with 3 shots plotted -->
+        <div class="hole-map">
+          <svg viewBox="0 0 320 295" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="295" fill="#0B1210"/>
+            <ellipse cx="160" cy="148" rx="100" ry="140" fill="#0D1A0D" opacity="0.9"/>
+            <path d="M 135 285 Q 128 230 118 175 Q 112 140 120 95 Q 128 60 148 42 Q 162 30 172 36 Q 180 42 174 62 Q 165 85 160 115 Q 153 150 158 195 Q 162 240 165 285 Z" fill="#184A18"/>
+            <ellipse cx="100" cy="90" rx="22" ry="13" fill="#0A1E3A"/>
+            <ellipse cx="195" cy="155" rx="18" ry="12" fill="#2A2510"/>
+            <ellipse cx="152" cy="40" rx="20" ry="15" fill="#1A7A1A"/>
+            <ellipse cx="152" cy="40" rx="14" ry="10" fill="#28B828" opacity="0.8"/>
+            <line x1="152" y1="40" x2="152" y2="22" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
+            <polygon points="152,22 164,28 152,34" fill="#E74C3C"/>
+            <rect x="148" y="280" width="20" height="10" rx="4" fill="#2A3A1A"/>
+
+            <!-- Shot 1: Tee → fairway (driver, 287 yds) -->
+            <path d="M 158 283 Q 188 205 160 148" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <!-- Shot 2: Fairway → near green (6i, 143 yds) -->
+            <path d="M 160 148 Q 153 100 154 68" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <!-- Shot 3: near green to green (chip) -->
+            <path d="M 154 68 Q 153 52 152 44" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+            <!-- Tee marker -->
+            <circle cx="158" cy="283" r="8" fill="rgba(10,10,15,0.85)" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+            <text x="158" y="287" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.6)" font-weight="700">T</text>
+
+            <!-- Shot 1 label -->
+            <rect x="170" y="145" width="50" height="13" rx="3" fill="rgba(10,10,15,0.8)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+            <text x="195" y="154" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.6)">Dr · 287 yds</text>
+
+            <!-- Shot 1 end: numbered PGA-style -->
+            <circle cx="160" cy="148" r="9" fill="#1A4A1A" stroke="rgba(46,204,113,0.6)" stroke-width="1.5"/>
+            <text x="160" y="152" text-anchor="middle" font-size="10" fill="white" font-weight="800">1</text>
+
+            <!-- Shot 2 label -->
+            <rect x="158" y="100" width="50" height="13" rx="3" fill="rgba(10,10,15,0.8)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+            <text x="183" y="109" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.6)">6i · 143 yds</text>
+
+            <!-- Shot 2 end: numbered -->
+            <circle cx="154" cy="68" r="9" fill="#1A3A1A" stroke="rgba(241,196,15,0.6)" stroke-width="1.5"/>
+            <text x="154" y="72" text-anchor="middle" font-size="10" fill="white" font-weight="800">2</text>
+
+            <!-- Shot 3 (current / near pin) — pulsing -->
+            <circle cx="152" cy="44" r="12" fill="rgba(46,204,113,0.08)" stroke="none"/>
+            <circle cx="152" cy="44" r="8" fill="rgba(46,204,113,0.2)" stroke="rgba(46,204,113,0.7)" stroke-width="1.5"/>
+            <text x="152" y="48" text-anchor="middle" font-size="10" fill="white" font-weight="800">3</text>
+            <text x="152" y="58" text-anchor="middle" font-size="7" fill="rgba(46,204,113,0.8)">PW · 25 yds</text>
+
+            <!-- Distance to pin from shot 3 -->
+            <line x1="152" y1="44" x2="152" y2="40" stroke="rgba(46,204,113,0.4)" stroke-width="1"/>
+            <rect x="108" y="55" width="42" height="13" rx="6" fill="rgba(46,204,113,0.1)" stroke="rgba(46,204,113,0.35)" stroke-width="1"/>
+            <text x="129" y="65" text-anchor="middle" font-size="8" fill="var(--green)" font-weight="700">12 ft pin</text>
+          </svg>
+
+          <div class="dist-pill">📍 On Green — 12 ft to pin</div>
+          <div class="map-btn-row">
+            <div class="map-btn primary" style="background:var(--gold);color:#000;">🚩 Hole Out</div>
+            <div class="map-btn">Drag Pin</div>
+          </div>
+
+          <div style="position:absolute;top:8px;left:10px;display:flex;gap:5px;">
+            <div style="background:rgba(10,10,15,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 8px;backdrop-filter:blur(8px);">
+              <div style="font-size:8px;color:var(--muted);font-weight:600;">HOLE</div>
+              <div style="font-size:14px;font-weight:900;">7</div>
+            </div>
+            <div style="background:rgba(10,10,15,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:4px 8px;backdrop-filter:blur(8px);">
+              <div style="font-size:8px;color:var(--muted);font-weight:600;">SHOT</div>
+              <div style="font-size:14px;font-weight:900;color:var(--gold);">3</div>
+            </div>
+            <div style="background:rgba(10,10,15,0.85);border:1px solid rgba(46,204,113,0.3);border-radius:7px;padding:4px 8px;backdrop-filter:blur(8px);">
+              <div style="font-size:8px;color:var(--green);font-weight:600;">ON GREEN</div>
+              <div style="font-size:11px;font-weight:800;color:var(--green);">12 ft</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stat toggles (context: on green) -->
+        <div class="stat-toggles">
+          <div>
+            <div class="toggle-label">This Hole (auto + override)</div>
+            <div class="toggle-row">
+              <div class="tog on">✓ FIR</div>
+              <div class="tog" style="flex:1.5;">GIR: On Green</div>
+              <div class="tog on-gold">Scramble</div>
+            </div>
+          </div>
+          <div class="putt-row" style="padding:0;">
+            <span class="putt-label">Putts</span>
+            <div class="putt-btns">
+              <div class="putt-btn sel">1</div>
+              <div class="putt-btn">2</div>
+              <div class="putt-btn">3</div>
+            </div>
+            <span class="putt-num" style="color:var(--green)">1</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:2px;">(set after green summary)</span>
+          </div>
+        </div>
+
+        <button class="next-hole-btn" style="background:var(--gold);">🚩 Hole Out → Green Summary</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
