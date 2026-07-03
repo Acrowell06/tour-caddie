@@ -106,44 +106,63 @@ window.TcRounds = (() => {
   async function computeRoundDifferential(session, roundId, courseRating, slopeRating) {
     if (!window.TcHandicap || courseRating == null || slopeRating == null) return null;
 
-    const { data: holes, error } = await TcAuth.client
-      .from('round_holes')
-      .select('par, gross_score, handicap')
-      .eq('round_id', roundId);
-    if (error || !holes || holes.length === 0) return null;
+    try {
+      const { data: holes, error } = await TcAuth.client
+        .from('round_holes')
+        .select('par, gross_score, handicap')
+        .eq('round_id', roundId);
+      if (error || !holes || holes.length === 0) return null;
 
-    const { data: profile } = await TcAuth.client
-      .from('profiles')
-      .select('handicap_index')
-      .eq('id', session.user.id)
-      .single();
-    const currentIndex = profile?.handicap_index ?? null;
-    const coursePar = holes.reduce((a, h) => a + (h.par ?? 4), 0);
+      const { data: profile, error: profileError } = await TcAuth.client
+        .from('profiles')
+        .select('handicap_index')
+        .eq('id', session.user.id)
+        .single();
+      if (profileError) console.error('TcRounds: failed to fetch profile for differential calc', profileError);
+      const currentIndex = profile?.handicap_index ?? null;
+      const coursePar = holes.reduce((a, h) => a + (h.par ?? 4), 0);
 
-    const adjustedGross = window.TcHandicap.adjustedGrossScore(holes, currentIndex, slopeRating, courseRating, coursePar);
-    const differential = window.TcHandicap.scoreDifferential(adjustedGross, courseRating, slopeRating);
-    return { adjustedGross, differential };
+      const adjustedGross = window.TcHandicap.adjustedGrossScore(holes, currentIndex, slopeRating, courseRating, coursePar);
+      const differential = window.TcHandicap.scoreDifferential(adjustedGross, courseRating, slopeRating);
+      return { adjustedGross, differential };
+    } catch (e) {
+      console.error('TcRounds: differential computation threw', e);
+      return null;
+    }
   }
 
   async function recomputeHandicapIndex(session) {
-    if (!window.TcHandicap) return;
-    const { data: rounds, error } = await TcAuth.client
-      .from('rounds')
-      .select('id, hole_count, differential, completed_at')
-      .eq('user_id', session.user.id)
-      .eq('status', 'complete')
-      .not('differential', 'is', null)
-      .order('completed_at', { ascending: false })
-      .limit(50); // generously more than the 20 needed post-pairing
-    if (error || !rounds) return;
+    if (!window.TcHandicap) return false;
+    try {
+      const { data: rounds, error } = await TcAuth.client
+        .from('rounds')
+        .select('id, hole_count, differential, completed_at')
+        .eq('user_id', session.user.id)
+        .eq('status', 'complete')
+        .not('differential', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(50); // generously more than the 20 needed post-pairing
+      if (error || !rounds) {
+        console.error('TcRounds: failed to fetch round history for handicap recompute', error);
+        return false;
+      }
 
-    const entries = window.TcHandicap.pairNineHoleDifferentials(rounds);
-    const { index } = window.TcHandicap.computeHandicapIndex(entries);
+      const entries = window.TcHandicap.pairNineHoleDifferentials(rounds);
+      const { index } = window.TcHandicap.computeHandicapIndex(entries);
 
-    await TcAuth.client
-      .from('profiles')
-      .update({ handicap_index: index })
-      .eq('id', session.user.id);
+      const { error: updateError } = await TcAuth.client
+        .from('profiles')
+        .update({ handicap_index: index })
+        .eq('id', session.user.id);
+      if (updateError) {
+        console.error('TcRounds: failed to write recomputed handicap index', updateError);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('TcRounds: handicap index recompute threw', e);
+      return false;
+    }
   }
 
   async function writeRoundComplete(roundId, payload) {
@@ -165,7 +184,10 @@ window.TcRounds = (() => {
       .eq('user_id', session.user.id);
     if (error) { console.error('TcRounds: failed to complete round', error); return false; }
 
-    if (diffResult) await recomputeHandicapIndex(session);
+    if (diffResult) {
+      const indexOk = await recomputeHandicapIndex(session);
+      if (!indexOk) return false;
+    }
     return true;
   }
 
