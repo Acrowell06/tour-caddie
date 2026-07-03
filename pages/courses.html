@@ -312,9 +312,17 @@ function escHtml(s) {
 
 function fmtToPar(n) { return n === 0 ? 'E' : n > 0 ? '+' + n : String(n); }
 
-function renderSeasonSummary() {
+async function renderSeasonSummary() {
   document.getElementById('ssum-rounds').textContent = String(ROUNDS.length);
-  document.getElementById('ssum-hcp').textContent = '—'; // needs the WHS handicap engine (future sub-project)
+
+  const session = await TcAuth.getSession();
+  const hcpEl = document.getElementById('ssum-hcp');
+  if (session) {
+    const { data } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
+    hcpEl.textContent = data?.handicap_index != null ? ((data.handicap_index >= 0 ? '+' : '') + data.handicap_index) : '—';
+  } else {
+    hcpEl.textContent = '—';
+  }
 
   const scravgEl = document.getElementById('ssum-scravg');
   const lowrdEl  = document.getElementById('ssum-lowrd');
@@ -340,7 +348,7 @@ async function loadRounds() {
   buildFilters();
   renderRounds(String(new Date().getFullYear()), '');
   renderInsights();
-  renderSeasonSummary();
+  await renderSeasonSummary();
 })();
 
 /* ══ ROUND DATA ══ */

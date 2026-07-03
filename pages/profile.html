@@ -150,7 +150,7 @@
       <div class="pf-name">John Doe</div>
       <div class="pf-hcp-lbl">Handicap Index</div>
     </div>
-    <div class="pf-hcp-num">4.2</div>
+    <div class="pf-hcp-num" id="pf-hcp-num">—</div>
   </div>
 
   <!-- Scrollable content -->
@@ -460,7 +460,15 @@
 <script src="tc-auth.js"></script>
 <script src="tc-utils.js"></script>
 <script>
-(async () => { await TcAuth.requireAuth(); })();
+(async () => {
+  await TcAuth.requireAuth();
+  const session = await TcAuth.getSession();
+  if (session) {
+    const { data } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
+    const el = document.getElementById('pf-hcp-num');
+    if (el) el.textContent = data?.handicap_index != null ? ((data.handicap_index >= 0 ? '+' : '') + data.handicap_index) : '—';
+  }
+})();
 
 async function doSignOut() {
   await TcAuth.signOut();

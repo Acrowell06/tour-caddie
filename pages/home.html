@@ -230,7 +230,7 @@
 
 /* ══ STAT CATALOGUE ══ */
 const STATS = {
-  'handicap':   { name:'Handicap Index',   label:'HANDICAP',    value:'+1.8',  vc:'g', trend:'▼ 0.3',  tc:'g', sub:'WHS · Jun 27' },
+  'handicap':   { name:'Handicap Index',   label:'HANDICAP',    value:'—',  vc:'g', trend:null,  tc:'g', sub:'WHS' },
   'last-round': { name:'Last Round',        label:'LAST ROUND',  value:'−2',    vc:'g', trend:null,     tc:'g', sub:'70 · Riviera' },
   'season':     { name:'2026 Season',       label:'2025 SEASON', value:'12',    vc:'w', trend:null,     tc:'n', sub:'rounds'       },
   'scoring':    { name:'Scoring Average',   label:'SCR AVG',     value:'+0.4',  vc:'w', trend:'▼ 0.1',  tc:'g', sub:'to par'       },
@@ -516,6 +516,15 @@ function initWeatherBanner() {
 
 /* ══ INIT ══ */
 renderWidgets();
+(async () => {
+  const session = await TcAuth.getSession();
+  if (!session) return;
+  const { data } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
+  if (data?.handicap_index != null) {
+    STATS['handicap'].value = (data.handicap_index >= 0 ? '+' : '') + data.handicap_index;
+    renderWidgets();
+  }
+})();
 renderLeaderboard();
 initWeatherBanner();
 </script>
