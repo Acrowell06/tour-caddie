@@ -393,6 +393,18 @@ const TEE_CANONICAL = [
 ];
 
 let teeCourseData = null; // holes_data for the selected course, once TcCourse.loadNear resolves
+let editingTeeYardageKey = null; // which tee's manual-yardage input is currently open, if any
+
+function getManualTeeYardage(geoKey, teeKey) {
+  try {
+    const raw = localStorage.getItem(`tc_tee_yardage_${geoKey}_${teeKey}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveManualTeeYardage(geoKey, teeKey, yds) {
+  try { localStorage.setItem(`tc_tee_yardage_${geoKey}_${teeKey}`, JSON.stringify(yds)); } catch {}
+}
 
 function sameLatLng(a, b) {
   return !!a && !!b && a.lat === b.lat && a.lng === b.lng;
@@ -792,17 +804,40 @@ function renderTeeList() {
   const teeList = document.getElementById('rd-tee-list');
   if (!teeList) return;
   const yardages = computeTeeYardages(teeCourseData);
+  const geoKey = (sel.course?.lat && sel.course?.lng) ? TcCourse.geoKeyFor(sel.course.lat, sel.course.lng) : null;
   teeList.innerHTML = '';
   TEE_CANONICAL.forEach(t => {
-    const yds = yardages[t.key];
+    let yds = yardages[t.key];
+    if (yds == null && geoKey) {
+      const manual = getManualTeeYardage(geoKey, t.key);
+      if (manual != null) yds = manual;
+    }
+
     const d = document.createElement('div');
     d.className = 'radio-opt' + (sel.tee && sel.tee.key === t.key ? ' selected' : '');
+
+    let subHtml;
+    if (yds != null) {
+      subHtml = `${yds.toLocaleString()} yds`;
+    } else if (geoKey && editingTeeYardageKey === t.key) {
+      subHtml = `
+        <div style="display:flex;gap:6px;align-items:center;" onclick="event.stopPropagation();">
+          <input class="date-inp" type="number" step="1" min="4000" max="8000" placeholder="e.g. 6800" id="rd-yds-inp-${t.key}" style="flex:1;padding:4px 8px;font-size:11px;">
+          <button class="setup-next-btn" style="padding:4px 10px;font-size:11px;" onclick="saveTeeYardageEntry('${t.key}')">Save</button>
+        </div>
+        <div id="rd-yds-err-${t.key}" style="color:#E74C3C;font-size:10px;margin-top:2px;"></div>`;
+    } else if (geoKey) {
+      subHtml = `Yardage unknown <span onclick="event.stopPropagation(); editingTeeYardageKey='${t.key}'; renderTeeList();" style="color:var(--green);cursor:pointer;">Enter yardage</span>`;
+    } else {
+      subHtml = 'Yardage unknown';
+    }
+
     d.innerHTML = `
       <div class="ro-dot"></div>
       <div class="tee-swatch" style="background:${t.color};border:1px solid rgba(255,255,255,0.2);"></div>
       <div class="ro-info">
         <div class="ro-name">${t.name}</div>
-        <div class="ro-sub">${yds != null ? yds.toLocaleString() + ' yds' : 'Yardage unknown'}</div>
+        <div class="ro-sub">${subHtml}</div>
       </div>`;
     d.onclick = () => {
       sel.tee = { name: t.name, key: t.key, color: t.color, yds };
@@ -814,6 +849,20 @@ function renderTeeList() {
     teeList.appendChild(d);
   });
 }
+
+window.saveTeeYardageEntry = function saveTeeYardageEntry(teeKey) {
+  const inp = document.getElementById(`rd-yds-inp-${teeKey}`);
+  const err = document.getElementById(`rd-yds-err-${teeKey}`);
+  const yds = parseInt(inp.value, 10);
+  if (!(yds >= 4000 && yds <= 8000)) {
+    if (err) err.textContent = 'Enter a yardage between 4,000 and 8,000.';
+    return;
+  }
+  const geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
+  saveManualTeeYardage(geoKey, teeKey, yds);
+  editingTeeYardageKey = null;
+  renderTeeList();
+};
 
 function renderRoundDetails(body) {
   sel.startHole = sel.startHole || 1;
