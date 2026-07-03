@@ -250,6 +250,169 @@ git commit -m "feat: rounds.html — compute real per-tee yardage from OSM data,
 
 ---
 
+### Task 2: `pages/rounds.html` — manual tee yardage entry fallback
+
+**Files:**
+- Modify: `pages/rounds.html`
+
+**Interfaces:**
+- Consumes: `TcCourse.geoKeyFor` (unchanged, already used by Task 1 and the Course Rating/Slope feature), `renderTeeList()`/`computeTeeYardages()`/`TEE_CANONICAL` from Task 1.
+- Produces: a new localStorage cache namespace `tc_tee_yardage_<geoKey>_<teeKey>`, distinct from `tc_handicap_...` (Rating/Slope) and `tc_course_...` (OSM data).
+
+Follow-up discovered while live-testing Task 1: when a tee's computed yardage is `null` ("Yardage unknown"), there's no way to fix it. This task adds a manual entry option, mirroring the existing Course Rating/Slope entry UI in the same wizard step. Real OSM-computed yardage always takes precedence — the manual cache is only ever consulted when the computed value is `null`.
+
+- [ ] **Step 1: Add the manual yardage cache helpers and an editing-state variable**
+
+Find:
+```js
+let teeCourseData = null; // holes_data for the selected course, once TcCourse.loadNear resolves
+```
+
+Replace with:
+```js
+let teeCourseData = null; // holes_data for the selected course, once TcCourse.loadNear resolves
+let editingTeeYardageKey = null; // which tee's manual-yardage input is currently open, if any
+
+function getManualTeeYardage(geoKey, teeKey) {
+  try {
+    const raw = localStorage.getItem(`tc_tee_yardage_${geoKey}_${teeKey}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveManualTeeYardage(geoKey, teeKey, yds) {
+  try { localStorage.setItem(`tc_tee_yardage_${geoKey}_${teeKey}`, JSON.stringify(yds)); } catch {}
+}
+```
+
+- [ ] **Step 2: Fall back to the manual cache when computed yardage is unknown, and render the entry affordance**
+
+Find:
+```js
+function renderTeeList() {
+  const teeList = document.getElementById('rd-tee-list');
+  if (!teeList) return;
+  const yardages = computeTeeYardages(teeCourseData);
+  teeList.innerHTML = '';
+  TEE_CANONICAL.forEach(t => {
+    const yds = yardages[t.key];
+    const d = document.createElement('div');
+    d.className = 'radio-opt' + (sel.tee && sel.tee.key === t.key ? ' selected' : '');
+    d.innerHTML = `
+      <div class="ro-dot"></div>
+      <div class="tee-swatch" style="background:${t.color};border:1px solid rgba(255,255,255,0.2);"></div>
+      <div class="ro-info">
+        <div class="ro-name">${t.name}</div>
+        <div class="ro-sub">${yds != null ? yds.toLocaleString() + ' yds' : 'Yardage unknown'}</div>
+      </div>`;
+    d.onclick = () => {
+      sel.tee = { name: t.name, key: t.key, color: t.color, yds };
+      teeList.querySelectorAll('.radio-opt').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+      updateRatingSlopePrompt();
+      document.getElementById('setup-next-btn').disabled = !canAdvance();
+    };
+    teeList.appendChild(d);
+  });
+}
+```
+
+Replace with:
+```js
+function renderTeeList() {
+  const teeList = document.getElementById('rd-tee-list');
+  if (!teeList) return;
+  const yardages = computeTeeYardages(teeCourseData);
+  const geoKey = (sel.course?.lat && sel.course?.lng) ? TcCourse.geoKeyFor(sel.course.lat, sel.course.lng) : null;
+  teeList.innerHTML = '';
+  TEE_CANONICAL.forEach(t => {
+    let yds = yardages[t.key];
+    if (yds == null && geoKey) {
+      const manual = getManualTeeYardage(geoKey, t.key);
+      if (manual != null) yds = manual;
+    }
+
+    const d = document.createElement('div');
+    d.className = 'radio-opt' + (sel.tee && sel.tee.key === t.key ? ' selected' : '');
+
+    let subHtml;
+    if (yds != null) {
+      subHtml = `${yds.toLocaleString()} yds`;
+    } else if (geoKey && editingTeeYardageKey === t.key) {
+      subHtml = `
+        <div style="display:flex;gap:6px;align-items:center;" onclick="event.stopPropagation();">
+          <input class="date-inp" type="number" step="1" min="4000" max="8000" placeholder="e.g. 6800" id="rd-yds-inp-${t.key}" style="flex:1;padding:4px 8px;font-size:11px;">
+          <button class="setup-next-btn" style="padding:4px 10px;font-size:11px;" onclick="saveTeeYardageEntry('${t.key}')">Save</button>
+        </div>
+        <div id="rd-yds-err-${t.key}" style="color:#E74C3C;font-size:10px;margin-top:2px;"></div>`;
+    } else if (geoKey) {
+      subHtml = `Yardage unknown <span onclick="event.stopPropagation(); editingTeeYardageKey='${t.key}'; renderTeeList();" style="color:var(--green);cursor:pointer;">Enter yardage</span>`;
+    } else {
+      subHtml = 'Yardage unknown';
+    }
+
+    d.innerHTML = `
+      <div class="ro-dot"></div>
+      <div class="tee-swatch" style="background:${t.color};border:1px solid rgba(255,255,255,0.2);"></div>
+      <div class="ro-info">
+        <div class="ro-name">${t.name}</div>
+        <div class="ro-sub">${subHtml}</div>
+      </div>`;
+    d.onclick = () => {
+      sel.tee = { name: t.name, key: t.key, color: t.color, yds };
+      teeList.querySelectorAll('.radio-opt').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+      updateRatingSlopePrompt();
+      document.getElementById('setup-next-btn').disabled = !canAdvance();
+    };
+    teeList.appendChild(d);
+  });
+}
+
+window.saveTeeYardageEntry = function saveTeeYardageEntry(teeKey) {
+  const inp = document.getElementById(`rd-yds-inp-${teeKey}`);
+  const err = document.getElementById(`rd-yds-err-${teeKey}`);
+  const yds = parseInt(inp.value, 10);
+  if (!(yds >= 4000 && yds <= 8000)) {
+    if (err) err.textContent = 'Enter a yardage between 4,000 and 8,000.';
+    return;
+  }
+  const geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
+  saveManualTeeYardage(geoKey, teeKey, yds);
+  editingTeeYardageKey = null;
+  renderTeeList();
+};
+```
+
+- [ ] **Step 3: Verify syntax**
+
+```bash
+node -e "
+const fs = require('fs');
+const html = fs.readFileSync('pages/rounds.html', 'utf8');
+const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+scripts.forEach((s, i) => { try { new Function(s); console.log('block', i, 'OK'); } catch (e) { console.log('block', i, 'ERROR:', e.message); } });
+"
+```
+Expected: every block reports `OK`.
+
+- [ ] **Step 4: Manual browser verification**
+
+With `pages/` served locally and signed in:
+
+1. Pick a course/tee combination previously confirmed to show "Yardage unknown" → click "Enter yardage" → type a value outside 4000-8000 → confirm the inline error appears and nothing saves. Enter a valid value (e.g. 6800) → confirm it saves and displays immediately.
+2. Reselect the same course → confirm the manually-entered yardage is remembered (cache hit), without re-prompting.
+3. Pick a course/tee that DOES have real computed yardage → confirm no "Enter yardage" link appears, and the real number is shown (computed data takes precedence, manual entry never applies here).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add pages/rounds.html
+git commit -m "feat: rounds.html — manual tee yardage entry fallback when OSM data is unavailable"
+```
+
+---
+
 ## Self-Review
 
 **Spec coverage check:**
@@ -265,6 +428,10 @@ git commit -m "feat: rounds.html — compute real per-tee yardage from OSM data,
 | Course Rating/Slope untouched | Confirmed — no changes to `updateRatingSlopePrompt`/`showRatingSlopeForm`/`saveRatingSlopeEntry` |
 | Real yardage flows to `courses.html` round history | Task 1 Step 4 (`teeYardage` unchanged pass-through) |
 | Black-tee canonical-key bug fix | Task 1 Step 4 |
+| Manual tee yardage entry when OSM data is unavailable | Task 2 Step 2 |
+| Manual entry cached in its own localStorage namespace | Task 2 Step 1 (`tc_tee_yardage_...`) |
+| Real computed yardage always takes precedence over manual entry | Task 2 Step 2 (`if (yds == null && geoKey)` — cache only consulted when computed value is `null`) |
+| Bounded input validation (4,000–8,000 yards) | Task 2 Step 2 (`saveTeeYardageEntry`) |
 
 **Placeholder scan:** no TBD/TODO; every step has literal code or an exact verification procedure.
 
