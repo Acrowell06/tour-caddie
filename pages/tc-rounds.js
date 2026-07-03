@@ -103,15 +103,69 @@ window.TcRounds = (() => {
     return true;
   }
 
-  async function writeRoundComplete(roundId) {
+  async function computeRoundDifferential(session, roundId, courseRating, slopeRating) {
+    if (!window.TcHandicap || courseRating == null || slopeRating == null) return null;
+
+    const { data: holes, error } = await TcAuth.client
+      .from('round_holes')
+      .select('par, gross_score, handicap')
+      .eq('round_id', roundId);
+    if (error || !holes || holes.length === 0) return null;
+
+    const { data: profile } = await TcAuth.client
+      .from('profiles')
+      .select('handicap_index')
+      .eq('id', session.user.id)
+      .single();
+    const currentIndex = profile?.handicap_index ?? null;
+    const coursePar = holes.reduce((a, h) => a + (h.par ?? 4), 0);
+
+    const adjustedGross = window.TcHandicap.adjustedGrossScore(holes, currentIndex, slopeRating, courseRating, coursePar);
+    const differential = window.TcHandicap.scoreDifferential(adjustedGross, courseRating, slopeRating);
+    return { adjustedGross, differential };
+  }
+
+  async function recomputeHandicapIndex(session) {
+    if (!window.TcHandicap) return;
+    const { data: rounds, error } = await TcAuth.client
+      .from('rounds')
+      .select('id, hole_count, differential, completed_at')
+      .eq('user_id', session.user.id)
+      .eq('status', 'complete')
+      .not('differential', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(50); // generously more than the 20 needed post-pairing
+    if (error || !rounds) return;
+
+    const entries = window.TcHandicap.pairNineHoleDifferentials(rounds);
+    const { index } = window.TcHandicap.computeHandicapIndex(entries);
+
+    await TcAuth.client
+      .from('profiles')
+      .update({ handicap_index: index })
+      .eq('id', session.user.id);
+  }
+
+  async function writeRoundComplete(roundId, payload) {
     const session = await TcAuth.getSession();
     if (!session) return false;
+
+    const diffResult = await computeRoundDifferential(session, roundId, payload?.courseRating, payload?.slopeRating);
+
+    const update = { status: 'complete', completed_at: new Date().toISOString() };
+    if (diffResult) {
+      update.differential = diffResult.differential;
+      update.adjusted_score = diffResult.adjustedGross;
+    }
+
     const { error } = await TcAuth.client
       .from('rounds')
-      .update({ status: 'complete', completed_at: new Date().toISOString() })
+      .update(update)
       .eq('id', roundId)
       .eq('user_id', session.user.id);
     if (error) { console.error('TcRounds: failed to complete round', error); return false; }
+
+    if (diffResult) await recomputeHandicapIndex(session);
     return true;
   }
 
@@ -127,7 +181,7 @@ window.TcRounds = (() => {
         const entry = queue[0];
         let ok = false;
         if (entry.type === 'hole') ok = await writeHoleResult(roundId, entry.payload);
-        else if (entry.type === 'complete') ok = await writeRoundComplete(roundId);
+        else if (entry.type === 'complete') ok = await writeRoundComplete(roundId, entry.payload);
 
         if (!ok) break; // leave it at the front of the queue, stop draining
 
@@ -146,9 +200,9 @@ window.TcRounds = (() => {
     return drainPendingSyncs();
   }
 
-  async function completeRound() {
+  async function completeRound({ courseRating, slopeRating } = {}) {
     const queue = readQueue();
-    queue.push({ type: 'complete', payload: {} });
+    queue.push({ type: 'complete', payload: { courseRating: courseRating ?? null, slopeRating: slopeRating ?? null } });
     writeQueue(queue);
     return drainPendingSyncs();
   }
