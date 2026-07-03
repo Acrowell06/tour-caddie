@@ -108,7 +108,7 @@ window.TcRounds = (() => {
     if (!session) return false;
     const { error } = await TcAuth.client
       .from('rounds')
-      .update({ status: 'complete' })
+      .update({ status: 'complete', completed_at: new Date().toISOString() })
       .eq('id', roundId)
       .eq('user_id', session.user.id);
     if (error) { console.error('TcRounds: failed to complete round', error); return false; }
@@ -156,7 +156,7 @@ window.TcRounds = (() => {
   function transformRound(row) {
     const holesData = [...row.round_holes].sort((a, b) => a.hole_number - b.hole_number);
     const holes = holesData.map(h => h.gross_score);
-    const pars  = holesData.map(h => h.par);
+    const pars  = holesData.map(h => h.par ?? 4); // par is a freshly-added nullable column; guard against pre-migration rows
     const gross = holes.reduce((a, b) => a + b, 0);
     const totalPar = pars.reduce((a, b) => a + b, 0);
     const score = gross - totalPar;
@@ -193,9 +193,10 @@ window.TcRounds = (() => {
     if (!session) return null;
     const { data, error } = await TcAuth.client
       .from('rounds')
-      .select('id, course_name, tee_name, tee_yardage, played_at, status, round_holes(hole_number, par, gross_score, putts, fairway_hit, gir, scramble)')
+      .select('id, course_name, tee_name, tee_yardage, played_at, completed_at, status, round_holes(hole_number, par, gross_score, putts, fairway_hit, gir, scramble)')
       .eq('user_id', session.user.id)
       .eq('status', 'complete')
+      .order('completed_at', { ascending: false, nullsFirst: false })
       .order('played_at', { ascending: false });
     if (error) { console.error('TcRounds: failed to fetch rounds', error); return null; }
     return data.map(transformRound);
