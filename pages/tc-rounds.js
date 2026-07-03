@@ -103,16 +103,19 @@ window.TcRounds = (() => {
     return true;
   }
 
-  async function computeRoundDifferential(session, roundId, courseRating, slopeRating) {
-    if (!window.TcHandicap || courseRating == null || slopeRating == null) return null;
+  async function fetchRoundHoles(roundId) {
+    const { data: holes, error } = await TcAuth.client
+      .from('round_holes')
+      .select('par, gross_score, handicap')
+      .eq('round_id', roundId);
+    if (error) { console.error('TcRounds: failed to fetch round holes', error); return null; }
+    return holes;
+  }
+
+  async function computeRoundDifferential(session, holes, courseRating, slopeRating) {
+    if (!window.TcHandicap || courseRating == null || slopeRating == null || !holes || holes.length === 0) return null;
 
     try {
-      const { data: holes, error } = await TcAuth.client
-        .from('round_holes')
-        .select('par, gross_score, handicap')
-        .eq('round_id', roundId);
-      if (error || !holes || holes.length === 0) return null;
-
       const { data: profile, error: profileError } = await TcAuth.client
         .from('profiles')
         .select('handicap_index')
@@ -169,9 +172,15 @@ window.TcRounds = (() => {
     const session = await TcAuth.getSession();
     if (!session) return false;
 
-    const diffResult = await computeRoundDifferential(session, roundId, payload?.courseRating, payload?.slopeRating);
+    const holes = await fetchRoundHoles(roundId);
+    const grossScore = holes ? holes.reduce((a, h) => a + (h.gross_score ?? 0), 0) : null;
+
+    const diffResult = await computeRoundDifferential(session, holes, payload?.courseRating, payload?.slopeRating);
 
     const update = { status: 'complete', completed_at: new Date().toISOString() };
+    if (grossScore != null) {
+      update.gross_score = grossScore;
+    }
     if (diffResult) {
       update.differential = diffResult.differential;
       update.adjusted_score = diffResult.adjustedGross;
