@@ -195,16 +195,31 @@ window.TcRounds = (() => {
       }
       if (chainBroken) continue;
 
-      anyHoleCounted = true;
+      // Accumulate this hole's SG contributions in per-hole temporaries first.
+      // Only merge them into the round-wide totals/shotUpdates after every
+      // shot in the hole has produced a valid (non-null) SG value — a single
+      // unresolvable shot partway through the hole must invalidate the WHOLE
+      // hole, not just leave off the failing shot.
+      const holeTotals = { ott: 0, app: 0, atg: 0, putt: 0 };
+      const holeShotUpdates = [];
+      let holeFailed = false;
       for (let i = 0; i < resolved.length; i++) {
         const r = resolved[i];
         const lieAfter = i + 1 < resolved.length ? resolved[i + 1].lieBefore : 'green'; // holed shots never reach expectedStrokes(after) since distAfter===0 short-circuits
         const sg = SG.shotStrokesGained(tier, r.lieBefore, r.distBefore, r.distAfter, lieAfter);
-        if (sg == null) { anyHoleCounted = false; break; }
+        if (sg == null) { holeFailed = true; break; }
         const category = SG.categorize(r.lieBefore, hole.par, r.distBefore);
-        totals[category] += sg;
-        shotUpdates.push({ id: r.id, sg_value: sg });
+        holeTotals[category] += sg;
+        holeShotUpdates.push({ id: r.id, sg_value: sg });
       }
+      if (holeFailed) continue;
+
+      anyHoleCounted = true;
+      totals.ott += holeTotals.ott;
+      totals.app += holeTotals.app;
+      totals.atg += holeTotals.atg;
+      totals.putt += holeTotals.putt;
+      shotUpdates.push(...holeShotUpdates);
     }
 
     if (!anyHoleCounted || shotUpdates.length === 0) return null;
