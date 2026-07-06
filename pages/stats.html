@@ -281,9 +281,9 @@ const CATS = [
   {
     id:'sg',
     name:'Strokes Gained', icon:'📈', color:'#2ECC71',
-    val:'+1.1', lbl:'SG TOTAL', trend:'▲ 0.2', tc:'g',
-    desc:'vs. scratch baseline · all categories',
-    chips:['+0.6 App','−0.2 ATG','+0.4 OTT'],
+    val:'—', lbl:'SG TOTAL', trend:null, tc:'g',
+    desc:'vs. estimated baseline for your handicap',
+    chips:[],
   },
   {
     id:'conditions',
@@ -689,30 +689,52 @@ function renderPutting(body) {
 }
 
 /* ══ 6. STROKES GAINED ══ */
-function renderSG(body) {
+async function renderSG(body) {
+  body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Loading…</div>';
+
+  const session = await TcAuth.getSession();
+  if (!session) { body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Sign in to see your Strokes Gained.</div>'; return; }
+
+  const { data: rounds, error } = await TcAuth.client
+    .from('rounds')
+    .select('sg_ott, sg_app, sg_atg, sg_putt, sg_total')
+    .eq('user_id', session.user.id)
+    .eq('status', 'complete')
+    .not('sg_total', 'is', null)
+    .order('completed_at', { ascending: false, nullsFirst: false })
+    .limit(20);
+
+  if (error || !rounds || rounds.length === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">No Strokes Gained data yet — play a full round at a well-mapped course to see it here.</div>';
+    return;
+  }
+
+  const avg = key => Math.round((rounds.reduce((a, r) => a + (r[key] || 0), 0) / rounds.length) * 100) / 100;
+  const totals = { ott: avg('sg_ott'), app: avg('sg_app'), atg: avg('sg_atg'), putt: avg('sg_putt'), total: avg('sg_total') };
+  const fmt = v => (v > 0 ? '+' : '') + v.toFixed(1);
+  const totalColor = totals.total >= 0 ? 'var(--green)' : 'var(--red)';
+
   body.innerHTML = `
     <div style="text-align:center;margin-bottom:16px;">
-      <div style="font-size:42px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1;">+1.1</div>
-      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">SG TOTAL vs. SCRATCH</div>
-      <div style="font-size:11px;color:var(--green);margin-top:6px;font-weight:700;">▲ 0.2 · trending up this season</div>
+      <div style="font-size:42px;font-weight:900;color:${totalColor};letter-spacing:-2px;line-height:1;">${fmt(totals.total)}</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">SG TOTAL vs. ESTIMATED BASELINE (avg. of last ${rounds.length})</div>
     </div>` +
 
     sec('Strokes Gained by Category') +
-    sgBar('SG: Approach',      0.6, 0.8) +
-    sgBar('SG: Tee-to-Green',  0.8, 0.8) +
-    sgBar('SG: Off the Tee',   0.4, 0.8) +
-    sgBar('SG: Putting',       0.3, 0.8) +
-    sgBar('SG: Around Green', -0.2, 0.8) +
+    sgBar('SG: Approach',      totals.app,  1.0) +
+    sgBar('SG: Off the Tee',   totals.ott,  1.0) +
+    sgBar('SG: Putting',      totals.putt, 1.0) +
+    sgBar('SG: Around Green', totals.atg,  1.0) +
 
     kpi([
-      {v:'+0.4',l:'SG OTT', c:'var(--green)'},
-      {v:'+0.6',l:'SG APP', c:'var(--green)'},
-      {v:'−0.2',l:'SG ATG', c:'var(--red)'},
-      {v:'+0.3',l:'SG PUTT',c:'var(--green)'},
+      {v:fmt(totals.ott),  l:'SG OTT', c: totals.ott  >= 0 ? 'var(--green)' : 'var(--red)'},
+      {v:fmt(totals.app),  l:'SG APP', c: totals.app  >= 0 ? 'var(--green)' : 'var(--red)'},
+      {v:fmt(totals.atg),  l:'SG ATG', c: totals.atg  >= 0 ? 'var(--green)' : 'var(--red)'},
+      {v:fmt(totals.putt), l:'SG PUTT',c: totals.putt >= 0 ? 'var(--green)' : 'var(--red)'},
     ], 4) +
 
-    `<div style="font-size:11px;color:var(--muted);line-height:1.65;margin-top:4px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
-      <strong style="color:rgba(255,255,255,0.85);">Insight:</strong> Approach (+0.6) is your biggest strength — you're gaining more than half a stroke per round on the field just with your irons. Around the Green (−0.2) is the only area below scratch. Improving scrambling from 58% to 65% would flip ATG to roughly +0.2 and push SG Total above +1.3.
+    `<div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+      Baseline is an approximate reference curve for your handicap level, not official Tour data.
     </div>
     <div style="height:12px;"></div>`;
 }

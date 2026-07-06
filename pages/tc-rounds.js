@@ -387,7 +387,7 @@ window.TcRounds = (() => {
       type: 'Home', // no round_type column in the live schema; nothing in the UI sets this yet
       score, gross, diff: null,
       fir, gir, putts, up_down: upDown,
-      sg: null,
+      sg: row.sg_total != null ? { ott: row.sg_ott, app: row.sg_app, atg: row.sg_atg, putt: row.sg_putt, total: row.sg_total } : null,
       holes, pars,
       chips: [`${fir}% FIR`, `${gir}% GIR`, `${putts} putts`]
     };
@@ -398,7 +398,7 @@ window.TcRounds = (() => {
     if (!session) return null;
     const { data, error } = await TcAuth.client
       .from('rounds')
-      .select('id, course_name, tee_name, tee_yardage, played_at, completed_at, status, round_holes(hole_number, par, gross_score, putts, fairway_hit, gir, scramble)')
+      .select('id, course_name, tee_name, tee_yardage, played_at, completed_at, status, sg_ott, sg_app, sg_atg, sg_putt, sg_total, round_holes(hole_number, par, gross_score, putts, fairway_hit, gir, scramble)')
       .eq('user_id', session.user.id)
       .eq('status', 'complete')
       .order('completed_at', { ascending: false, nullsFirst: false })
