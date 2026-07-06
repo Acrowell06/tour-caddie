@@ -111,7 +111,7 @@ window.TcRounds = (() => {
   async function fetchRoundHoles(roundId) {
     const { data: holes, error } = await TcAuth.client
       .from('round_holes')
-      .select('par, gross_score, handicap')
+      .select('hole_number, par, gross_score, handicap, tee_lat, tee_lng, green_lat, green_lng')
       .eq('round_id', roundId);
     if (error) { console.error('TcRounds: failed to fetch round holes', error); return null; }
     return holes;
