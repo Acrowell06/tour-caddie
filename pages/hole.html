@@ -960,6 +960,7 @@ function hConfirmGPS() {
   hShotCount++;
   if (hShotCount === 1) hStartLiveGPS();
   let ydsLabel = '';
+  let inferredLie;
 
   if (hViewMode === 'green') {
     const pos  = hGreenDrag.getPosition();
@@ -977,6 +978,8 @@ function hConfirmGPS() {
       { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
     const leafletMarker = L.marker([shotLL.lat, shotLL.lng],
       { icon: makeShotIcon(hShotCount, false) }).addTo(lmap);
+
+    inferredLie = inferLie(hLoggedShots.length, fromLL);
 
     hLoggedShots.push({ el, line, leafletMarker, leafletLine, latlng: shotLL,
                          x: pos.x, y: pos.y, svgId: 'h-green-svg' });
@@ -1006,6 +1009,7 @@ function hConfirmGPS() {
       { icon: makeShotIcon(hShotCount, false) }).addTo(lmap);
 
     const svgPos = latLngToSumSVG(ll);
+    inferredLie = inferLie(hLoggedShots.length, fromLL);
     hLoggedShots.push({ leafletMarker, leafletLine, latlng: ll,
                          x: svgPos.x, y: svgPos.y, svgId: 'h-leaflet' });
     removePendingMarker();
@@ -1052,7 +1056,7 @@ function hConfirmGPS() {
     }
   }
 
-  openClubPicker(hShotCount, ydsLabel, hViewMode === 'green');
+  openClubPicker(hShotCount, ydsLabel, hViewMode === 'green', inferredLie);
 }
 
 function undoLastHole() {
@@ -1159,17 +1163,15 @@ function selectLie(btn, lie) {
   selectedLie = lie;
 }
 
-function openClubPicker(shotNum, yds, isGreen) {
+function openClubPicker(shotNum, yds, isGreen, inferredLie) {
   pendingShot = { shotNum, yds };
   selectedClub = null;
   document.querySelectorAll('#club-ov .cbtn').forEach(b => b.classList.remove('sel'));
   document.getElementById('club-shot-label').textContent = `Shot ${shotNum} · ${yds}`;
 
-  const fromLL = hLoggedShots.at(-1)?.latlng ?? TEE_LL;
-  const inferred = inferLie(hLoggedShots.length, fromLL);
-  selectedLie = inferred;
+  selectedLie = inferredLie;
   document.querySelectorAll('#lie-btns .cbtn').forEach(b => {
-    b.classList.toggle('sel', b.dataset.lie === inferred);
+    b.classList.toggle('sel', b.dataset.lie === inferredLie);
   });
   // Always show all clubs — green view may still need wedge/iron for chip shots
   // Putter section is always visible; visually reorder it to top when on green
