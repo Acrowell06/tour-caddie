@@ -474,6 +474,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <script src="tc-auth.js"></script>
+<script src="tc-strokesgained.js"></script>
 <script src="tc-rounds.js"></script>
 <script src="tc-course.js"></script>
 <script src="tc-utils.js"></script>
@@ -1266,7 +1267,7 @@ function hHoleOut() {
   hLoggedShots.push({ el: markerEl, line, leafletMarker, leafletLine,
                        latlng: GREEN_CTR, x: 160, y: 100, svgId: 'h-green-svg', holed: true });
 
-  hShotLog.push({ num: hShotCount, club: 'Putter', yds: 'MADE ⛳', holed: true });
+  hShotLog.push({ num: hShotCount, club: 'Putter', yds: 'MADE ⛳', holed: true, lie: 'green' });
   renderShotLog();
 
   const snum = document.getElementById('h-shot-num');
@@ -1310,9 +1311,11 @@ function hHoleOutFromMap() {
     ? `${Math.max(1, Math.round(haversineFt(fromLL, GREEN_CTR)))} ft`
     : distYds < 10 ? `${Math.round(distYds * 3)} ft` : `${distYds} yds`;
 
+  const inferredLie = inferLie(hLoggedShots.length, fromLL);
+
   hLoggedShots.push({ leafletMarker, leafletLine, latlng: GREEN_CTR,
                        x: 150, y: 24, svgId: 'h-leaflet', holed: true });
-  hShotLog.push({ num: hShotCount, club: 'Putter', yds: `MADE ⛳ · ${distLabel}`, holed: true });
+  hShotLog.push({ num: hShotCount, club: 'Putter', yds: `MADE ⛳ · ${distLabel}`, holed: true, lie: inferredLie });
   renderShotLog();
 
   const snum = document.getElementById('h-shot-num');
