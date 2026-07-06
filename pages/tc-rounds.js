@@ -71,7 +71,11 @@ window.TcRounds = (() => {
         gir: payload.gir,
         fairway_direction: payload.fairwayDirection,
         gir_direction: payload.girDirection,
-        scramble: payload.upAndDown
+        scramble: payload.upAndDown,
+        tee_lat: payload.teeLat ?? null,
+        tee_lng: payload.teeLng ?? null,
+        green_lat: payload.greenLat ?? null,
+        green_lng: payload.greenLng ?? null
       }, { onConflict: 'round_id,hole_number' })
       .select('id')
       .single();
@@ -95,6 +99,7 @@ window.TcRounds = (() => {
         lat: s.lat,
         lng: s.lng,
         result: s.result,
+        lie: s.lie ?? null,
         distance_yds: s.distanceYards
       }));
       const { error: shotsError } = await TcAuth.client.from('shots').insert(shotRows);
@@ -132,6 +137,91 @@ window.TcRounds = (() => {
       console.error('TcRounds: differential computation threw', e);
       return null;
     }
+  }
+
+  async function computeRoundStrokesGained(session, roundId, holes) {
+    if (!window.TcStrokesGained) return null;
+    if (!holes || holes.some(h => h.tee_lat == null || h.tee_lng == null || h.green_lat == null || h.green_lng == null)) return null;
+
+    const { data: profile } = await TcAuth.client
+      .from('profiles')
+      .select('handicap_index')
+      .eq('id', session.user.id)
+      .single();
+    const tier = window.TcStrokesGained.tierForHandicap(profile?.handicap_index ?? null);
+    if (!tier) return null; // not enough rounds yet for a real handicap — skip SG rather than guess a tier
+
+    const { data: shots, error } = await TcAuth.client
+      .from('shots')
+      .select('id, hole_number, shot_number, lie, lat, lng, result')
+      .eq('round_id', roundId)
+      .order('hole_number', { ascending: true })
+      .order('shot_number', { ascending: true });
+    if (error || !shots) { console.error('TcRounds: failed to fetch shots for SG', error); return null; }
+
+    const SG = window.TcStrokesGained;
+    const holeByNumber = {};
+    holes.forEach(h => { holeByNumber[h.hole_number] = h; });
+
+    const shotUpdates = [];
+    const totals = { ott: 0, app: 0, atg: 0, putt: 0 };
+    let anyHoleCounted = false;
+
+    for (const holeNumKey of Object.keys(holeByNumber)) {
+      const hole = holeByNumber[holeNumKey];
+      const holeShots = shots.filter(s => String(s.hole_number) === String(holeNumKey));
+      if (holeShots.length === 0) continue;
+
+      const teeLL = { lat: hole.tee_lat, lng: hole.tee_lng };
+      const greenLL = { lat: hole.green_lat, lng: hole.green_lng };
+
+      // Resolve each shot's before/after distance-to-pin and lie. Before-
+      // position for shot i is the tee (i===0) or the previous shot's
+      // landing spot; after-position is this shot's own landing spot, or
+      // "holed" (distance 0) if it went in.
+      const resolved = [];
+      let chainBroken = false;
+      for (let i = 0; i < holeShots.length; i++) {
+        const s = holeShots[i];
+        if (s.lat == null || s.lng == null || !s.lie) { chainBroken = true; break; }
+
+        const beforeLL = i === 0 ? teeLL : { lat: holeShots[i - 1].lat, lng: holeShots[i - 1].lng };
+        const lieBefore = s.lie;
+        const distBefore = SG.haversineYds(beforeLL, greenLL);
+        const distAfter = s.result === 'holed' ? 0 : SG.haversineYds({ lat: s.lat, lng: s.lng }, greenLL);
+        if (distBefore == null || distAfter == null) { chainBroken = true; break; }
+
+        resolved.push({ id: s.id, lieBefore, distBefore, distAfter });
+      }
+      if (chainBroken) continue;
+
+      anyHoleCounted = true;
+      for (let i = 0; i < resolved.length; i++) {
+        const r = resolved[i];
+        const lieAfter = i + 1 < resolved.length ? resolved[i + 1].lieBefore : 'green'; // holed shots never reach expectedStrokes(after) since distAfter===0 short-circuits
+        const sg = SG.shotStrokesGained(tier, r.lieBefore, r.distBefore, r.distAfter, lieAfter);
+        if (sg == null) { anyHoleCounted = false; break; }
+        const category = SG.categorize(r.lieBefore, hole.par, r.distBefore);
+        totals[category] += sg;
+        shotUpdates.push({ id: r.id, sg_value: sg });
+      }
+    }
+
+    if (!anyHoleCounted || shotUpdates.length === 0) return null;
+
+    for (const u of shotUpdates) {
+      const { error: updateError } = await TcAuth.client.from('shots').update({ sg_value: u.sg_value }).eq('id', u.id);
+      if (updateError) console.error('TcRounds: failed to write shot SG value', updateError);
+    }
+
+    const total = totals.ott + totals.app + totals.atg + totals.putt;
+    return {
+      ott: Math.round(totals.ott * 100) / 100,
+      app: Math.round(totals.app * 100) / 100,
+      atg: Math.round(totals.atg * 100) / 100,
+      putt: Math.round(totals.putt * 100) / 100,
+      total: Math.round(total * 100) / 100
+    };
   }
 
   async function recomputeHandicapIndex(session) {
@@ -177,6 +267,14 @@ window.TcRounds = (() => {
 
     const diffResult = await computeRoundDifferential(session, holes, payload?.courseRating, payload?.slopeRating);
 
+    let sgResult = null;
+    try {
+      sgResult = await computeRoundStrokesGained(session, roundId, holes);
+    } catch (e) {
+      console.error('TcRounds: Strokes Gained computation threw', e);
+      sgResult = null;
+    }
+
     const update = { status: 'complete', completed_at: new Date().toISOString() };
     if (grossScore != null) {
       update.gross_score = grossScore;
@@ -184,6 +282,13 @@ window.TcRounds = (() => {
     if (diffResult) {
       update.differential = diffResult.differential;
       update.adjusted_score = diffResult.adjustedGross;
+    }
+    if (sgResult) {
+      update.sg_ott = sgResult.ott;
+      update.sg_app = sgResult.app;
+      update.sg_atg = sgResult.atg;
+      update.sg_putt = sgResult.putt;
+      update.sg_total = sgResult.total;
     }
 
     const { error } = await TcAuth.client
