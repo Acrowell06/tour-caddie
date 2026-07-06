@@ -394,6 +394,17 @@
       </div>
       <div class="club-skip-btn" onclick="skipClub()">Skip</div>
     </div>
+    <div class="club-grp" id="club-sec-lie">
+      <div class="club-grp-lbl">Lie</div>
+      <div class="club-btns" id="lie-btns">
+        <div class="cbtn" data-lie="tee" onclick="selectLie(this,'tee')">Tee</div>
+        <div class="cbtn" data-lie="fairway" onclick="selectLie(this,'fairway')">Fairway</div>
+        <div class="cbtn" data-lie="rough" onclick="selectLie(this,'rough')">Rough</div>
+        <div class="cbtn" data-lie="bunker" onclick="selectLie(this,'bunker')">Bunker</div>
+        <div class="cbtn" data-lie="recovery" onclick="selectLie(this,'recovery')">Recovery</div>
+        <div class="cbtn" data-lie="green" onclick="selectLie(this,'green')">Green</div>
+      </div>
+    </div>
     <div class="club-grp" id="club-sec-woods">
       <div class="club-grp-lbl">Woods / Hybrids</div>
       <div class="club-btns">
@@ -1089,6 +1100,25 @@ function autoSetTog(rowEl, togIdx, colorCls) {
   });
 }
 
+// Infers a shot's STARTING lie from GPS geometry alone. Confidently
+// distinguishes tee/green/fairway/rough; never infers bunker/water/
+// recovery (no hazard polygon data exists in this app's course pipeline) —
+// those three are always available as a manual correction in the club
+// picker, never auto-selected.
+function inferLie(shotIndex, fromLL) {
+  if (shotIndex === 0) return 'tee';
+  if (TcCourse.haversineYds(fromLL, GREEN_CTR) <= 18) return 'green';
+
+  const total = TcCourse.haversineYds(TEE_LL, GREEN_CTR);
+  const t = Math.min(1, TcCourse.haversineYds(TEE_LL, fromLL) / total);
+  const axisLL = {
+    lat: TEE_LL.lat + (GREEN_CTR.lat - TEE_LL.lat) * t,
+    lng: TEE_LL.lng + (GREEN_CTR.lng - TEE_LL.lng) * t
+  };
+  const lateral = TcCourse.haversineYds(fromLL, axisLL);
+  return lateral <= 20 ? 'fairway' : 'rough';
+}
+
 function autoDetectFIR(latlng) {
   const row = document.getElementById('trow-fir');
   const total = TcCourse.haversineYds(TEE_LL, GREEN_CTR);
@@ -1121,12 +1151,26 @@ function autoDetectGIR(shot) {
 /* ── CLUB PICKER ── */
 let pendingShot = null;
 let selectedClub = null;
+let selectedLie = null;
+
+function selectLie(btn, lie) {
+  document.querySelectorAll('#lie-btns .cbtn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  selectedLie = lie;
+}
 
 function openClubPicker(shotNum, yds, isGreen) {
   pendingShot = { shotNum, yds };
   selectedClub = null;
   document.querySelectorAll('#club-ov .cbtn').forEach(b => b.classList.remove('sel'));
   document.getElementById('club-shot-label').textContent = `Shot ${shotNum} · ${yds}`;
+
+  const fromLL = hLoggedShots.at(-1)?.latlng ?? TEE_LL;
+  const inferred = inferLie(hLoggedShots.length, fromLL);
+  selectedLie = inferred;
+  document.querySelectorAll('#lie-btns .cbtn').forEach(b => {
+    b.classList.toggle('sel', b.dataset.lie === inferred);
+  });
   // Always show all clubs — green view may still need wedge/iron for chip shots
   // Putter section is always visible; visually reorder it to top when on green
   const putterSec = document.getElementById('club-sec-putter');
@@ -1164,20 +1208,22 @@ function confirmClub() {
       }
     }
     // Non-putter: dist is already "X yds from previous ball" or "X yds from fringe"
-    hShotLog.push({ num: pendingShot.shotNum, club: selectedClub, yds: dist });
+    hShotLog.push({ num: pendingShot.shotNum, club: selectedClub, yds: dist, lie: selectedLie });
     renderShotLog();
   }
   pendingShot = null;
   selectedClub = null;
+  selectedLie = null;
   document.getElementById('club-ov').classList.remove('open');
 }
 
 function skipClub() {
   if (pendingShot) {
-    hShotLog.push({ num: pendingShot.shotNum, club: null, yds: pendingShot.yds });
+    hShotLog.push({ num: pendingShot.shotNum, club: null, yds: pendingShot.yds, lie: selectedLie });
     renderShotLog();
     pendingShot = null;
   }
+  selectedLie = null;
   document.getElementById('club-ov').classList.remove('open');
 }
 
@@ -1498,6 +1544,7 @@ function buildShotsPayload() {
       lat: pos.latlng?.lat ?? null,
       lng: pos.latlng?.lng ?? null,
       result: log.holed ? 'holed' : null,
+      lie: log.lie ?? null,
       distanceYards
     };
   });
@@ -1526,6 +1573,10 @@ function hSaveAndNext() {
     upAndDown,
     fairwayDirection: firSt ? firLabels[firSt.idx] : null,
     girDirection: girSt ? greenLabels[girSt.idx] : null,
+    teeLat: HAS_REAL_TEE ? TEE_LL.lat : null,
+    teeLng: HAS_REAL_TEE ? TEE_LL.lng : null,
+    greenLat: _holeData?.green ? GREEN_CTR.lat : null,
+    greenLng: _holeData?.green ? GREEN_CTR.lng : null,
     shots: buildShotsPayload()
   }).catch(err => console.error('TcRounds: syncHole failed unexpectedly', err));
 
