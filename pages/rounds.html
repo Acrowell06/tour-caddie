@@ -343,12 +343,20 @@
 <script src="tc-utils.js"></script>
 <script>
 let currentHandicapIndex = null;
+let preferredHomeCourse  = null; // { name, lat, lng } | null — from profiles.home_club(_lat/_lng)
+let preferredTeeKey      = null; // 'tips'|'blue'|'white'|'gold'|'red' | null — from profiles.default_tee_key
 (async () => {
   await TcAuth.requireAuth();
   const session = await TcAuth.getSession();
   if (session) {
-    const { data } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
+    const { data } = await TcAuth.client.from('profiles')
+      .select('handicap_index, home_club, home_club_lat, home_club_lng, default_tee_key')
+      .eq('id', session.user.id).single();
     currentHandicapIndex = data?.handicap_index ?? null;
+    if (data?.home_club && data?.home_club_lat != null && data?.home_club_lng != null) {
+      preferredHomeCourse = { name: data.home_club, lat: data.home_club_lat, lng: data.home_club_lng };
+    }
+    preferredTeeKey = data?.default_tee_key ?? null;
   }
 })();
 
@@ -617,6 +625,20 @@ function renderCourse(body) {
     <div id="course-content"></div>
   `;
   sel.courseTab = sel.courseTab || 'search';
+
+  // Pre-fill from the golfer's saved Home Course, but only if they haven't
+  // already picked something this session — e.g. navigating back to this
+  // step after choosing a different course must not clobber that choice.
+  if (!sel.course && preferredHomeCourse) {
+    sel.course = { name: preferredHomeCourse.name, lat: preferredHomeCourse.lat, lng: preferredHomeCourse.lng };
+    document.getElementById('setup-next-btn').disabled = !canAdvance();
+    teeCourseData = null;
+    TcCourse.loadNear(preferredHomeCourse.lat, preferredHomeCourse.lng).then(data => {
+      teeCourseData = data?.holes ?? null;
+      renderTeeList();
+    }).catch(() => { teeCourseData = null; });
+  }
+
   renderCourseTab(sel.courseTab);
 }
 
@@ -805,6 +827,18 @@ function renderTeeList() {
   if (!teeList) return;
   const yardages = computeTeeYardages(teeCourseData);
   const geoKey = (sel.course?.lat && sel.course?.lng) ? TcCourse.geoKeyFor(sel.course.lat, sel.course.lng) : null;
+
+  // Pre-select the golfer's preferred tee, but only if nothing is picked yet
+  // this session, and only when this course actually has real yardage data
+  // for it (OSM-computed or a cached manual entry) — otherwise leave it
+  // unpicked, identical to today's behavior for an unconfigured preference.
+  if (!sel.tee && preferredTeeKey && geoKey) {
+    const t = TEE_CANONICAL.find(x => x.key === preferredTeeKey);
+    let yds = yardages[preferredTeeKey];
+    if (yds == null) yds = getManualTeeYardage(geoKey, preferredTeeKey);
+    if (t && yds != null) sel.tee = { name: t.name, key: t.key, color: t.color, yds };
+  }
+
   teeList.innerHTML = '';
   TEE_CANONICAL.forEach(t => {
     let yds = yardages[t.key];
@@ -848,6 +882,11 @@ function renderTeeList() {
     };
     teeList.appendChild(d);
   });
+
+  // Reflects the pre-fill above in the Continue/Play button immediately,
+  // without relying on updateRatingSlopePrompt() (out of scope from this
+  // function — see this task's note on the pre-existing scope issue).
+  document.getElementById('setup-next-btn').disabled = !canAdvance();
 }
 
 window.saveTeeYardageEntry = function saveTeeYardageEntry(teeKey) {
