@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tour Caddie — Scan Scorecard</title>
+<link rel="stylesheet" href="tc.css">
+<style>
+.sc-state { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.sc-state.hidden { display:none; }
+
+.sc-nav { display:flex; align-items:center; padding:8px 14px; flex-shrink:0; border-bottom:1px solid var(--border); position:relative; }
+.sc-back { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:700; color:var(--green); cursor:pointer; user-select:none; }
+.sc-back svg { width:16px; height:16px; }
+.sc-ttl { position:absolute; left:50%; transform:translateX(-50%); font-size:14px; font-weight:800; }
+
+.up-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 20px 28px; gap:20px; }
+.up-zone { width:100%; background:rgba(46,204,113,0.04); border:1.5px dashed rgba(46,204,113,0.3); border-radius:18px; padding:32px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; cursor:pointer; transition:background 0.2s; }
+.up-zone:active { background:rgba(46,204,113,0.08); }
+.up-icon { width:52px; height:52px; background:rgba(46,204,113,0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.up-icon svg { width:24px; height:24px; stroke:var(--green); }
+.up-lbl { font-size:13px; font-weight:700; color:#fff; text-align:center; line-height:1.4; }
+.up-sub { font-size:11px; color:var(--muted); text-align:center; }
+.up-btns { display:flex; flex-direction:column; gap:8px; width:100%; }
+.up-btn { width:100%; padding:13px; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; font-family:Inter,sans-serif; border:none; }
+.up-btn.primary { background:var(--green); color:#000; }
+.up-btn.secondary { background:var(--surface); color:#fff; border:1px solid var(--border); }
+.up-btn:active { opacity:0.8; }
+.up-tips { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+.up-tip { display:flex; align-items:flex-start; gap:8px; font-size:11px; color:var(--muted); line-height:1.4; }
+.up-tip-dot { width:4px; height:4px; background:var(--green); border-radius:50%; margin-top:5px; flex-shrink:0; }
+
+.proc-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 24px; gap:20px; }
+.proc-spinner { position:relative; width:72px; height:72px; }
+.proc-ring { width:72px; height:72px; border:3px solid rgba(46,204,113,0.15); border-top-color:var(--green); border-radius:50%; animation:spin 0.9s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.proc-hdr { font-size:16px; font-weight:800; text-align:center; letter-spacing:-0.3px; }
+.proc-sub { font-size:12px; color:var(--muted); text-align:center; }
+
+.rv-scroller { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; min-height:0; padding-bottom:12px; }
+.rv-scroller::-webkit-scrollbar { display:none; }
+.rv-sec { padding:12px 16px 6px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+
+.rs-strip { display:flex; gap:8px; padding:0 12px; overflow-x:auto; scrollbar-width:none; }
+.rs-strip::-webkit-scrollbar { display:none; }
+.rs-card { flex-shrink:0; width:120px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px; }
+.rs-tee-name { font-size:12px; font-weight:800; margin-bottom:6px; }
+.rs-field { display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+.rs-field span { font-size:9px; color:var(--muted); font-weight:700; }
+.rs-field input { width:56px; background:var(--surface2,#1e1e2e); border:1px solid var(--border); border-radius:6px; padding:3px 5px; font-size:11px; color:#fff; font-family:Inter,sans-serif; text-align:right; }
+
+.rv-table-wrap { margin:8px 12px 0; overflow-x:auto; border:1px solid var(--border); border-radius:12px; }
+.rv-table { width:100%; border-collapse:collapse; font-size:11px; }
+.rv-table th, .rv-table td { padding:6px 8px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.04); white-space:nowrap; }
+.rv-table th { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; background:var(--surface); }
+.rv-cell { width:44px; background:transparent; border:1px solid transparent; border-radius:5px; padding:3px; font-size:11px; color:#fff; font-family:Inter,sans-serif; text-align:center; }
+.rv-cell.empty { background:rgba(241,196,15,0.1); border-color:rgba(241,196,15,0.3); }
+.rv-cell:focus { border-color:rgba(46,204,113,0.5); outline:none; }
+
+.rv-save { padding:12px; flex-shrink:0; }
+.rv-save-btn { width:100%; background:var(--green); border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:900; color:#000; cursor:pointer; font-family:Inter,sans-serif; letter-spacing:-0.2px; }
+.rv-save-btn:active { opacity:0.85; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap" data-page="scan-scorecard">
+  <div class="st"><span>9:41</span><span>●●●</span></div>
+
+  <div class="sc-state" id="st-upload">
+    <div class="sc-nav">
+      <div class="sc-back" onclick="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </div>
+      <div class="sc-ttl">Scan Scorecard</div>
+    </div>
+    <div class="up-body">
+      <div class="up-zone" onclick="document.getElementById('capture-input').click()">
+        <div class="up-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div class="up-lbl">Take a photo of the course scorecard</div>
+        <div class="up-sub">Lay it flat, good lighting, all tees visible</div>
+      </div>
+      <div class="up-btns">
+        <button class="up-btn primary" onclick="document.getElementById('capture-input').click()">Take Photo</button>
+        <button class="up-btn secondary" onclick="document.getElementById('upload-input').click()">Upload from Photos</button>
+      </div>
+      <div class="up-tips">
+        <div class="up-tip"><div class="up-tip-dot"></div>One photo can cover every tee color printed on the card</div>
+        <div class="up-tip"><div class="up-tip-dot"></div>You'll be able to review and correct every value before saving</div>
+      </div>
+    </div>
+    <input type="file" accept="image/*" capture="environment" id="capture-input" hidden>
+    <input type="file" accept="image/*" id="upload-input" hidden>
+  </div>
+
+  <div class="sc-state hidden" id="st-proc">
+    <div class="proc-body">
+      <div class="proc-spinner"><div class="proc-ring"></div></div>
+      <div class="proc-hdr">Reading your scorecard…</div>
+      <div class="proc-sub">This can take a few seconds</div>
+    </div>
+  </div>
+
+  <div class="sc-state hidden" id="st-review">
+    <div class="sc-nav">
+      <div class="sc-back" onclick="goState('upload')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Retake
+      </div>
+      <div class="sc-ttl">Review</div>
+    </div>
+    <div class="rv-scroller">
+      <div class="rv-sec">Rating / Slope</div>
+      <div class="rs-strip" id="rs-strip"></div>
+      <div class="rv-sec">Par · Handicap · Yardage</div>
+      <div class="rv-table-wrap">
+        <table class="rv-table">
+          <thead><tr id="scan-hole-thead"></tr></thead>
+          <tbody id="scan-hole-rows"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="rv-save">
+      <button class="rv-save-btn" onclick="saveScan()">Save to Tour Caddie</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
+<script src="tc-auth.js"></script>
+<script src="tc-course-data.js"></script>
+<script src="tc-handicap.js"></script>
+<script src="tc-course.js"></script>
+<script src="tc-utils.js"></script>
+<script>
+(async () => { await TcAuth.requireAuth(); })();
+
+const TEE_LABELS = { tips:'Black', gold:'Gold', blue:'Blue', white:'White', red:'Red' };
+
+let scanResult = null;
+
+function getResumeCourse() {
+  try {
+    const resume = JSON.parse(sessionStorage.getItem('tc_setup_resume') || 'null');
+    return resume?.sel?.course || null;
+  } catch { return null; }
+}
+
+function getGeoKey() {
+  const course = getResumeCourse();
+  if (!course?.lat || !course?.lng) return null;
+  return TcCourse.geoKeyFor(course.lat, course.lng);
+}
+
+function goBack() {
+  navigate('rounds');
+}
+
+function goState(id) {
+  document.querySelectorAll('.sc-state').forEach(s => s.classList.add('hidden'));
+  document.getElementById('st-' + id).classList.remove('hidden');
+}
+
+function resizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const maxDim = 2000;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  goState('proc');
+  try {
+    const base64 = await resizeImage(file);
+    const { data, error } = await TcAuth.client.functions.invoke('scan-scorecard', {
+      body: { image_base64: base64, mime_type: 'image/jpeg' }
+    });
+    if (error || !data?.ok) {
+      showToast('toast', data?.message || 'Could not read that photo — try again.');
+      goState('upload');
+      return;
+    }
+    scanResult = data;
+    renderReview();
+    goState('review');
+  } catch {
+    showToast('toast', 'Something went wrong — try again.');
+    goState('upload');
+  }
+}
+
+document.getElementById('capture-input').addEventListener('change', (e) => handleFile(e.target.files[0]));
+document.getElementById('upload-input').addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+function renderReview() {
+  const strip = document.getElementById('rs-strip');
+  strip.innerHTML = scanResult.tees_present.map(tee => {
+    const rs = scanResult.rating_slope[tee] || {};
+    return `<div class="rs-card">
+      <div class="rs-tee-name">${TEE_LABELS[tee] || tee}</div>
+      <div class="rs-field"><span>Rating</span><input type="number" step="0.1" data-tee="${tee}" data-field="rating" value="${rs.rating ?? ''}" placeholder="—"></div>
+      <div class="rs-field"><span>Slope</span><input type="number" data-tee="${tee}" data-field="slope" value="${rs.slope ?? ''}" placeholder="—"></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('scan-hole-thead').innerHTML =
+    '<th>Hole</th><th>Par</th><th>HCP</th>' +
+    scanResult.tees_present.map(tee => `<th>${TEE_LABELS[tee] || tee}</th>`).join('');
+
+  const holes = scanResult.holes.length ? scanResult.holes
+    : Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: null, handicap: null, yardage: {} }));
+
+  document.getElementById('scan-hole-rows').innerHTML = holes.map(h => `
+    <tr>
+      <td>${h.number}</td>
+      <td><input type="number" class="rv-cell ${h.par == null ? 'empty' : ''}" data-hole="${h.number}" data-field="par" value="${h.par ?? ''}" placeholder="—"></td>
+      <td><input type="number" class="rv-cell ${h.handicap == null ? 'empty' : ''}" data-hole="${h.number}" data-field="handicap" value="${h.handicap ?? ''}" placeholder="—"></td>
+      ${scanResult.tees_present.map(tee => `<td><input type="number" class="rv-cell ${h.yardage?.[tee] == null ? 'empty' : ''}" data-hole="${h.number}" data-tee="${tee}" data-field="yardage" value="${h.yardage?.[tee] ?? ''}" placeholder="—"></td>`).join('')}
+    </tr>`).join('');
+}
+
+async function saveScan() {
+  const geoKey = getGeoKey();
+  if (!geoKey) { showToast('toast', 'No course selected — go back and pick a course first.'); return; }
+
+  document.querySelectorAll('#rs-strip input').forEach(inp => {
+    const tee = inp.dataset.tee, field = inp.dataset.field;
+    if (!scanResult.rating_slope[tee]) scanResult.rating_slope[tee] = {};
+    scanResult.rating_slope[tee][field] = inp.value === '' ? null : parseFloat(inp.value);
+  });
+
+  const holesByNumber = {};
+  (scanResult.holes || []).forEach(h => { holesByNumber[h.number] = h; });
+  document.querySelectorAll('#scan-hole-rows input').forEach(inp => {
+    const num = parseInt(inp.dataset.hole, 10);
+    if (!holesByNumber[num]) holesByNumber[num] = { number: num, par: null, handicap: null, yardage: {} };
+    const val = inp.value === '' ? null : parseFloat(inp.value);
+    if (inp.dataset.field === 'yardage') holesByNumber[num].yardage[inp.dataset.tee] = val;
+    else holesByNumber[num][inp.dataset.field] = val;
+  });
+
+  for (const tee of scanResult.tees_present) {
+    const rs = scanResult.rating_slope[tee];
+    if (rs?.rating != null && rs?.slope != null) {
+      await TcHandicap.saveRatingSlope(geoKey, TEE_LABELS[tee] || tee, '18', { rating: rs.rating, slope: rs.slope }, { source: 'scan', courseName: scanResult.course_name });
+    }
+  }
+  await TcCourseData.saveHoles(geoKey, Object.values(holesByNumber), { source: 'scan', courseName: scanResult.course_name });
+
+  showToast('toast', 'Saved!');
+  setTimeout(() => navigate('rounds'), 800);
+}
+</script>
+</body>
+</html>
