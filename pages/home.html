@@ -217,6 +217,8 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 </div><!-- /wrap -->
 </div><!-- /phone -->
 
@@ -324,7 +326,7 @@ function renderWidgets() {
     // Edit bar (CSS: display:none → display:flex when .edit-mode is on grid)
     const bar = el('div', 'w-edit-bar');
     const rm  = el('div', 'w-remove', '− Remove');
-    rm.onclick = () => { widgetConfig = widgetConfig.filter(x => x.id !== w.id); renderWidgets(); };
+    rm.onclick = () => { widgetConfig = widgetConfig.filter(x => x.id !== w.id); renderWidgets(); saveWidgetLayout(); };
     const szs = el('div', 'w-sizes');
     ['small','medium','large'].forEach(s => {
       const lbl = { small:'S', medium:'M', large:'L' }[s];
@@ -352,6 +354,7 @@ function changeSize(id, newSize) {
     : old.slice(0, n);
   w.size = newSize;
   renderWidgets();
+  saveWidgetLayout();
 }
 
 /* ══ EDIT MODE ══ */
@@ -388,6 +391,7 @@ function openSlotPicker(widgetId, slotIdx) {
       if (ww) ww.slots[editSlot.slotIdx] = key;
       closePicker();
       renderWidgets();
+      saveWidgetLayout();
     };
     list.appendChild(item);
   });
@@ -419,6 +423,7 @@ function openAddPicker() {
       widgetConfig.push({ id:'w'+nextId++, size:opt.size, slots:Array(SIZE_SLOTS[opt.size]).fill(null) });
       closePicker();
       renderWidgets();
+      saveWidgetLayout();
     };
     list.appendChild(item);
   });
@@ -428,6 +433,26 @@ function openAddPicker() {
 
 function closePicker() {
   document.getElementById('picker-ov').classList.remove('open');
+}
+
+/* ══ WIDGET LAYOUT PERSISTENCE ══ */
+// Derives the next widget id from the loaded widgets' own ids (rather than
+// persisting a separate counter) so it can never drift out of sync with the
+// array it's supposed to describe.
+function deriveNextId(widgets) {
+  let max = -1;
+  widgets.forEach(w => {
+    const n = parseInt(String(w.id).replace(/^w/, ''), 10);
+    if (!isNaN(n) && n > max) max = n;
+  });
+  return max + 1;
+}
+
+async function saveWidgetLayout() {
+  const session = await TcAuth.getSession();
+  if (!session) return;
+  const { error } = await TcAuth.client.from('profiles').update({ widget_layout: widgetConfig }).eq('id', session.user.id);
+  if (error) showToast('toast', 'Failed to save layout — try again');
 }
 
 /* ══ PGA TOGGLE ══ */
@@ -515,12 +540,25 @@ renderWidgets();
 (async () => {
   const session = await TcAuth.getSession();
   if (!session) return;
-  const { data } = await TcAuth.client.from('profiles').select('handicap_index, display_name').eq('id', session.user.id).single();
+  const { data } = await TcAuth.client.from('profiles').select('handicap_index, display_name, widget_layout').eq('id', session.user.id).single();
   const nameEl = document.getElementById('greet-name');
   if (nameEl && data?.display_name) nameEl.textContent = data.display_name;
   if (data?.handicap_index != null) {
     STATS['handicap'].value = (data.handicap_index >= 0 ? '+' : '') + data.handicap_index;
     renderWidgets();
+  }
+
+  if (data?.widget_layout != null && Array.isArray(data.widget_layout)) {
+    const previousConfig = widgetConfig;
+    try {
+      widgetConfig = data.widget_layout;
+      nextId = deriveNextId(widgetConfig);
+      renderWidgets();
+    } catch {
+      // Malformed saved layout — restore and re-render today's hardcoded default.
+      widgetConfig = previousConfig;
+      renderWidgets();
+    }
   }
 
   const { data: rounds } = await TcAuth.client
