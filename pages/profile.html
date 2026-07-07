@@ -83,6 +83,11 @@
 .signout-btn { margin: 0 12px 20px; background: rgba(231,76,60,0.06); border: 1px solid rgba(231,76,60,0.25); border-radius: 12px; padding: 13px; font-size: 14px; font-weight: 700; color: var(--red); text-align: center; cursor: pointer; transition: opacity 0.12s; flex-shrink: 0; }
 .signout-btn:active { opacity: 0.65; }
 
+/* ── SHEET SAVE BUTTON / INLINE ERROR (Account editing sheets) ── */
+.sheet-save-btn { margin-top: 4px; background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.35); border-radius: 12px; padding: 13px; font-size: 14px; font-weight: 700; color: var(--green); text-align: center; cursor: pointer; transition: opacity 0.12s; }
+.sheet-save-btn:active { opacity: 0.65; }
+.sheet-err { color: #E74C3C; font-size: 10px; margin: 6px 0; min-height: 12px; }
+
 /* ── FRIEND DETAIL SHEET ── */
 .fd-header { display: flex; flex-direction: column; align-items: center; padding: 0 0 12px; }
 .fd-av { width: 52px; height: 52px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; margin-bottom: 8px; }
@@ -283,6 +288,59 @@
   </div>
 </div>
 
+<!-- ── EDIT NAME SHEET ── -->
+<div class="sheet-ov" id="name-ov">
+  <div class="sheet-bd" onclick="closeNameSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Display Name</div>
+      <div class="sh-undo" onclick="closeNameSheet()">✕ Close</div>
+    </div>
+    <input class="lg-inp" id="name-inp" placeholder="e.g. Jane Smith" style="margin-bottom:8px;">
+    <div class="sheet-err" id="name-err"></div>
+    <div class="sheet-save-btn" onclick="saveDisplayName()">Save</div>
+  </div>
+</div>
+
+<!-- ── CHANGE PASSWORD SHEET ── -->
+<div class="sheet-ov" id="pwd-ov">
+  <div class="sheet-bd" onclick="closePasswordSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Change Password</div>
+      <div class="sh-undo" onclick="closePasswordSheet()">✕ Close</div>
+    </div>
+    <input class="lg-inp" type="password" id="pwd-current-inp" placeholder="Current password" style="margin-bottom:8px;">
+    <input class="lg-inp" type="password" id="pwd-new-inp" placeholder="New password" style="margin-bottom:8px;">
+    <input class="lg-inp" type="password" id="pwd-confirm-inp" placeholder="Confirm new password" style="margin-bottom:8px;">
+    <div class="sheet-err" id="pwd-err"></div>
+    <div class="sheet-save-btn" onclick="savePassword()">Save</div>
+  </div>
+</div>
+
+<!-- ── CHANGE EMAIL SHEET ── -->
+<div class="sheet-ov" id="email-ov">
+  <div class="sheet-bd" onclick="closeEmailSheet()"></div>
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-top">
+      <div class="sh-ttl">Change Email</div>
+      <div class="sh-undo" onclick="closeEmailSheet()">✕ Close</div>
+    </div>
+    <div id="email-form">
+      <input class="lg-inp" type="email" id="email-new-inp" placeholder="New email address" style="margin-bottom:8px;">
+      <input class="lg-inp" type="password" id="email-pwd-inp" placeholder="Current password" style="margin-bottom:8px;">
+      <div class="sheet-err" id="email-err"></div>
+      <div class="sheet-save-btn" onclick="saveEmail()">Save</div>
+    </div>
+    <div id="email-pending" style="display:none;text-align:center;padding:12px 4px;font-size:12px;color:var(--muted);line-height:1.6;">
+      Check your email to confirm this change.
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ── GOLF SUB-SCREEN ── -->
@@ -333,15 +391,15 @@
   <div class="sub-scroll">
     <div class="sec-hdr">Profile</div>
     <div class="settings-group">
-      <div class="settings-row" onclick="showToast('toast','Edit name — coming soon')">
+      <div class="settings-row" onclick="openNameSheet()">
         <div class="sr-lbl">Display Name</div>
         <div class="sr-val" id="acct-name-val">— <span class="chev">›</span></div>
       </div>
-      <div class="settings-row" onclick="showToast('toast','Change email — coming soon')">
+      <div class="settings-row" onclick="openEmailSheet()">
         <div class="sr-lbl">Email</div>
         <div class="sr-val" id="acct-email-val">— <span class="chev">›</span></div>
       </div>
-      <div class="settings-row" onclick="showToast('toast','Change password — coming soon')">
+      <div class="settings-row" onclick="openPasswordSheet()">
         <div class="sr-lbl">Password</div>
         <div class="sr-val">Change <span class="chev">›</span></div>
       </div>
@@ -476,6 +534,7 @@ function escHtml(s) {
     if (el) el.textContent = data?.handicap_index != null ? ((data.handicap_index >= 0 ? '+' : '') + data.handicap_index) : '—';
 
     const name = data?.display_name || null;
+    currentDisplayName = name;
     const nameEl = document.getElementById('pf-name');
     if (nameEl) nameEl.textContent = name || 'Golfer';
     const avEl = document.getElementById('pf-avatar');
@@ -528,6 +587,7 @@ let activeFriend        = null;
 let activeFdTab         = 'rounds';
 let courseSearchResults = [];     // last TcCourse.searchByName results, indexed for selectCourse(i)
 let courseSearchDebounce;
+let currentDisplayName  = null;   // string | null — kept in sync with profiles.display_name
 
 /* ── FRIENDS LIST ── */
 function renderFriends(list) {
@@ -725,6 +785,92 @@ async function setUnit(unit) {
   if (!session) return;
   const { error } = await TcAuth.client.from('profiles').update({ distance_unit: unit }).eq('id', session.user.id);
   if (error) showToast('toast', 'Failed to save — try again');
+}
+
+/* ── EDIT NAME ── */
+function openNameSheet() {
+  document.getElementById('name-inp').value = currentDisplayName || '';
+  document.getElementById('name-err').textContent = '';
+  document.getElementById('name-ov').classList.add('open');
+}
+function closeNameSheet() { document.getElementById('name-ov').classList.remove('open'); }
+
+async function saveDisplayName() {
+  const name = document.getElementById('name-inp').value.trim();
+  const errEl = document.getElementById('name-err');
+  if (!name) { errEl.textContent = 'Enter a display name.'; return; }
+  const session = await TcAuth.getSession();
+  if (!session) return;
+  const { error } = await TcAuth.client.from('profiles').update({ display_name: name }).eq('id', session.user.id);
+  if (error) { showToast('toast', 'Failed to save — try again'); return; }
+  currentDisplayName = name;
+  document.getElementById('pf-name').textContent = name;
+  document.getElementById('pf-avatar').textContent = name.split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('acct-name-val').innerHTML = `${escHtml(name)} <span class="chev">›</span>`;
+  closeNameSheet();
+}
+
+/* ── CHANGE PASSWORD ── */
+function openPasswordSheet() {
+  document.getElementById('pwd-current-inp').value = '';
+  document.getElementById('pwd-new-inp').value = '';
+  document.getElementById('pwd-confirm-inp').value = '';
+  document.getElementById('pwd-err').textContent = '';
+  document.getElementById('pwd-ov').classList.add('open');
+}
+function closePasswordSheet() { document.getElementById('pwd-ov').classList.remove('open'); }
+
+async function savePassword() {
+  const current = document.getElementById('pwd-current-inp').value;
+  const next    = document.getElementById('pwd-new-inp').value;
+  const confirm = document.getElementById('pwd-confirm-inp').value;
+  const errEl = document.getElementById('pwd-err');
+  errEl.textContent = '';
+  if (!current || !next || !confirm) { errEl.textContent = 'Fill in all three fields.'; return; }
+  if (next !== confirm) { errEl.textContent = 'New password and confirmation do not match.'; return; }
+  const session = await TcAuth.getSession();
+  if (!session?.user?.email) return;
+  try {
+    await TcAuth.signInWithPassword(session.user.email, current);
+  } catch {
+    errEl.textContent = 'Current password is incorrect.';
+    return;
+  }
+  const { error } = await TcAuth.client.auth.updateUser({ password: next });
+  if (error) { errEl.textContent = error.message; return; }
+  closePasswordSheet();
+  showToast('toast', 'Password changed');
+}
+
+/* ── CHANGE EMAIL ── */
+function openEmailSheet() {
+  document.getElementById('email-new-inp').value = '';
+  document.getElementById('email-pwd-inp').value = '';
+  document.getElementById('email-err').textContent = '';
+  document.getElementById('email-form').style.display = '';
+  document.getElementById('email-pending').style.display = 'none';
+  document.getElementById('email-ov').classList.add('open');
+}
+function closeEmailSheet() { document.getElementById('email-ov').classList.remove('open'); }
+
+async function saveEmail() {
+  const newEmail = document.getElementById('email-new-inp').value.trim();
+  const pwd      = document.getElementById('email-pwd-inp').value;
+  const errEl = document.getElementById('email-err');
+  errEl.textContent = '';
+  if (!newEmail || !pwd) { errEl.textContent = 'Enter a new email and your current password.'; return; }
+  const session = await TcAuth.getSession();
+  if (!session?.user?.email) return;
+  try {
+    await TcAuth.signInWithPassword(session.user.email, pwd);
+  } catch {
+    errEl.textContent = 'Current password is incorrect.';
+    return;
+  }
+  const { error } = await TcAuth.client.auth.updateUser({ email: newEmail });
+  if (error) { errEl.textContent = error.message; return; }
+  document.getElementById('email-form').style.display = 'none';
+  document.getElementById('email-pending').style.display = '';
 }
 
 /* ── SUB-SCREENS ── */
