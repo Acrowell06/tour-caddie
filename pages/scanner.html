@@ -255,19 +255,19 @@
     <div class="rv-scroller">
       <!-- Summary card -->
       <div class="rv-summary">
-        <div class="rvs-course">Pebble Beach Golf Links</div>
-        <div class="rvs-date">June 30, 2026 · Tips · 9:08 AM · Calm</div>
+        <div class="rvs-course">—</div>
+        <div class="rvs-date">—</div>
         <div class="rvs-score">
-          <div class="rvs-big">75</div>
-          <div class="rvs-net">+2</div>
+          <div class="rvs-big">—</div>
+          <div class="rvs-net">—</div>
         </div>
-        <div class="rvs-nine">Out 37 (+1) &nbsp;·&nbsp; In 38 (+1)</div>
+        <div class="rvs-nine">—</div>
         <div class="rvs-stats">
-          <div class="rvs-stat"><div class="rvs-sv">32</div><div class="rvs-sl">Putts</div></div>
-          <div class="rvs-stat"><div class="rvs-sv green">71%</div><div class="rvs-sl">FIR</div></div>
-          <div class="rvs-stat"><div class="rvs-sv green">72%</div><div class="rvs-sl">GIR</div></div>
-          <div class="rvs-stat"><div class="rvs-sv green">2</div><div class="rvs-sl">Birdies</div></div>
-          <div class="rvs-stat"><div class="rvs-sv" style="color:#F1C40F">4</div><div class="rvs-sl">Bogeys</div></div>
+          <div class="rvs-stat"><div class="rvs-sv">—</div><div class="rvs-sl">Putts</div></div>
+          <div class="rvs-stat"><div class="rvs-sv">—</div><div class="rvs-sl">FIR</div></div>
+          <div class="rvs-stat"><div class="rvs-sv">—</div><div class="rvs-sl">GIR</div></div>
+          <div class="rvs-stat"><div class="rvs-sv">—</div><div class="rvs-sl">Birdies</div></div>
+          <div class="rvs-stat"><div class="rvs-sv">—</div><div class="rvs-sl">Bogeys</div></div>
         </div>
       </div>
 
@@ -288,11 +288,11 @@
     <div class="suc-body">
       <div class="suc-ring"><div class="suc-check">✓</div></div>
       <div class="suc-ttl">Round Imported</div>
-      <div class="suc-round">Pebble Beach Golf Links<br>June 30, 2026 · Tips · 75 (+2)</div>
+      <div class="suc-round">—</div>
       <div class="suc-stats">
-        <div class="suc-stat"><div class="suc-sv">4.2→4.0</div><div class="suc-sl">Handicap</div></div>
-        <div class="suc-stat"><div class="suc-sv green">72%</div><div class="suc-sl">GIR</div></div>
-        <div class="suc-stat"><div class="suc-sv">1.78</div><div class="suc-sl">Putts/GIR</div></div>
+        <div class="suc-stat"><div class="suc-sv">—</div><div class="suc-sl">Handicap</div></div>
+        <div class="suc-stat"><div class="suc-sv">—</div><div class="suc-sl">GIR</div></div>
+        <div class="suc-stat"><div class="suc-sv">—</div><div class="suc-sl">Putts/GIR</div></div>
       </div>
       <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.6;">
         All 8 stat categories updated<br>Handicap index recalculated
@@ -329,27 +329,9 @@
 <script>
 (async () => { await TcAuth.requireAuth(); })();
 
-/* ── DATA: Simulated OCR extraction from Tour Caddie scorecard ── */
-const HOLES = [
-  { h:1,  par:4, yards:430, si:7,  teeClub:'D',   teeYds:285, fir:'H',   apprClub:'9i',  apprYds:142, apprPrx:12, gir:'✓',  p1:12, p2:2,         putts:2, score:4 },
-  { h:2,  par:5, yards:502, si:11, teeClub:'D',   teeYds:308, fir:'H',   apprClub:'7i',  apprYds:165, apprPrx:20, gir:'✓',  p1:20, p2:3,         putts:2, score:5 },
-  { h:3,  par:4, yards:390, si:3,  teeClub:'D',   teeYds:268, fir:'L',   apprClub:'8i',  apprYds:158, apprPrx:8,  gir:'✓',  p1:8,               putts:1, score:4 },
-  { h:4,  par:4, yards:438, si:1,  teeClub:'D',   teeYds:291, fir:'H',   apprClub:'9i',  apprYds:140, apprPrx:48, gir:'S',  s3:{club:'SW',lie:'F',from:15}, p1:3, p2:1, putts:2, score:5 },
-  { h:5,  par:3, yards:166, si:17,                             apprClub:'6i',  apprYds:166, apprPrx:22, gir:'✓',  p1:22, p2:4,         putts:2, score:3 },
-  { h:6,  par:5, yards:521, si:13, teeClub:'D',   teeYds:312, fir:'H',   apprClub:'PW', apprYds:115, apprPrx:6,  gir:'✓',  p1:6,               putts:1, score:4 },
-  { h:7,  par:3, yards:107, si:18,                             apprClub:'9i',  apprYds:107, apprPrx:35, gir:'R',  s3:{club:'LW',lie:'F',from:18}, p1:4, p2:1, putts:2, score:3 },
-  { h:8,  par:4, yards:425, si:5,  teeClub:'D',   teeYds:272, fir:'R',   apprClub:'7i',  apprYds:172, apprPrx:16, gir:'✓',  p1:16, p2:2,         putts:2, score:4 },
-  { h:9,  par:4, yards:464, si:9,  teeClub:'D',   teeYds:268, fir:'H',   apprClub:'8i',  apprYds:160, apprPrx:55, gir:'L',  s3:{club:'LW',lie:'R',from:22}, p1:5, p2:2, putts:2, score:5 },
-  { h:10, par:4, yards:446, si:2,  teeClub:'D',   teeYds:288, fir:'H',   apprClub:'8i',  apprYds:152, apprPrx:14, gir:'✓',  p1:14, p2:2,         putts:2, score:4 },
-  { h:11, par:4, yards:384, si:8,  teeClub:'3W',  teeYds:248, fir:'H',   apprClub:'7i',  apprYds:168, apprPrx:10, gir:'✓',  p1:10,              putts:1, score:4 },
-  { h:12, par:3, yards:202, si:14,                             apprClub:'5i',  apprYds:202, apprPrx:60, gir:'Lg', s3:{club:'SW',lie:'B',from:28}, p1:4, p2:2, putts:2, score:4 },
-  { h:13, par:5, yards:444, si:16, teeClub:'D',   teeYds:298, fir:'H',   apprClub:'9i',  apprYds:138, apprPrx:22, gir:'✓',  p1:22, p2:3,         putts:2, score:5 },
-  { h:14, par:5, yards:565, si:10, teeClub:'D',   teeYds:305, fir:'L',   apprClub:'PW', apprYds:112, apprPrx:8,  gir:'✓',  p1:8,               putts:1, score:4 },
-  { h:15, par:4, yards:397, si:4,  teeClub:'D',   teeYds:280, fir:'H',   apprClub:'9i',  apprYds:145, apprPrx:18, gir:'✓',  p1:18, p2:2,         putts:2, score:4 },
-  { h:16, par:4, yards:402, si:6,  teeClub:'D',   teeYds:261, fir:'R',   apprClub:'7i',  apprYds:170, apprPrx:58, gir:'R',  s3:{club:'SW',lie:'R',from:21}, p1:5, p2:2, putts:2, score:5 },
-  { h:17, par:3, yards:175, si:12,                             apprClub:'5i',  apprYds:175, apprPrx:12, gir:'✓',  p1:12, p2:2,         putts:2, score:3 },
-  { h:18, par:5, yards:548, si:15, teeClub:'D',   teeYds:295, fir:'H',   apprClub:'9i',  apprYds:140, apprPrx:28, gir:'✓',  p1:28, p2:4,         putts:2, score:5 },
-];
+/* No real OCR backend exists yet — the scan flow below is gated behind a
+   "coming soon" toast in beginScan() rather than faking extraction results. */
+const HOLES = [];
 
 /* ── STATE MANAGEMENT ── */
 function goState(id) {
@@ -357,39 +339,11 @@ function goState(id) {
   document.getElementById('st-' + id).classList.remove('hidden');
 }
 
-/* ── UPLOAD → PROCESSING ── */
+/* ── UPLOAD → PROCESSING ──
+   No real OCR backend exists yet, so scanning is gated behind this message
+   instead of faking a successful extraction. */
 function beginScan() {
-  goState('proc');
-  let pct = 0;
-  const pctEl = document.getElementById('proc-pct');
-  const steps = [document.getElementById('ps0'), document.getElementById('ps1'),
-                 document.getElementById('ps2'), document.getElementById('ps3')];
-  let stepIdx = 0;
-
-  const pctIv = setInterval(() => {
-    pct = Math.min(pct + 3, 100);
-    pctEl.textContent = pct + '%';
-    if (pct >= 100) clearInterval(pctIv);
-  }, 80);
-
-  steps[0].classList.add('active');
-  const stepTimings = [0, 700, 1400, 2100];
-  stepTimings.forEach((t, i) => {
-    setTimeout(() => {
-      if (i > 0) steps[i - 1].classList.remove('active');
-      if (i > 0) steps[i - 1].classList.add('done');
-      if (steps[i]) steps[i].classList.add('active');
-    }, t);
-  });
-
-  setTimeout(() => {
-    steps[3].classList.remove('active');
-    steps[3].classList.add('done');
-    setTimeout(() => {
-      renderReview();
-      goState('review');
-    }, 400);
-  }, 2900);
+  showToast('toast', 'Scan & Import is coming soon — enter scores manually for now');
 }
 
 /* ── RENDER REVIEW LIST ── */

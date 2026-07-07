@@ -141,7 +141,7 @@
   <div style="padding:6px 16px 8px; flex-shrink:0; display:flex; align-items:center;">
     <div style="flex:1;">
       <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px;">Stats</div>
-      <div style="font-size:11px; color:var(--muted); margin-top:1px;">2026 Season · 12 rounds</div>
+      <div style="font-size:11px; color:var(--muted); margin-top:1px;">2026 Season</div>
     </div>
     <button class="edit-btn" id="edit-btn" onclick="toggleEdit()">Edit</button>
   </div>
@@ -246,37 +246,37 @@ const CATS = [
   {
     id:'scoring',
     name:'Scoring', icon:'📊', color:'#2ECC71',
-    val:'+0.4', lbl:'SCR AVG', trend:'▼ 0.1', tc:'g',
-    desc:'Scoring average · 12 rounds',
-    chips:['Low: −5','42% U-par','72.4 gross'],
+    val:'—', lbl:'SCR AVG', trend:null, tc:'g',
+    desc:'Scoring average',
+    chips:[],
   },
   {
     id:'ott',
     name:'Off the Tee', icon:'🏌️', color:'#2ECC71',
-    val:'67%', lbl:'FIR %', trend:'▲ 4%', tc:'g',
+    val:'—', lbl:'FIR %', trend:null, tc:'g',
     desc:'Fairways in regulation',
-    chips:['284 avg','322 max','33% miss L'],
+    chips:[],
   },
   {
     id:'approach',
     name:'Approach', icon:'🎯', color:'#E74C3C',
-    val:'62%', lbl:'GIR %', trend:'▼ 2%', tc:'r',
+    val:'—', lbl:'GIR %', trend:null, tc:'r',
     desc:'Greens in regulation',
-    chips:['18.4 ft prox','71% from FW','48% from rough'],
+    chips:[],
   },
   {
     id:'atg',
     name:'Around the Green', icon:'🌿', color:'#2ECC71',
-    val:'58%', lbl:'SCRAMBLE', trend:'▲ 3%', tc:'g',
+    val:'—', lbl:'SCRAMBLE', trend:null, tc:'g',
     desc:'Scrambling & short game',
-    chips:['54% sand save','71% fringe U&D','55% rough U&D'],
+    chips:[],
   },
   {
     id:'putting',
     name:'Putting', icon:'⛳', color:'#E74C3C',
-    val:'1.74', lbl:'PUTTS/GIR', trend:'▲ 0.04', tc:'r',
+    val:'—', lbl:'PUTTS/GIR', trend:null, tc:'r',
     desc:'Putts per greens in regulation',
-    chips:['32% 1-putt','4% 3-putt','29.2 per round'],
+    chips:[],
   },
   {
     id:'sg',
@@ -288,9 +288,9 @@ const CATS = [
   {
     id:'conditions',
     name:'Course & Conditions', icon:'🌤️', color:'#8B8BA7',
-    val:'+0.1', lbl:'HOME AVG', trend:'', tc:'n',
+    val:'—', lbl:'HOME AVG', trend:null, tc:'n',
     desc:'Performance by round type & conditions',
-    chips:['AM: +0.1','Away: +0.8','Back 9: +0.1'],
+    chips:[],
   },
   {
     id:'handicap',
@@ -487,14 +487,6 @@ function kpi(items, cols) {
   ).join('')}</div>`;
 }
 
-function hbar(lbl, pct, color, val) {
-  return `<div class="bar-row">
-    <div class="br-lbl">${lbl}</div>
-    <div class="br-track"><div class="br-fill" style="width:${pct}%;background:${color};"></div></div>
-    <div class="br-val" style="color:${color}">${val}</div>
-  </div>`;
-}
-
 function sgBar(lbl, val, maxAbs) {
   const pct = Math.abs(val) / maxAbs * 50;
   const pos = val >= 0;
@@ -510,182 +502,36 @@ function sgBar(lbl, val, maxAbs) {
   </div>`;
 }
 
-function sdBar(lbl, n, total, color) {
-  const w = n / total * 100;
-  const pct = (n / total * 100).toFixed(1);
-  return `<div class="sd-row">
-    <div class="sd-lbl">${lbl}</div>
-    <div class="sd-track"><div class="sd-fill" style="width:${w}%;background:${color};"></div></div>
-    <div class="sd-count">${n}</div>
-    <div class="sd-pct">${pct}%</div>
-  </div>`;
-}
-
-function pdBar(lbl, made, att) {
-  const pct = Math.round(made / att * 100);
-  const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? '#F1C40F' : pct >= 25 ? '#E67E22' : 'var(--red)';
-  return `<div class="pd-row">
-    <div class="pd-lbl">${lbl}</div>
-    <div class="pd-track"><div class="pd-fill" style="width:${pct}%;background:${color};border-radius:3px;"></div></div>
-    <div class="pd-val" style="color:${color}">${pct}%</div>
-    <div class="pd-att">${made}/${att}</div>
-  </div>`;
-}
-
 function sec(title) { return `<div class="ds-sec">${title}</div>`; }
+
+/* ══ EMPTY-STATE HELPER (used by categories with no real computation wired up yet) ══ */
+function noDataMsg(msg) {
+  return `<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">${msg}</div>`;
+}
 
 /* ══ 1. SCORING ══ */
 function renderScoring(body) {
-  body.innerHTML =
-    kpi([
-      {v:'+0.4',lbl:'AVG TO PAR',c:'var(--green)'},
-      {v:'72.4', lbl:'GROSS AVG',  c:'#fff'},
-      {v:'−5',   lbl:'LOW ROUND',  c:'var(--green)'},
-      {v:'5/12', lbl:'UNDER PAR',  c:'var(--green)'},
-    ].map(k => ({v:k.v,l:k.lbl,c:k.c})), 4) +
-
-    sec('Score Distribution · 216 holes') +
-    sdBar('Eagle',    2,   216, '#F1C40F') +
-    sdBar('Birdie',   48,  216, 'var(--green)') +
-    sdBar('Par',      104, 216, 'rgba(255,255,255,0.35)') +
-    sdBar('Bogey',    42,  216, '#E67E22') +
-    sdBar('Double',   14,  216, 'var(--red)') +
-    sdBar('Triple+',  6,   216, '#8B0000') +
-
-    sec('Par Averages') +
-    kpi([
-      {v:'+0.1',l:'PAR 3',c:'var(--green)'},
-      {v:'+0.5',l:'PAR 4',c:'#E67E22'},
-      {v:'−0.2',l:'PAR 5',c:'var(--green)'},
-    ], 3) +
-
-    sec('9-Hole Split') +
-    kpi([
-      {v:'+0.7',l:'FRONT 9',c:'#E67E22'},
-      {v:'+0.1',l:'BACK 9', c:'var(--green)'},
-    ]) +
-
-    sec('Round Results') +
-    kpi([
-      {v:'5',l:'UNDER PAR',c:'var(--green)'},
-      {v:'2',l:'EVEN',     c:'#fff'},
-      {v:'5',l:'OVER PAR', c:'var(--red)'},
-    ], 3) +
-    '<div style="height:12px;"></div>';
+  body.innerHTML = noDataMsg('No rounds yet — play and complete a round to see your scoring stats here.');
 }
 
 /* ══ 2. OFF THE TEE ══ */
 function renderOTT(body) {
-  body.innerHTML =
-    kpi([
-      {v:'67%', l:'FIR %',    c:'var(--green)'},
-      {v:'284', l:'DIST AVG', c:'#fff'},
-      {v:'322', l:'DIST MAX', c:'var(--green)'},
-      {v:'22.4',l:'P3 PROX',  c:'#fff'},
-    ], 4) +
-
-    sec('Fairway Results') +
-    hbar('Fairway',    67, 'var(--green)', '67%') +
-    hbar('Miss Left',  18, 'var(--red)',   '18%') +
-    hbar('Miss Right', 15, 'var(--red)',   '15%') +
-
-    sec('Driving Distance') +
-    kpi([
-      {v:'261',l:'MIN',c:'var(--muted)'},
-      {v:'284',l:'AVG',c:'#fff'},
-      {v:'322',l:'MAX',c:'var(--green)'},
-    ], 3) +
-
-    sec('Par 3 Tee Shots') +
-    kpi([
-      {v:'22.4',l:'PROX AVG (FT)',c:'#fff'},
-      {v:'62%', l:'GIR ON PAR 3', c:'var(--green)'},
-    ]) +
-    '<div style="height:12px;"></div>';
+  body.innerHTML = noDataMsg('No rounds yet — play and complete a round to see your off-the-tee stats here.');
 }
 
 /* ══ 3. APPROACH ══ */
 function renderApproach(body) {
-  body.innerHTML =
-    kpi([
-      {v:'62%',  l:'GIR %',     c:'var(--red)'},
-      {v:'18.4', l:'PROX FT',   c:'#fff'},
-      {v:'71%',  l:'FW GIR %',  c:'var(--green)'},
-      {v:'48%',  l:'ROUGH GIR', c:'var(--red)'},
-    ], 4) +
-
-    sec('GIR % by Distance') +
-    hbar('50–100 yds', 85, 'var(--green)', '85%') +
-    hbar('100–150',    72, 'var(--green)', '72%') +
-    hbar('150–175',    61, '#F1C40F',      '61%') +
-    hbar('175–200',    44, '#E67E22',      '44%') +
-    hbar('200+ yds',   28, 'var(--red)',   '28%') +
-
-    sec('Proximity by Distance (ft avg)') +
-    kpi([
-      {v:'9.2', l:'50–100 YDS',  c:'var(--green)'},
-      {v:'14.1',l:'100–150 YDS', c:'var(--green)'},
-      {v:'18.4',l:'150–175 YDS', c:'#F1C40F'},
-      {v:'24.8',l:'175–200 YDS', c:'#E67E22'},
-    ], 4) +
-
-    sec('Miss Direction') +
-    hbar('Short', 26, 'var(--red)',    '26%') +
-    hbar('Right', 20, '#E67E22',       '20%') +
-    hbar('Left',  18, '#E67E22',       '18%') +
-    hbar('Long',  12, 'var(--muted)',  '12%') +
-    '<div style="height:12px;"></div>';
+  body.innerHTML = noDataMsg('No rounds yet — play and complete a round to see your approach stats here.');
 }
 
 /* ══ 4. AROUND THE GREEN ══ */
 function renderATG(body) {
-  body.innerHTML =
-    kpi([
-      {v:'58%',l:'SCRAMBLING', c:'var(--green)'},
-      {v:'54%',l:'SAND SAVE',  c:'var(--green)'},
-      {v:'61%',l:'U & DOWN',   c:'var(--green)'},
-      {v:'29', l:'ATTEMPTS',   c:'#fff'},
-    ], 4) +
-
-    sec('Up & Down % by Lie') +
-    hbar('Fringe', 71, 'var(--green)', '71%') +
-    hbar('Rough',  55, '#F1C40F',      '55%') +
-    hbar('Bunker', 54, '#F1C40F',      '54%') +
-    hbar('Other',  48, '#E67E22',      '48%') +
-
-    sec('Proximity from Around Green (ft)') +
-    kpi([
-      {v:'4.2',l:'FRINGE',c:'var(--green)'},
-      {v:'6.8',l:'ROUGH',  c:'#F1C40F'},
-      {v:'7.1',l:'BUNKER', c:'#F1C40F'},
-    ], 3) +
-    '<div style="height:12px;"></div>';
+  body.innerHTML = noDataMsg('No rounds yet — play and complete a round to see your short-game stats here.');
 }
 
 /* ══ 5. PUTTING ══ */
 function renderPutting(body) {
-  body.innerHTML =
-    kpi([
-      {v:'1.74',l:'PUTTS/GIR',  c:'var(--red)'},
-      {v:'29.2',l:'PER ROUND',  c:'#fff'},
-      {v:'32%', l:'1-PUTT %',   c:'var(--green)'},
-      {v:'4%',  l:'3-PUTT %',   c:'var(--red)'},
-    ], 4) +
-
-    sec('Make % by Distance') +
-    pdBar('< 3 ft',    70, 72) +
-    pdBar('3 – 6 ft',  26, 36) +
-    pdBar('6 – 10 ft', 15, 40) +
-    pdBar('10 – 15 ft', 4, 18) +
-    pdBar('15 – 20 ft', 1,  8) +
-    pdBar('20+ ft',     1, 20) +
-
-    sec('Distance Metrics') +
-    kpi([
-      {v:'22.1',l:'1ST PUTT AVG (FT)',c:'#fff'},
-      {v:'2.8', l:'AFTER MISS (FT)',  c:'#fff'},
-    ]) +
-    '<div style="height:12px;"></div>';
+  body.innerHTML = noDataMsg('No rounds yet — play and complete a round to see your putting stats here.');
 }
 
 /* ══ 6. STROKES GAINED ══ */
@@ -741,36 +587,7 @@ async function renderSG(body) {
 
 /* ══ 7. COURSE & CONDITIONS ══ */
 function renderConditions(body) {
-  body.innerHTML =
-    sec('Score Type') +
-    kpi([
-      {v:'+0.1',l:'HOME',        c:'var(--green)'},
-      {v:'+0.5',l:'COMPETITION', c:'#F1C40F'},
-      {v:'+0.8',l:'AWAY',        c:'#E67E22'},
-    ], 3) +
-
-    sec('Time of Day') +
-    kpi([
-      {v:'+0.1',l:'MORNING', c:'var(--green)'},
-      {v:'+0.7',l:'AFTERNOON',c:'#E67E22'},
-    ]) +
-
-    sec('Course Half') +
-    hbar('Back 9',  100, 'var(--green)', '+0.1') +
-    hbar('Front 9', 88,  '#E67E22',      '+0.7') +
-
-    sec('Monthly Trend · 2025') +
-    kpi([
-      {v:'+0.6',l:'APRIL',c:'#F1C40F'},
-      {v:'+0.2',l:'MAY',  c:'var(--green)'},
-      {v:'+0.4',l:'JUNE', c:'#F1C40F'},
-    ], 3) +
-
-    sec('By Hole Difficulty (stroke index)') +
-    hbar('Hdcp 15–18 (easy)', 100, 'var(--green)', '−0.4') +
-    hbar('Hdcp 8–14 (mid)',   100, '#F1C40F',      '+0.3') +
-    hbar('Hdcp 1–7 (hard)',   100, 'var(--red)',   '+0.9') +
-    '<div style="height:12px;"></div>';
+  body.innerHTML = noDataMsg('No rounds yet — play and complete a round to see your course & conditions splits here.');
 }
 
 /* ══ 8. HANDICAP ══ */

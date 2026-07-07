@@ -139,7 +139,7 @@
   <div style="padding:6px 16px 4px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-end;">
     <div>
       <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.8px;margin-bottom:1px;">GOOD MORNING</div>
-      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px;">John Doe</div>
+      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px;" id="greet-name">Golfer</div>
     </div>
     <button id="edit-btn" onclick="toggleEdit()"
       style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.22);border-radius:8px;
@@ -161,10 +161,10 @@
     <div style="height:6px;flex-shrink:0;"></div>
   </div>
 
-  <!-- PGA Tour Live Leaderboard -->
-  <div class="pga-strip collapsed" id="pga-strip">
+  <!-- PGA Tour Live Leaderboard — hidden until a real leaderboard feed is wired up -->
+  <div class="pga-strip collapsed" id="pga-strip" style="display:none;">
     <div class="pga-hdr" onclick="toggleLeaderboard()">
-      <span class="pga-ttl">The Travelers Championship</span>
+      <span class="pga-ttl" id="pga-ttl"></span>
       <div class="pga-right">
         <span class="pga-live" onclick="openPGA();event.stopPropagation();">LIVE</span>
         <span class="pga-round">R4 · Hole 16</span>
@@ -231,19 +231,19 @@
 /* ══ STAT CATALOGUE ══ */
 const STATS = {
   'handicap':   { name:'Handicap Index',   label:'HANDICAP',    value:'—',  vc:'g', trend:null,  tc:'g', sub:'WHS' },
-  'last-round': { name:'Last Round',        label:'LAST ROUND',  value:'−2',    vc:'g', trend:null,     tc:'g', sub:'70 · Riviera' },
-  'season':     { name:'2026 Season',       label:'2025 SEASON', value:'12',    vc:'w', trend:null,     tc:'n', sub:'rounds'       },
-  'scoring':    { name:'Scoring Average',   label:'SCR AVG',     value:'+0.4',  vc:'w', trend:'▼ 0.1',  tc:'g', sub:'to par'       },
-  'low-round':  { name:'Low Round',         label:'LOW ROUND',   value:'−5',    vc:'g', trend:null,     tc:'g', sub:'65 gross'     },
-  'fir':        { name:'Fairways Hit %',    label:'FIR %',       value:'67%',   vc:'w', trend:'▲ 4%',   tc:'g', sub:null           },
-  'gir':        { name:'Greens in Reg.',    label:'GIR %',       value:'62%',   vc:'w', trend:'▼ 2%',   tc:'r', sub:null           },
-  'prox':       { name:'GIR Proximity',     label:'GIR PROX',    value:'18.4',  vc:'w', trend:null,     tc:'n', sub:'ft avg'       },
-  'driving':    { name:'Driving Distance',  label:'DRIVE AVG',   value:'284',   vc:'w', trend:null,     tc:'n', sub:'yds'          },
-  'scrambling': { name:'Scrambling %',      label:'SCRAMBLING',  value:'58%',   vc:'w', trend:'▲ 3%',   tc:'g', sub:null           },
-  'sand-save':  { name:'Sand Save %',       label:'SAND SAVE',   value:'54%',   vc:'w', trend:'▲ 5%',   tc:'g', sub:null           },
-  'putts':      { name:'Putts per GIR',     label:'PUTTS/GIR',   value:'1.74',  vc:'w', trend:'▲ 0.04', tc:'r', sub:null           },
-  '1putt':      { name:'1-Putt %',          label:'1-PUTT %',    value:'32%',   vc:'w', trend:'▲ 2%',   tc:'g', sub:null           },
-  '3putt':      { name:'3-Putt %',          label:'3-PUTT %',    value:'4%',    vc:'w', trend:'▼ 1%',   tc:'g', sub:null           },
+  'last-round': { name:'Last Round',        label:'LAST ROUND',  value:'—',  vc:'g', trend:null,  tc:'g', sub:null },
+  'season':     { name:'2026 Season',       label:'2026 SEASON', value:'—',  vc:'w', trend:null,  tc:'n', sub:'rounds' },
+  'scoring':    { name:'Scoring Average',   label:'SCR AVG',     value:'—',  vc:'w', trend:null,  tc:'g', sub:'to par' },
+  'low-round':  { name:'Low Round',         label:'LOW ROUND',   value:'—',  vc:'g', trend:null,  tc:'g', sub:null },
+  'fir':        { name:'Fairways Hit %',    label:'FIR %',       value:'—',  vc:'w', trend:null,  tc:'g', sub:null },
+  'gir':        { name:'Greens in Reg.',    label:'GIR %',       value:'—',  vc:'w', trend:null,  tc:'r', sub:null },
+  'prox':       { name:'GIR Proximity',     label:'GIR PROX',    value:'—',  vc:'w', trend:null,  tc:'n', sub:null },
+  'driving':    { name:'Driving Distance',  label:'DRIVE AVG',   value:'—',  vc:'w', trend:null,  tc:'n', sub:null },
+  'scrambling': { name:'Scrambling %',      label:'SCRAMBLING',  value:'—',  vc:'w', trend:null,  tc:'g', sub:null },
+  'sand-save':  { name:'Sand Save %',       label:'SAND SAVE',   value:'—',  vc:'w', trend:null,  tc:'g', sub:null },
+  'putts':      { name:'Putts per GIR',     label:'PUTTS/GIR',   value:'—',  vc:'w', trend:null,  tc:'r', sub:null },
+  '1putt':      { name:'1-Putt %',          label:'1-PUTT %',    value:'—',  vc:'w', trend:null,  tc:'g', sub:null },
+  '3putt':      { name:'3-Putt %',          label:'3-PUTT %',    value:'—',  vc:'w', trend:null,  tc:'g', sub:null },
   'sg-total':   { name:'SG: Total',         label:'SG TOTAL',    value:'—',  vc:'g', trend:null,  tc:'g', sub:null           },
   'sg-ott':     { name:'SG: Off the Tee',   label:'SG OTT',      value:'—',  vc:'g', trend:null,  tc:'g', sub:null           },
   'sg-app':     { name:'SG: Approach',      label:'SG APP',      value:'—',  vc:'g', trend:null,  tc:'g', sub:null           },
@@ -466,16 +466,9 @@ function openPGA() {
   window.location.href = appUrl;
 }
 
-/* ══ PGA LEADERBOARD ══ */
-const PGA_LEADERS = [
-  { pos:'1',  name:'Scottie Scheffler',  tot:-18, today:-6, thru:16   },
-  { pos:'2',  name:'Collin Morikawa',    tot:-16, today:-4, thru:16   },
-  { pos:'3',  name:'Jon Rahm',           tot:-15, today:-5, thru:'F'  },
-  { pos:'T4', name:'Rory McIlroy',       tot:-14, today:-3, thru:16   },
-  { pos:'T4', name:'Xander Schauffele',  tot:-14, today:-2, thru:'F'  },
-  { pos:'T6', name:'Patrick Cantlay',    tot:-13, today:-4, thru:'F'  },
-  { pos:'T6', name:'Tommy Fleetwood',    tot:-13, today:-1, thru:16   },
-];
+/* ══ PGA LEADERBOARD ══
+   No live leaderboard feed is wired up yet — empty until a real data source exists. */
+const PGA_LEADERS = [];
 
 function fmtScore(n) {
   if (n === 0) return '<span class="c-even">E</span>';
@@ -488,8 +481,11 @@ function fmtToday(n) {
 }
 
 function renderLeaderboard() {
+  const strip = document.getElementById('pga-strip');
   const el = document.getElementById('pga-rows');
-  if (!el) return;
+  if (!el || !strip) return;
+  if (!PGA_LEADERS.length) { strip.style.display = 'none'; return; }
+  strip.style.display = '';
   el.innerHTML = PGA_LEADERS.map(p => `
     <div class="pga-row">
       <div class="pga-pos">${p.pos}</div>
@@ -519,7 +515,9 @@ renderWidgets();
 (async () => {
   const session = await TcAuth.getSession();
   if (!session) return;
-  const { data } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
+  const { data } = await TcAuth.client.from('profiles').select('handicap_index, display_name').eq('id', session.user.id).single();
+  const nameEl = document.getElementById('greet-name');
+  if (nameEl && data?.display_name) nameEl.textContent = data.display_name;
   if (data?.handicap_index != null) {
     STATS['handicap'].value = (data.handicap_index >= 0 ? '+' : '') + data.handicap_index;
     renderWidgets();

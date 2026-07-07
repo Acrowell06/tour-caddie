@@ -145,9 +145,9 @@
 
   <!-- Compact horizontal header -->
   <div class="pf-header">
-    <div class="pf-avatar">JD</div>
+    <div class="pf-avatar" id="pf-avatar">—</div>
     <div class="pf-info">
-      <div class="pf-name">John Doe</div>
+      <div class="pf-name" id="pf-name">Golfer</div>
       <div class="pf-hcp-lbl">Handicap Index</div>
     </div>
     <div class="pf-hcp-num" id="pf-hcp-num">—</div>
@@ -335,11 +335,11 @@
     <div class="settings-group">
       <div class="settings-row" onclick="showToast('toast','Edit name — coming soon')">
         <div class="sr-lbl">Display Name</div>
-        <div class="sr-val">John Doe <span class="chev">›</span></div>
+        <div class="sr-val" id="acct-name-val">— <span class="chev">›</span></div>
       </div>
       <div class="settings-row" onclick="showToast('toast','Change email — coming soon')">
         <div class="sr-lbl">Email</div>
-        <div class="sr-val">john@example.com <span class="chev">›</span></div>
+        <div class="sr-val" id="acct-email-val">— <span class="chev">›</span></div>
       </div>
       <div class="settings-row" onclick="showToast('toast','Change password — coming soon')">
         <div class="sr-lbl">Password</div>
@@ -470,10 +470,20 @@ function escHtml(s) {
   const session = await TcAuth.getSession();
   if (session) {
     const { data } = await TcAuth.client.from('profiles')
-      .select('handicap_index, home_club, home_club_lat, home_club_lng, default_tee_key, distance_unit')
+      .select('handicap_index, home_club, home_club_lat, home_club_lng, default_tee_key, distance_unit, display_name')
       .eq('id', session.user.id).single();
     const el = document.getElementById('pf-hcp-num');
     if (el) el.textContent = data?.handicap_index != null ? ((data.handicap_index >= 0 ? '+' : '') + data.handicap_index) : '—';
+
+    const name = data?.display_name || null;
+    const nameEl = document.getElementById('pf-name');
+    if (nameEl) nameEl.textContent = name || 'Golfer';
+    const avEl = document.getElementById('pf-avatar');
+    if (avEl) avEl.textContent = name ? name.split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() : '—';
+    const acctNameEl = document.getElementById('acct-name-val');
+    if (acctNameEl) acctNameEl.innerHTML = `${name || 'Not set'} <span class="chev">›</span>`;
+    const acctEmailEl = document.getElementById('acct-email-val');
+    if (acctEmailEl) acctEmailEl.innerHTML = `${session.user.email || 'Not set'} <span class="chev">›</span>`;
 
     if (data?.default_tee_key) {
       selectedTeeKey = data.default_tee_key;
@@ -497,34 +507,8 @@ async function doSignOut() {
   navigate('login');
 }
 
-const FRIENDS = [
-  { initials:'TM', name:'Tom Mitchell',   hcp:'7.8',  online:true,  color:'#5B8DEE',
-    rounds:[
-      { course:'Augusta National', date:'Jun 28', score:'+3', n:3  },
-      { course:'Pebble Beach',     date:'Jun 15', score:'E',  n:0  },
-      { course:'Torrey Pines',     date:'Jun 2',  score:'+5', n:5  },
-    ]},
-  { initials:'SR', name:'Sarah Roberts',  hcp:'12.4', online:true,  color:'#E67E22',
-    rounds:[
-      { course:'St Andrews',  date:'Jun 27', score:'+6', n:6 },
-      { course:'Carnoustie',  date:'Jun 14', score:'+8', n:8 },
-    ]},
-  { initials:'JK', name:'Jake Kim',       hcp:'2.1',  online:false, color:'#9B59B6',
-    rounds:[
-      { course:'Shinnecock Hills', date:'Jun 24', score:'+1', n:1  },
-      { course:'Winged Foot',      date:'Jun 10', score:'-1', n:-1 },
-      { course:'Bethpage Black',   date:'May 30', score:'+4', n:4  },
-    ]},
-  { initials:'LC', name:'Lisa Chen',      hcp:'18.2', online:false, color:'#E74C3C',
-    rounds:[
-      { course:'Bandon Dunes', date:'Jun 20', score:'+9', n:9 },
-    ]},
-  { initials:'MP', name:'Mark Patterson', hcp:'5.6',  online:true,  color:'#1ABC9C',
-    rounds:[
-      { course:'Cypress Point', date:'Jun 29', score:'+2', n:2 },
-      { course:'Olympic Club',  date:'Jun 18', score:'+3', n:3 },
-    ]},
-];
+/* No real friends backend exists yet — starts empty until that's built. */
+const FRIENDS = [];
 
 // Same 5 canonical tees rounds.html's TEE_CANONICAL uses for real per-course
 // yardage data — duplicated here rather than shared, since this codebase has
@@ -610,23 +594,19 @@ function renderFdContent() {
     }).join('');
   } else {
     el.innerHTML = `<div class="fd-stat-grid">
-      <div class="fd-stat-card"><div class="fd-sc-lbl">Scoring Avg</div><div class="fd-sc-val">76.4</div></div>
-      <div class="fd-stat-card"><div class="fd-sc-lbl">GIR %</div><div class="fd-sc-val" style="color:var(--green);">54%</div></div>
-      <div class="fd-stat-card"><div class="fd-sc-lbl">Fairways %</div><div class="fd-sc-val">61%</div></div>
-      <div class="fd-stat-card"><div class="fd-sc-lbl">Putts / Rd</div><div class="fd-sc-val">31.2</div></div>
-      <div class="fd-stat-card"><div class="fd-sc-lbl">Scrambling</div><div class="fd-sc-val">48%</div></div>
-      <div class="fd-stat-card"><div class="fd-sc-lbl">Low Round</div><div class="fd-sc-val" style="color:var(--green);">-1</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Scoring Avg</div><div class="fd-sc-val">—</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">GIR %</div><div class="fd-sc-val">—</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Fairways %</div><div class="fd-sc-val">—</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Putts / Rd</div><div class="fd-sc-val">—</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Scrambling</div><div class="fd-sc-val">—</div></div>
+      <div class="fd-stat-card"><div class="fd-sc-lbl">Low Round</div><div class="fd-sc-val">—</div></div>
     </div>`;
   }
 }
 
-/* ── ADD FRIEND ── */
-const SEARCH_POOL = [
-  { initials:'MJ', name:'Mike Johnson', hcp:'9.3',  color:'#5B8DEE' },
-  { initials:'AS', name:'Amy Sanders',  hcp:'22.1', color:'#E67E22' },
-  { initials:'BW', name:'Ben Wilson',   hcp:'3.7',  color:'#1ABC9C' },
-  { initials:'RC', name:'Ryan Clark',   hcp:'14.5', color:'#9B59B6' },
-];
+/* ── ADD FRIEND ──
+   No real user search backend exists yet — starts empty until that's built. */
+const SEARCH_POOL = [];
 
 function openAddSheet() {
   document.querySelector('#af-ov .lg-inp').value = '';
@@ -689,7 +669,7 @@ async function selectTee(key) {
 /* ── HOME COURSE ── */
 function openCourseSheet() {
   document.getElementById('course-search').value = '';
-  document.getElementById('course-list').innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">Search for a course above</div>';
+  document.getElementById('course-list').innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">Search for your home course above</div>';
   document.getElementById('hc-ov').classList.add('open');
 }
 function closeCourseSheet() { document.getElementById('hc-ov').classList.remove('open'); }
@@ -698,8 +678,8 @@ function filterCourses(q) {
   clearTimeout(courseSearchDebounce);
   const val = q.trim();
   const list = document.getElementById('course-list');
-  if (!val) { list.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">Search for a course above</div>'; return; }
-  list.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">Searching…</div>';
+  if (!val) { list.innerHTML = '<div style="text-align:center;color:var(--dim);font-size:12px;padding:16px;">Search for your home course above</div>'; return; }
+  list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px;">Searching…</div>';
   courseSearchDebounce = setTimeout(async () => {
     try {
       const results = await TcCourse.searchByName(val);

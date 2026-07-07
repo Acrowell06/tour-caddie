@@ -216,69 +216,26 @@
     <!-- Season summary -->
     <div class="season-strip">
       <div class="ss-col">
-        <div class="ss-val">12</div>
+        <div class="ss-val">—</div>
         <div class="ss-lbl">Rounds</div>
       </div>
       <div class="ss-col">
-        <div class="ss-val" style="color:var(--green);">+0.4</div>
+        <div class="ss-val">—</div>
         <div class="ss-lbl">Scr Avg</div>
       </div>
       <div class="ss-col">
-        <div class="ss-val" style="color:var(--green);">+1.8</div>
+        <div class="ss-val">—</div>
         <div class="ss-lbl">Handicap</div>
       </div>
       <div class="ss-col">
-        <div class="ss-val" style="color:var(--green);">−5</div>
+        <div class="ss-val">—</div>
         <div class="ss-lbl">Low Rd</div>
       </div>
     </div>
 
     <div class="r-sec">Recent Rounds</div>
 
-    <div class="round-card">
-      <div class="rc-date">Jun 27</div>
-      <div class="rc-info">
-        <div class="rc-course">Riviera CC</div>
-        <div class="rc-sub">70 gross · Blue tees · 18 holes</div>
-      </div>
-      <div class="rc-score green">−2</div>
-    </div>
-
-    <div class="round-card">
-      <div class="rc-date">Jun 22</div>
-      <div class="rc-info">
-        <div class="rc-course">Pebble Beach</div>
-        <div class="rc-sub">72 gross · White tees · 18 holes</div>
-      </div>
-      <div class="rc-score white">E</div>
-    </div>
-
-    <div class="round-card">
-      <div class="rc-date">Jun 15</div>
-      <div class="rc-info">
-        <div class="rc-course">Augusta National</div>
-        <div class="rc-sub">75 gross · Masters tees · 18 holes</div>
-      </div>
-      <div class="rc-score red">+3</div>
-    </div>
-
-    <div class="round-card">
-      <div class="rc-date">Jun 8</div>
-      <div class="rc-info">
-        <div class="rc-course">TPC Sawgrass</div>
-        <div class="rc-sub">71 gross · Blue tees · 18 holes</div>
-      </div>
-      <div class="rc-score green">−1</div>
-    </div>
-
-    <div class="round-card">
-      <div class="rc-date">Jun 1</div>
-      <div class="rc-info">
-        <div class="rc-course">Torrey Pines (South)</div>
-        <div class="rc-sub">73 gross · Blue tees · 18 holes</div>
-      </div>
-      <div class="rc-score red">+1</div>
-    </div>
+    <div style="text-align:center;color:var(--dim);font-size:12px;padding:24px 16px;">No rounds yet — tap Start Round or check the Courses tab once you've played.</div>
 
     <div style="height:8px;"></div>
   </div>
@@ -384,14 +341,7 @@ const OTHER_STEPS = ['course','game-type','friends'];
 let steps   = MY_SCORE_STEPS;
 let stepIdx = 0;
 
-const COURSES_FAV = [
-  { name:'Riviera CC',           location:'Pacific Palisades, CA', lat:34.0462, lng:-118.5090, fav:true  },
-  { name:'Pebble Beach',         location:'Pebble Beach, CA',      lat:36.5686, lng:-121.9489, fav:true  },
-  { name:'Torrey Pines (South)', location:'La Jolla, CA',          lat:32.8983, lng:-117.2517, fav:true  },
-  { name:'Augusta National',     location:'Augusta, GA',           lat:33.5021, lng:-82.0202,  fav:false },
-  { name:'TPC Sawgrass',         location:'Ponte Vedra Beach, FL', lat:30.1975, lng:-81.3965,  fav:false },
-  { name:'Bethpage Black',       location:'Farmingdale, NY',       lat:40.7282, lng:-73.4562,  fav:false },
-];
+const COURSES_FAV = [];
 const TEE_CANONICAL = [
   { key:'tips',  name:'Black', color:'#1a1a2e' },
   { key:'blue',  name:'Blue',  color:'#1a3a8f' },
@@ -712,6 +662,10 @@ function escHtml(s) {
 
 function renderCourseList(list, container) {
   container.innerHTML = '';
+  if (!list.length) {
+    container.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">No courses found — try searching by name</div>';
+    return;
+  }
   list.forEach(c => {
     const row = document.createElement('div');
     const isSelected = sel.course && sel.course.name === c.name;
