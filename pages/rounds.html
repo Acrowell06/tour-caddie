@@ -295,6 +295,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <script src="tc-auth.js"></script>
 <script src="tc-rounds.js"></script>
+<script src="tc-course-data.js"></script>
 <script src="tc-handicap.js"></script>
 <script src="tc-course.js"></script>
 <script src="tc-utils.js"></script>
@@ -900,7 +901,7 @@ function determineWhich9() {
   return null; // custom hole counts, or a 9-hole round not starting on 1 or 10 — not ratable
 }
 
-function updateRatingSlopePrompt() {
+async function updateRatingSlopePrompt() {
   const wrap = document.getElementById('rd-rating-wrap');
   if (!wrap) return;
   if (!sel.tee) { wrap.innerHTML = ''; sel.ratingSlope = null; sel.which9 = null; return; }
@@ -919,7 +920,7 @@ function updateRatingSlopePrompt() {
   }
 
   const geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
-  const cached = TcHandicap.getRatingSlope(geoKey, sel.tee.name, which9);
+  const cached = await TcHandicap.getRatingSlope(geoKey, sel.tee.name, which9);
   if (cached) {
     sel.ratingSlope = cached;
     wrap.innerHTML = `<div class="rd-sec-sub">Rating ${cached.rating} · Slope ${cached.slope} <span onclick="showRatingSlopeForm()" style="color:var(--green);cursor:pointer;">Edit</span></div>`;
@@ -948,7 +949,7 @@ function renderRoundDetails(body) {
       <button class="setup-next-btn" style="margin-top:8px;padding:8px;font-size:12px;" onclick="saveRatingSlopeEntry()">Save</button>`;
   };
 
-  window.saveRatingSlopeEntry = function saveRatingSlopeEntry() {
+  window.saveRatingSlopeEntry = async function saveRatingSlopeEntry() {
     const ratingEl = document.getElementById('rd-rating-inp');
     const slopeEl  = document.getElementById('rd-slope-inp');
     const errEl    = document.getElementById('rd-rating-err');
@@ -959,7 +960,7 @@ function renderRoundDetails(body) {
       return;
     }
     const geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
-    TcHandicap.saveRatingSlope(geoKey, sel.tee.name, sel.which9, { rating, slope });
+    await TcHandicap.saveRatingSlope(geoKey, sel.tee.name, sel.which9, { rating, slope }, { source: 'manual', courseName: sel.course?.name });
     sel.ratingSlope = { rating, slope };
     const wrap = document.getElementById('rd-rating-wrap');
     wrap.innerHTML = `<div class="rd-sec-sub">Rating ${rating} · Slope ${slope} <span onclick="showRatingSlopeForm()" style="color:var(--green);cursor:pointer;">Edit</span></div>`;

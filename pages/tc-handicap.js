@@ -1,8 +1,10 @@
-/* tc-handicap.js — Course Rating/Slope cache (localStorage, mirrors the
-   manual tee/green marking pattern in tc-course.js but its own namespace)
-   plus the WHS handicap math: Net Double Bogey ESC, Score Differential,
-   9-hole pairing, and rolling index averaging. No Supabase dependency —
-   pure functions plus localStorage only. */
+/* tc-handicap.js — Course Rating/Slope now reads/writes the shared
+   Supabase course_data table (via tc-course-data.js), with localStorage
+   as a same-device fallback cache if the shared read fails (e.g. offline).
+   Also has the WHS handicap math: Net Double Bogey ESC, Score
+   Differential, 9-hole pairing, and rolling index averaging (still pure
+   functions, no Supabase dependency). Requires tc-course-data.js to be
+   loaded first. */
 window.TcHandicap = (() => {
   const LOWEST_COUNT_TABLE = [
     null, null, null, // 0, 1, 2 differentials — no index yet
@@ -20,15 +22,18 @@ window.TcHandicap = (() => {
     return `tc_handicap_${geoKey}_${teeName}_${which9}`;
   }
 
-  function getRatingSlope(geoKey, teeName, which9) {
+  async function getRatingSlope(geoKey, teeName, which9) {
+    const shared = await TcCourseData.getRatingSlope(geoKey, teeName, which9);
+    if (shared) return shared;
     try {
       const raw = localStorage.getItem(cacheKey(geoKey, teeName, which9));
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   }
 
-  function saveRatingSlope(geoKey, teeName, which9, { rating, slope }) {
+  async function saveRatingSlope(geoKey, teeName, which9, { rating, slope }, opts) {
     try { localStorage.setItem(cacheKey(geoKey, teeName, which9), JSON.stringify({ rating, slope })); } catch {}
+    await TcCourseData.saveRatingSlope(geoKey, teeName, which9, { rating, slope }, opts);
   }
 
   function courseHandicap(handicapIndex, slope, rating, coursePar) {
