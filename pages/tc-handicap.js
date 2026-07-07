@@ -33,7 +33,7 @@ window.TcHandicap = (() => {
 
   async function saveRatingSlope(geoKey, teeName, which9, { rating, slope }, opts) {
     try { localStorage.setItem(cacheKey(geoKey, teeName, which9), JSON.stringify({ rating, slope })); } catch {}
-    await TcCourseData.saveRatingSlope(geoKey, teeName, which9, { rating, slope }, opts);
+    return TcCourseData.saveRatingSlope(geoKey, teeName, which9, { rating, slope }, opts);
   }
 
   function courseHandicap(handicapIndex, slope, rating, coursePar) {

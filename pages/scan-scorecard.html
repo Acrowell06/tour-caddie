@@ -267,14 +267,21 @@ async function saveScan() {
     else holesByNumber[num][inp.dataset.field] = val;
   });
 
+  let allSucceeded = true;
   for (const tee of scanResult.tees_present) {
     const rs = scanResult.rating_slope[tee];
     if (rs?.rating != null && rs?.slope != null) {
-      await TcHandicap.saveRatingSlope(geoKey, TEE_LABELS[tee] || tee, '18', { rating: rs.rating, slope: rs.slope }, { source: 'scan', courseName: scanResult.course_name });
+      const ok = await TcHandicap.saveRatingSlope(geoKey, TEE_LABELS[tee] || tee, '18', { rating: rs.rating, slope: rs.slope }, { source: 'scan', courseName: scanResult.course_name });
+      if (!ok) allSucceeded = false;
     }
   }
-  await TcCourseData.saveHoles(geoKey, Object.values(holesByNumber), { source: 'scan', courseName: scanResult.course_name });
+  const holesOk = await TcCourseData.saveHoles(geoKey, Object.values(holesByNumber), { source: 'scan', courseName: scanResult.course_name });
+  if (!holesOk) allSucceeded = false;
 
+  if (!allSucceeded) {
+    showToast('toast', 'Failed to save — check your connection and try again.');
+    return;
+  }
   showToast('toast', 'Saved!');
   setTimeout(() => navigate('rounds'), 800);
 }

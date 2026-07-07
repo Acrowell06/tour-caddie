@@ -26,7 +26,7 @@ window.TcCourseData = (() => {
 
   async function saveRatingSlope(geoKey, teeName, which9, { rating, slope }, { source = 'manual', courseName = null } = {}) {
     const session = await TcAuth.getSession();
-    if (!session) return;
+    if (!session) return false;
     const existing = await fetchRow(geoKey);
     const ratingSlope = { ...(existing?.rating_slope || {}) };
     ratingSlope[teeName] = { ...(ratingSlope[teeName] || {}), [which9]: { rating, slope } };
@@ -39,7 +39,8 @@ window.TcCourseData = (() => {
       updated_by: session.user.id,
       updated_at: new Date().toISOString()
     }, { onConflict: 'geo_key' });
-    if (error) console.error('TcCourseData: failed to save rating/slope', error);
+    if (error) { console.error('TcCourseData: failed to save rating/slope', error); return false; }
+    return true;
   }
 
   // holesPatch: [{ number, par, handicap, yardage: { canonicalTeeKey: yds, ... } }, ...]
@@ -49,7 +50,7 @@ window.TcCourseData = (() => {
   // exactly as they were.
   async function saveHoles(geoKey, holesPatch, { source = 'manual', courseName = null } = {}) {
     const session = await TcAuth.getSession();
-    if (!session) return;
+    if (!session) return false;
     const existing = await fetchRow(geoKey);
     const merged = (existing?.holes || []).slice();
     for (const patch of holesPatch) {
@@ -72,7 +73,8 @@ window.TcCourseData = (() => {
       updated_by: session.user.id,
       updated_at: new Date().toISOString()
     }, { onConflict: 'geo_key' });
-    if (error) console.error('TcCourseData: failed to save holes', error);
+    if (error) { console.error('TcCourseData: failed to save holes', error); return false; }
+    return true;
   }
 
   async function getCourseData(geoKey) {
