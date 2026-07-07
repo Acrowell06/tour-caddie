@@ -540,9 +540,9 @@ function escHtml(s) {
     const avEl = document.getElementById('pf-avatar');
     if (avEl) avEl.textContent = name ? name.split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() : '—';
     const acctNameEl = document.getElementById('acct-name-val');
-    if (acctNameEl) acctNameEl.innerHTML = `${name || 'Not set'} <span class="chev">›</span>`;
+    if (acctNameEl) acctNameEl.innerHTML = `${escHtml(name || 'Not set')} <span class="chev">›</span>`;
     const acctEmailEl = document.getElementById('acct-email-val');
-    if (acctEmailEl) acctEmailEl.innerHTML = `${session.user.email || 'Not set'} <span class="chev">›</span>`;
+    if (acctEmailEl) acctEmailEl.innerHTML = `${escHtml(session.user.email || 'Not set')} <span class="chev">›</span>`;
 
     if (data?.default_tee_key) {
       selectedTeeKey = data.default_tee_key;
