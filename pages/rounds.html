@@ -1098,7 +1098,7 @@ function renderFriends(body) {
 
 /* ── AUTO-OPEN if navigated from Start Round ── */
 const params = new URLSearchParams(location.search);
-if (params.get('start') === '1') openSetup();
+if (params.get('start') === '1' || sessionStorage.getItem('tc_setup_resume')) openSetup();
 </script>
 </body>
 </html>
