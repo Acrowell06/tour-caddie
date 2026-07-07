@@ -139,6 +139,10 @@
 <script>
 (async () => { await TcAuth.requireAuth(); })();
 
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 const TEE_LABELS = { tips:'Black', gold:'Gold', blue:'Blue', white:'White', red:'Red' };
 
 let scanResult = null;
@@ -221,25 +225,25 @@ function renderReview() {
   strip.innerHTML = scanResult.tees_present.map(tee => {
     const rs = scanResult.rating_slope[tee] || {};
     return `<div class="rs-card">
-      <div class="rs-tee-name">${TEE_LABELS[tee] || tee}</div>
-      <div class="rs-field"><span>Rating</span><input type="number" step="0.1" data-tee="${tee}" data-field="rating" value="${rs.rating ?? ''}" placeholder="—"></div>
-      <div class="rs-field"><span>Slope</span><input type="number" data-tee="${tee}" data-field="slope" value="${rs.slope ?? ''}" placeholder="—"></div>
+      <div class="rs-tee-name">${escHtml(TEE_LABELS[tee] || tee)}</div>
+      <div class="rs-field"><span>Rating</span><input type="number" step="0.1" data-tee="${escHtml(tee)}" data-field="rating" value="${escHtml(rs.rating ?? '')}" placeholder="—"></div>
+      <div class="rs-field"><span>Slope</span><input type="number" data-tee="${escHtml(tee)}" data-field="slope" value="${escHtml(rs.slope ?? '')}" placeholder="—"></div>
     </div>`;
   }).join('');
 
   document.getElementById('scan-hole-thead').innerHTML =
     '<th>Hole</th><th>Par</th><th>HCP</th>' +
-    scanResult.tees_present.map(tee => `<th>${TEE_LABELS[tee] || tee}</th>`).join('');
+    scanResult.tees_present.map(tee => `<th>${escHtml(TEE_LABELS[tee] || tee)}</th>`).join('');
 
   const holes = scanResult.holes.length ? scanResult.holes
     : Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: null, handicap: null, yardage: {} }));
 
   document.getElementById('scan-hole-rows').innerHTML = holes.map(h => `
     <tr>
-      <td>${h.number}</td>
-      <td><input type="number" class="rv-cell ${h.par == null ? 'empty' : ''}" data-hole="${h.number}" data-field="par" value="${h.par ?? ''}" placeholder="—"></td>
-      <td><input type="number" class="rv-cell ${h.handicap == null ? 'empty' : ''}" data-hole="${h.number}" data-field="handicap" value="${h.handicap ?? ''}" placeholder="—"></td>
-      ${scanResult.tees_present.map(tee => `<td><input type="number" class="rv-cell ${h.yardage?.[tee] == null ? 'empty' : ''}" data-hole="${h.number}" data-tee="${tee}" data-field="yardage" value="${h.yardage?.[tee] ?? ''}" placeholder="—"></td>`).join('')}
+      <td>${escHtml(h.number)}</td>
+      <td><input type="number" class="rv-cell ${h.par == null ? 'empty' : ''}" data-hole="${escHtml(h.number)}" data-field="par" value="${escHtml(h.par ?? '')}" placeholder="—"></td>
+      <td><input type="number" class="rv-cell ${h.handicap == null ? 'empty' : ''}" data-hole="${escHtml(h.number)}" data-field="handicap" value="${escHtml(h.handicap ?? '')}" placeholder="—"></td>
+      ${scanResult.tees_present.map(tee => `<td><input type="number" class="rv-cell ${h.yardage?.[tee] == null ? 'empty' : ''}" data-hole="${escHtml(h.number)}" data-tee="${escHtml(tee)}" data-field="yardage" value="${escHtml(h.yardage?.[tee] ?? '')}" placeholder="—"></td>`).join('')}
     </tr>`).join('');
 }
 
