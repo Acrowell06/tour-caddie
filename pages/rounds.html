@@ -416,11 +416,29 @@ function today() {
 
 /* ══ OPEN / CLOSE ══ */
 function openSetup() {
+  const resumeRaw = sessionStorage.getItem('tc_setup_resume');
+  if (resumeRaw) {
+    sessionStorage.removeItem('tc_setup_resume');
+    try {
+      const resume = JSON.parse(resumeRaw);
+      Object.assign(sel, resume.sel);
+      stepIdx = resume.stepIdx;
+      steps = MY_SCORE_STEPS;
+      document.getElementById('setup-ov').classList.add('open');
+      renderStep();
+      return;
+    } catch {}
+  }
   stepIdx = 0;
   steps   = MY_SCORE_STEPS;
   Object.assign(sel, { course:null, gameType:null, scoreMode:null, holes:null, tee:null, startHole:1, scoreType:null, date:today(), courseTab:'search' });
   document.getElementById('setup-ov').classList.add('open');
   renderStep();
+}
+
+function openScanScorecard() {
+  sessionStorage.setItem('tc_setup_resume', JSON.stringify({ sel, stepIdx }));
+  navigate('scan-scorecard');
 }
 function closeSetup() {
   document.getElementById('setup-ov').classList.remove('open');
@@ -473,6 +491,26 @@ async function startRound() {
     try {
       const data = await TcCourse.loadNear(sel.course.lat, sel.course.lng);
       if (data) roundData.holes_data = data.holes ?? null;
+    } catch {}
+
+    // Merge in shared/scanned course data — OSM's own par/handicap win
+    // whenever present; the shared table only fills gaps OSM has nothing
+    // for. Yardage always comes from the shared table (OSM's per-hole
+    // shape doesn't carry a per-tee yardage number at all).
+    try {
+      const shared = await TcCourseData.getCourseData(roundData.geoKey);
+      if (shared?.holes?.length) {
+        const base = roundData.holes_data || Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: null, handicap: null, tees: {}, green: null }));
+        roundData.holes_data = base.map(h => {
+          const s = shared.holes.find(x => x.number === h.number);
+          return {
+            ...h,
+            par: h.par ?? s?.par ?? null,
+            handicap: h.handicap ?? s?.handicap ?? null,
+            yardage: s?.yardage?.[roundData.tee] ?? null
+          };
+        });
+      }
     } catch {}
   }
 
@@ -978,6 +1016,7 @@ function renderRoundDetails(body) {
 
     <div class="rd-sec" style="margin-top:18px;">Course Rating / Slope</div>
     <div id="rd-rating-wrap"></div>
+    <div style="margin-top:6px;"><span onclick="openScanScorecard()" style="color:var(--green);cursor:pointer;font-size:11px;font-weight:700;">📷 Scan Scorecard instead</span></div>
 
     <div class="rd-sec" style="margin-top:18px;">Score Type</div>
     <div id="rd-score-type-list"></div>

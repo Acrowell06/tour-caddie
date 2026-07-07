@@ -1,7 +1,7 @@
 /* ===== TOUR CADDIE — SHARED UTILITIES ===== */
 
-const ORDER = ['login','home','rounds','stats','courses','profile','scanner','hole'];
-const PAGES = { login:'login.html', home:'home.html', rounds:'rounds.html', stats:'stats.html', courses:'courses.html', profile:'profile.html', scanner:'scanner.html', hole:'hole.html' };
+const ORDER = ['login','home','rounds','scan-scorecard','stats','courses','profile','scanner','hole'];
+const PAGES = { login:'login.html', home:'home.html', rounds:'rounds.html', 'scan-scorecard':'scan-scorecard.html', stats:'stats.html', courses:'courses.html', profile:'profile.html', scanner:'scanner.html', hole:'hole.html' };
 
 function navigate(key) {
   const cur = document.body.dataset.page;
