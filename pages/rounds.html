@@ -837,9 +837,7 @@ function renderTeeList() {
     teeList.appendChild(d);
   });
 
-  // Reflects the pre-fill above in the Continue/Play button immediately,
-  // without relying on updateRatingSlopePrompt() (out of scope from this
-  // function — see this task's note on the pre-existing scope issue).
+  // Reflects the pre-fill above in the Continue/Play button immediately.
   document.getElementById('setup-next-btn').disabled = !canAdvance();
 }
 
@@ -857,77 +855,84 @@ window.saveTeeYardageEntry = function saveTeeYardageEntry(teeKey) {
   renderTeeList();
 };
 
+// Note: this preview always assumes par 72 for the "Course Handicap" estimate shown
+// during setup — real per-hole par isn't known until course data loads at round start.
+// The actual differential/index math (Task 3) uses real round_holes.par, not this preview.
+//
+// Hoisted to top-level (not nested inside renderRoundDetails) so renderTeeList's
+// tee-click handler and the hole-chip click handler — both declared outside
+// renderRoundDetails — can call updateRatingSlopePrompt() too. It previously threw
+// a silently-swallowed ReferenceError on every real tee click, since a function
+// declaration nested inside one function is invisible to a sibling function
+// regardless of call order — confirmed via a minimal reproduction before this fix.
+function reCalcHandicap() {
+  const hcEl   = document.getElementById('rd-hdcp-val');
+  const hcRow  = document.getElementById('rd-hdcp-row');
+  const hcDesc = document.getElementById('rd-hdcp-desc');
+  if (!hcEl || !sel.tee) return;
+  if (!sel.ratingSlope) {
+    hcEl.textContent = '—';
+    if (hcDesc) hcDesc.textContent = 'Enter Course Rating & Slope above to calculate';
+    if (hcRow)  hcRow.innerHTML = '';
+    return;
+  }
+  const { rating, slope } = sel.ratingSlope;
+  const idxLabel = currentHandicapIndex == null ? '—' : ((currentHandicapIndex >= 0 ? '+' : '') + currentHandicapIndex);
+  const idx = currentHandicapIndex ?? 0;
+  const raw = idx * (slope / 113) + (rating - 72);
+  const hcp = Math.round(raw);
+  const str = (hcp >= 0 ? '+' : '') + hcp;
+  hcEl.textContent  = str;
+  if (hcDesc) hcDesc.textContent = `Index ${idxLabel} · ${sel.tee.name} tees · Rating ${rating} · Slope ${slope}`;
+  if (hcRow)  hcRow.innerHTML = `
+    <div class="hdcp-chip"><div class="hc-val" style="color:var(--green)">${idxLabel}</div><div class="hc-lbl">HCP INDEX</div></div>
+    <div class="hdcp-chip"><div class="hc-val">${slope}</div><div class="hc-lbl">SLOPE</div></div>
+    <div class="hdcp-chip"><div class="hc-val">${rating}</div><div class="hc-lbl">RATING</div></div>
+    <div class="hdcp-chip"><div class="hc-val" style="color:var(--green)">${str}</div><div class="hc-lbl">PLAYING HCP</div></div>`;
+}
+
+function determineWhich9() {
+  if (sel.holes === 18) return '18';
+  if (sel.holes === 9) {
+    if (sel.startHole === 1)  return 'front9';
+    if (sel.startHole === 10) return 'back9';
+  }
+  return null; // custom hole counts, or a 9-hole round not starting on 1 or 10 — not ratable
+}
+
+function updateRatingSlopePrompt() {
+  const wrap = document.getElementById('rd-rating-wrap');
+  if (!wrap) return;
+  if (!sel.tee) { wrap.innerHTML = ''; sel.ratingSlope = null; sel.which9 = null; return; }
+  if (!sel.course?.lat || !sel.course?.lng) {
+    wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--muted);">No location data for this course — handicap tracking unavailable for this round.</div>';
+    sel.ratingSlope = null; sel.which9 = null;
+    return;
+  }
+
+  const which9 = determineWhich9();
+  sel.which9 = which9;
+  if (!which9) {
+    wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--muted);">This hole selection isn\'t a standard 9 or 18 — this round won\'t count toward your handicap.</div>';
+    sel.ratingSlope = null;
+    return;
+  }
+
+  const geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
+  const cached = TcHandicap.getRatingSlope(geoKey, sel.tee.name, which9);
+  if (cached) {
+    sel.ratingSlope = cached;
+    wrap.innerHTML = `<div class="rd-sec-sub">Rating ${cached.rating} · Slope ${cached.slope} <span onclick="showRatingSlopeForm()" style="color:var(--green);cursor:pointer;">Edit</span></div>`;
+    reCalcHandicap();
+    return;
+  }
+
+  sel.ratingSlope = null;
+  showRatingSlopeForm();
+}
+
 function renderRoundDetails(body) {
   sel.startHole = sel.startHole || 1;
-
-  // Note: this preview always assumes par 72 for the "Course Handicap" estimate shown
-  // during setup — real per-hole par isn't known until course data loads at round start.
-  // The actual differential/index math (Task 3) uses real round_holes.par, not this preview.
-  function reCalcHandicap() {
-    const hcEl   = document.getElementById('rd-hdcp-val');
-    const hcRow  = document.getElementById('rd-hdcp-row');
-    const hcDesc = document.getElementById('rd-hdcp-desc');
-    if (!hcEl || !sel.tee) return;
-    if (!sel.ratingSlope) {
-      hcEl.textContent = '—';
-      if (hcDesc) hcDesc.textContent = 'Enter Course Rating & Slope above to calculate';
-      if (hcRow)  hcRow.innerHTML = '';
-      return;
-    }
-    const { rating, slope } = sel.ratingSlope;
-    const idxLabel = currentHandicapIndex == null ? '—' : ((currentHandicapIndex >= 0 ? '+' : '') + currentHandicapIndex);
-    const idx = currentHandicapIndex ?? 0;
-    const raw = idx * (slope / 113) + (rating - 72);
-    const hcp = Math.round(raw);
-    const str = (hcp >= 0 ? '+' : '') + hcp;
-    hcEl.textContent  = str;
-    if (hcDesc) hcDesc.textContent = `Index ${idxLabel} · ${sel.tee.name} tees · Rating ${rating} · Slope ${slope}`;
-    if (hcRow)  hcRow.innerHTML = `
-      <div class="hdcp-chip"><div class="hc-val" style="color:var(--green)">${idxLabel}</div><div class="hc-lbl">HCP INDEX</div></div>
-      <div class="hdcp-chip"><div class="hc-val">${slope}</div><div class="hc-lbl">SLOPE</div></div>
-      <div class="hdcp-chip"><div class="hc-val">${rating}</div><div class="hc-lbl">RATING</div></div>
-      <div class="hdcp-chip"><div class="hc-val" style="color:var(--green)">${str}</div><div class="hc-lbl">PLAYING HCP</div></div>`;
-  }
-
-  function determineWhich9() {
-    if (sel.holes === 18) return '18';
-    if (sel.holes === 9) {
-      if (sel.startHole === 1)  return 'front9';
-      if (sel.startHole === 10) return 'back9';
-    }
-    return null; // custom hole counts, or a 9-hole round not starting on 1 or 10 — not ratable
-  }
-
-  function updateRatingSlopePrompt() {
-    const wrap = document.getElementById('rd-rating-wrap');
-    if (!wrap) return;
-    if (!sel.tee) { wrap.innerHTML = ''; sel.ratingSlope = null; sel.which9 = null; return; }
-    if (!sel.course?.lat || !sel.course?.lng) {
-      wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--muted);">No location data for this course — handicap tracking unavailable for this round.</div>';
-      sel.ratingSlope = null; sel.which9 = null;
-      return;
-    }
-
-    const which9 = determineWhich9();
-    sel.which9 = which9;
-    if (!which9) {
-      wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--muted);">This hole selection isn\'t a standard 9 or 18 — this round won\'t count toward your handicap.</div>';
-      sel.ratingSlope = null;
-      return;
-    }
-
-    const geoKey = TcCourse.geoKeyFor(sel.course.lat, sel.course.lng);
-    const cached = TcHandicap.getRatingSlope(geoKey, sel.tee.name, which9);
-    if (cached) {
-      sel.ratingSlope = cached;
-      wrap.innerHTML = `<div class="rd-sec-sub">Rating ${cached.rating} · Slope ${cached.slope} <span onclick="showRatingSlopeForm()" style="color:var(--green);cursor:pointer;">Edit</span></div>`;
-      reCalcHandicap();
-      return;
-    }
-
-    sel.ratingSlope = null;
-    showRatingSlopeForm();
-  }
 
   window.showRatingSlopeForm = function showRatingSlopeForm() {
     const wrap = document.getElementById('rd-rating-wrap');
