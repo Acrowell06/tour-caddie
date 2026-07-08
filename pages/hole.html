@@ -1089,11 +1089,8 @@ function confirmClub() {
     let dist = pendingShot.yds;
     if (selectedClub === 'Putter') {
       // Putter: recalculate from confirmed ball position to pin, in feet.
-      // Uses 10/37 ft/px — from 10ft ring (rx=37) in the green SVG.
       const cur = hLoggedShots.at(-1);
-      if (cur && cur.svgId === 'h-green-svg') {
-        dist = `${Math.max(1, Math.round(px2(cur.x, cur.y, 160, 100) * (10 / 37)))} ft`;
-      } else if (cur && cur.latlng) {
+      if (cur && cur.latlng) {
         dist = `${Math.max(1, Math.round(haversineFt(cur.latlng, GREEN_CTR)))} ft`;
       } else if (dist.endsWith('yds')) {
         dist = `${Math.round(parseFloat(dist) * 3)} ft`;
@@ -1151,9 +1148,7 @@ function hHoleOutFromMap() {
     { icon: makeShotIcon(hShotCount, true) }).addTo(lmap);
 
   const distYds = Math.max(1, Math.round(haversineYds(fromLL, GREEN_CTR)));
-  const distLabel = prev.svgId === 'h-green-svg'
-    ? `${Math.max(1, Math.round(haversineFt(fromLL, GREEN_CTR)))} ft`
-    : distYds < 10 ? `${Math.round(distYds * 3)} ft` : `${distYds} yds`;
+  const distLabel = distYds < 10 ? `${Math.round(distYds * 3)} ft` : `${distYds} yds`;
 
   const inferredLie = inferLie(hLoggedShots.length, fromLL);
 

@@ -88,9 +88,6 @@ function sp(el, id) {
 }
 
 
-
-
-
 /* ── WEATHER (Open-Meteo — free, no API key) ── */
 const WX_CACHE_TTL = 15 * 60 * 1000;
 
