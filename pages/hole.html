@@ -83,7 +83,7 @@
 .sum-map-wrap { padding:6px 10px 4px; }
 .sum-map-wrap #sum-leaflet { width:100%; height:130px; border-radius:10px; overflow:hidden; }
 /* Marker fade/scale-in for the staggered shot reveal on the summary map. */
-#sum-leaflet .leaflet-marker-icon { transition: opacity 0.3s ease, transform 0.3s ease; }
+#sum-leaflet .leaflet-marker-icon { transition: opacity 0.3s ease; }
 .sum-shots { display:flex; gap:5px; padding:0 10px 6px; overflow-x:auto; scrollbar-width:none; }
 .sum-shots::-webkit-scrollbar { display:none; }
 .sum-score-row { display:flex; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:0; }
@@ -913,8 +913,6 @@ function undoLastHole() {
   const last = hLoggedShots.pop();
   if (last.leafletMarker) lmap.removeLayer(last.leafletMarker);
   if (last.leafletLine)   lmap.removeLayer(last.leafletLine);
-  last.line?.remove();
-  last.el?.remove();
   hShotLog.pop();
   renderShotLog();
   hShotCount--;
@@ -1197,16 +1195,9 @@ function buildSummaryMap() {
       const marker = L.marker([to.lat, to.lng], {
         icon: makeShotIcon(i, pt.holed), interactive: false, opacity: 0
       }).addTo(thisMap);
-      const iconEl = marker.getElement();
-      if (iconEl) {
-        iconEl.style.transform = 'scale(0.4)';
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          marker.setOpacity(1);
-          iconEl.style.transform = 'scale(1)';
-        }));
-      } else {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
         marker.setOpacity(1);
-      }
+      }));
     }, i * 450);
   });
 
