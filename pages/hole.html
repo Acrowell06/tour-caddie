@@ -81,7 +81,9 @@
 .sc-na { color:rgba(255,255,255,0.2); }
 /* ── Hole summary sheet ── */
 .sum-map-wrap { padding:6px 10px 4px; }
-.sum-map-wrap svg { width:100%; height:130px; border-radius:10px; display:block; }
+.sum-map-wrap #sum-leaflet { width:100%; height:130px; border-radius:10px; overflow:hidden; }
+/* Marker fade/scale-in for the staggered shot reveal on the summary map. */
+#sum-leaflet .leaflet-marker-icon { transition: opacity 0.3s ease, transform 0.3s ease; }
 .sum-shots { display:flex; gap:5px; padding:0 10px 6px; overflow-x:auto; scrollbar-width:none; }
 .sum-shots::-webkit-scrollbar { display:none; }
 .sum-score-row { display:flex; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:0; }
@@ -273,40 +275,9 @@
       <div class="sh-undo" onclick="hideSheet()">↩ Edit</div>
     </div>
 
-    <!-- Mini hole map with all shots rendered dynamically -->
+    <!-- Mini hole map — real satellite view, shots revealed by buildSummaryMap() -->
     <div class="sum-map-wrap">
-      <svg viewBox="0 0 320 242" id="sum-svg" xmlns="http://www.w3.org/2000/svg">
-        <!-- Bird's-eye overhead terrain -->
-        <rect width="320" height="242" fill="#0C1A0C"/>
-        <ellipse cx="55"  cy="225" rx="42" ry="22" fill="#0A1609"/>
-        <ellipse cx="66"  cy="190" rx="36" ry="21" fill="#0B1B0A"/>
-        <ellipse cx="50"  cy="155" rx="40" ry="23" fill="#0A1609"/>
-        <ellipse cx="70"  cy="118" rx="32" ry="20" fill="#0B1A0A"/>
-        <ellipse cx="52"  cy="83"  rx="38" ry="21" fill="#0A1609"/>
-        <ellipse cx="72"  cy="50"  rx="30" ry="17" fill="#0B1B0A"/>
-        <ellipse cx="90"  cy="22"  rx="22" ry="13" fill="#0A1609"/>
-        <ellipse cx="254" cy="218" rx="40" ry="21" fill="#0A1609"/>
-        <ellipse cx="244" cy="183" rx="33" ry="20" fill="#0B1B0A"/>
-        <ellipse cx="256" cy="148" rx="38" ry="21" fill="#0A1609"/>
-        <ellipse cx="242" cy="112" rx="30" ry="18" fill="#0B1A0A"/>
-        <ellipse cx="252" cy="78"  rx="34" ry="19" fill="#0A1609"/>
-        <ellipse cx="238" cy="44"  rx="26" ry="15" fill="#0B1B0A"/>
-        <path d="M108 235 C106 195 102 155 105 112 C108 69 124 40 131 24 L169 24 C176 40 190 69 191 112 C192 155 188 195 186 235 Z" fill="#183818"/>
-        <path d="M127 235 C126 195 124 155 126 112 C128 69 134 42 131 24 L169 24 C166 42 172 69 170 112 C170 155 168 195 167 235 Z" fill="#286428"/>
-        <path d="M136 235 C135 198 133 162 134 122 C135 80 139 50 150 28 L150 28 C161 50 163 80 162 122 C161 162 159 198 158 235 Z" fill="#2E7030" opacity="0.45"/>
-        <ellipse cx="97" cy="65" rx="20" ry="12" fill="#0A1E3A"/>
-        <ellipse cx="97" cy="65" rx="16" ry="9" fill="#0D2545" opacity="0.8"/>
-        <text x="97" y="69" text-anchor="middle" font-size="8" fill="rgba(52,152,219,0.55)">💧</text>
-        <ellipse cx="193" cy="123" rx="17" ry="11" fill="#7A6428"/>
-        <ellipse cx="150" cy="24" rx="19" ry="13" fill="#1A7A1A"/>
-        <ellipse cx="150" cy="24" rx="15" ry="9" fill="#22A022" opacity="0.9"/>
-        <line x1="150" y1="24" x2="150" y2="7" stroke="rgba(255,255,255,0.9)" stroke-width="1.5"/>
-        <polygon points="150,7 162,13 150,19" fill="#E74C3C"/>
-        <rect x="146" y="230" width="18" height="9" rx="4" fill="#2A3A1A"/>
-        <circle cx="155" cy="234" r="7" fill="rgba(10,10,15,0.85)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-        <text x="155" y="238" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.55)" font-weight="700">T</text>
-        <!-- dynamic shot lines + markers injected here by buildSummaryMap() -->
-      </svg>
+      <div id="sum-leaflet"></div>
     </div>
 
     <!-- Shot review strip -->
@@ -529,12 +500,6 @@ function haversineYds(a, b) {
 }
 function haversineFt(a, b) { return haversineYds(a, b) * 3; }
 
-
-// GPS → approximate hole-summary-SVG coords (tee=155,234 / green=150,24).
-function latLngToSumSVG(ll) {
-  const t = Math.min(1, haversineYds(TEE_LL, ll) / haversineYds(TEE_LL, GREEN_CTR));
-  return { x: 155 + (150 - 155) * t, y: 234 + (24 - 234) * t };
-}
 
 // Update FRONT / CENTER / BACK strip using real GPS distances.
 function updateDistanceBar(ll) {
@@ -864,12 +829,6 @@ function hStopLiveGPS() {
   if (hWatchId !== null) { navigator.geolocation.clearWatch(hWatchId); hWatchId = null; }
 }
 
-// greenToHoleSVG still used for summary map (green SVG shots → summary SVG positions).
-function greenToHoleSVG(gx, gy) {
-  return { x: 150 + (gx - 160) * (19 / 74), y: 24 + (gy - 100) * (13 / 70) };
-}
-
-
 function hMark() {
   const btn = document.getElementById('h-markbtn');
   btn.textContent = '📍 GPS Dropped…';
@@ -901,10 +860,8 @@ function hConfirmGPS() {
   const leafletMarker = L.marker([ll.lat, ll.lng],
     { icon: makeShotIcon(hShotCount, false) }).addTo(lmap);
 
-  const svgPos = latLngToSumSVG(ll);
   const inferredLie = inferLie(hLoggedShots.length, fromLL);
-  hLoggedShots.push({ leafletMarker, leafletLine, latlng: ll,
-                       x: svgPos.x, y: svgPos.y, svgId: 'h-leaflet' });
+  hLoggedShots.push({ leafletMarker, leafletLine, latlng: ll });
   removePendingMarker();
   updateDistanceBar(ll);
 
@@ -938,7 +895,7 @@ function hConfirmGPS() {
         if (hShotCount === 1 && result === 'GIR' && hViewMode === 'hole') {
           setTimeout(() => hSetView('green'), 600);
         }
-      } else if (hShotCount === 1 && confirmedPos.svgId === 'h-leaflet') {
+      } else if (hShotCount === 1) {
         const result = autoDetectFIR(confirmedPos.latlng);
         showToast('h-toast', `Auto: ${result} detected`, 2200);
       } else if (hShotCount >= 2) {
@@ -974,7 +931,7 @@ function undoLastHole() {
   if (noShots) document.getElementById('h-undo-btn').classList.add('dim');
 
   const nowLast = hLoggedShots.at(-1);
-  if (nowLast?.svgId === 'h-leaflet' && nowLast.latlng) {
+  if (nowLast?.latlng) {
     updateDistanceBar(nowLast.latlng);
   } else {
     ['h-fcb-front','h-fcb-center','h-fcb-back'].forEach(id =>
@@ -1032,13 +989,7 @@ function autoDetectFIR(latlng) {
 
 function autoDetectGIR(shot) {
   const row = document.getElementById('trow-green');
-  if (shot.svgId === 'h-leaflet') {
-    if (TcCourse.haversineYds(shot.latlng, GREEN_CTR) <= 18) { autoSetTog(row, 0, 't-g'); return 'GIR'; }
-    autoSetTog(row, 1, 't-r'); return 'GIR-Miss';
-  }
-  // Green SVG shot
-  const dx = (shot.x - 160) / 120, dy = (shot.y - 100) / 110;
-  if (dx*dx + dy*dy <= 1) { autoSetTog(row, 0, 't-g'); return 'GIR'; }
+  if (TcCourse.haversineYds(shot.latlng, GREEN_CTR) <= 18) { autoSetTog(row, 0, 't-g'); return 'GIR'; }
   autoSetTog(row, 1, 't-r'); return 'GIR-Miss';
 }
 
@@ -1152,8 +1103,7 @@ function hHoleOutFromMap() {
 
   const inferredLie = inferLie(hLoggedShots.length, fromLL);
 
-  hLoggedShots.push({ leafletMarker, leafletLine, latlng: GREEN_CTR,
-                       x: 150, y: 24, svgId: 'h-leaflet', holed: true });
+  hLoggedShots.push({ leafletMarker, leafletLine, latlng: GREEN_CTR, holed: true });
   hShotLog.push({ num: hShotCount, club: 'Putter', yds: `MADE ⛳ · ${distLabel}`, holed: true, lie: inferredLie });
   renderShotLog();
 
@@ -1171,6 +1121,7 @@ function hHoleOutFromMap() {
 }
 
 /* ── HOLE SUMMARY SHEET ── */
+let sumMap = null;
 let putts = 0;
 
 function togState(rowEl) {
@@ -1183,47 +1134,80 @@ function togState(rowEl) {
 }
 
 function buildSummaryMap() {
-  const svg = document.getElementById('sum-svg');
-  svg.querySelectorAll('[data-sum]').forEach(el => el.remove());
-  const ns = 'http://www.w3.org/2000/svg';
+  const container = document.getElementById('sum-leaflet');
+  if (sumMap) { sumMap.remove(); sumMap = null; }
 
-  function mk(tag, attrs) {
-    const el = document.createElementNS(ns, tag);
-    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-    el.setAttribute('data-sum', '1');
-    return el;
-  }
-
-  const positions = hLoggedShots.map(s => {
-    if (s.svgId === 'h-green-svg') {
-      const h = greenToHoleSVG(s.x, s.y);
-      return { x: h.x, y: h.y, holed: s.holed };
-    }
-    return { x: s.x, y: s.y, holed: s.holed };
+  const thisMap = L.map(container, {
+    zoomControl: false, attributionControl: false,
+    dragging: false, touchZoom: false, scrollWheelZoom: false,
+    doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false
   });
+  sumMap = thisMap;
 
-  // Lines: tee → shot 1, then shot-to-shot
-  if (positions.length > 0) {
-    svg.appendChild(mk('line', { x1:155, y1:234, x2:positions[0].x, y2:positions[0].y,
-      stroke:'rgba(255,255,255,0.45)', 'stroke-width':'1.5', 'stroke-dasharray':'4,3' }));
-  }
-  for (let i = 1; i < positions.length; i++) {
-    svg.appendChild(mk('line', { x1:positions[i-1].x, y1:positions[i-1].y,
-      x2:positions[i].x, y2:positions[i].y,
-      stroke:'rgba(255,255,255,0.45)', 'stroke-width':'1.5', 'stroke-dasharray':'4,3' }));
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 19 }
+  ).addTo(thisMap);
+
+  const shotPositions = hLoggedShots.map(s => s.latlng).filter(Boolean);
+  const boundsPoints = [
+    [TEE_LL.lat, TEE_LL.lng],
+    [GREEN_CTR.lat, GREEN_CTR.lng],
+    ...shotPositions.map(ll => [ll.lat, ll.lng])
+  ];
+  thisMap.fitBounds(L.latLngBounds(boundsPoints), { padding: [18, 18] });
+
+  // Static tee marker — shown immediately, never animated.
+  L.marker([TEE_LL.lat, TEE_LL.lng], {
+    icon: L.divIcon({
+      html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
+      iconSize: [16, 16], iconAnchor: [8, 8], className: ''
+    }),
+    interactive: false
+  }).addTo(thisMap);
+
+  // Static flag marker — shown immediately (skipped if DEGRADED, same
+  // reasoning as the live map's flag marker: GREEN_CTR would be fabricated).
+  if (!DEGRADED) {
+    L.marker([GREEN_CTR.lat, GREEN_CTR.lng], {
+      icon: L.divIcon({
+        html: '<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:2px;height:14px;background:rgba(255,255,255,0.9);"></div><div style="background:#E74C3C;border-radius:3px;padding:1px 5px;font-size:9px;">⛳</div></div>',
+        iconSize: [24, 30], iconAnchor: [1, 30], className: ''
+      }),
+      interactive: false
+    }).addTo(thisMap);
   }
 
-  // Markers
-  positions.forEach((p, i) => {
-    const gold = p.holed;
-    svg.appendChild(mk('circle', { cx:p.x, cy:p.y, r:'8',
-      fill: gold ? 'rgba(241,196,15,0.25)' : 'rgba(46,204,113,0.2)',
-      stroke: gold ? 'rgba(241,196,15,0.9)' : 'rgba(46,204,113,0.7)',
-      'stroke-width':'1.5' }));
-    const t = mk('text', { x:p.x, y:p.y + 3.5, 'text-anchor':'middle',
-      'font-size':'8', fill:'white', 'font-weight':'800' });
-    t.textContent = gold ? '⛳' : (i + 1);
-    svg.appendChild(t);
+  // Shots reveal one at a time — tee-to-shot1, then shot-to-shot, each firing
+  // a bit after the previous. `thisMap` is captured in this closure and
+  // compared against the module-level `sumMap` before each reveal fires, so
+  // a stale timer from a previous hole (if the sheet is rebuilt quickly)
+  // can never draw onto a map that's already been replaced.
+  const points = [{ latlng: TEE_LL }, ...hLoggedShots.filter(s => s.latlng)];
+  points.forEach((pt, i) => {
+    if (i === 0) return; // the tee point itself, already drawn above
+    const from = points[i - 1].latlng;
+    const to = pt.latlng;
+    setTimeout(() => {
+      if (sumMap !== thisMap) return;
+      L.polyline([[from.lat, from.lng], [to.lat, to.lng]], {
+        color: 'rgba(241,196,15,0.5)', weight: 2, dashArray: '4,3'
+      }).addTo(thisMap);
+
+      const marker = L.marker([to.lat, to.lng], {
+        icon: makeShotIcon(i, pt.holed), interactive: false, opacity: 0
+      }).addTo(thisMap);
+      const iconEl = marker.getElement();
+      if (iconEl) {
+        iconEl.style.transform = 'scale(0.4)';
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          marker.setOpacity(1);
+          iconEl.style.transform = 'scale(1)';
+        }));
+      } else {
+        marker.setOpacity(1);
+      }
+    }, i * 450);
   });
 
   // Shot chips strip
