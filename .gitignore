@@ -1,3 +1,9 @@
 .playwright-mcp/
 node_modules/
 .superpowers/
+
+# Xcode / iOS (generated once `ios/` exists, added via a future `npx cap add ios` on macOS)
+ios/App/Pods/
+**/xcuserdata/
+*.xcuserstate
+DerivedData/
