@@ -257,6 +257,48 @@ const STATS = {
 /* ══ CONSTANTS ══ */
 const SIZE_SLOTS = { small:1, medium:2, large:3 };
 
+/* ══ SG PANEL — DATA ══
+   Radar scale is fixed so the shape stays comparable between visits.
+   Values beyond ±SG_RADAR_SCALE clamp to the chart edge. */
+const SG_RADAR_SCALE = 3.0;
+
+const SG_CATS = [
+  { key:'sg_ott',  label:'OFF TEE',    name:'Off tee',    angle:0   },
+  { key:'sg_app',  label:'APPROACH',   name:'Approach',   angle:90  },
+  { key:'sg_atg',  label:'AROUND GRN', name:'Around grn', angle:180 },
+  { key:'sg_putt', label:'PUTTING',    name:'Putting',    angle:270 },
+];
+
+function fmtSg(v) { return (v > 0 ? '+' : '') + v.toFixed(2); }
+
+function sgColor(v) { return v >= 0 ? 'var(--green)' : 'var(--red)'; }
+
+/* rounds: newest first, each with the five sg_* columns and completed_at. */
+function deriveSgPanel(rounds) {
+  if (!rounds || rounds.length === 0) return null;
+  const avg = k => rounds.reduce((a, r) => a + (r[k] || 0), 0) / rounds.length;
+  const cats = SG_CATS.map(c => ({ ...c, value: avg(c.key) }));
+  const ranked = [...cats].sort((a, b) => b.value - a.value);
+  return {
+    total:     avg('sg_total'),
+    count:     rounds.length,
+    lastValue: rounds[0].sg_total,
+    lastDate:  rounds[0].completed_at,
+    cats,
+    best:      ranked[0],
+    worst:     ranked[ranked.length - 1],
+  };
+}
+
+/* Maps a category value onto the radar. rZero is the dashed tour-average
+   circle; rMax is the outer ring. Angle 0 is straight up, growing clockwise. */
+function sgRadarPoint(value, angleDeg, cx, cy, rZero, rMax) {
+  const clamped = Math.max(-SG_RADAR_SCALE, Math.min(SG_RADAR_SCALE, value));
+  const r = Math.max(3, rZero + (clamped / SG_RADAR_SCALE) * (rMax - rZero));
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
 /* ══ WIDGET STATE ══
    Each widget: { id, size, slots[] }
    slots[i] is a stat key (string) or null (empty/unassigned)
