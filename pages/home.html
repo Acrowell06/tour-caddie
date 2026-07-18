@@ -131,9 +131,8 @@
 <div class="wrap" id="wrap">
 
 <!-- overflow-y:hidden so the tab bar stays fixed; hw-scroller handles scrolling -->
-<div class="page" style="overflow-y:hidden;position:relative;">
+<div class="page" style="overflow-y:hidden;">
 
-  <div class="st"><span>9:41</span><span>●●●</span></div>
 
   <!-- Header -->
   <div style="padding:6px 16px 4px;flex-shrink:0;display:flex;justify-content:space-between;align-items:flex-end;">
@@ -156,10 +155,12 @@
   <div class="hw-scroller">
     <div class="widget-grid" id="widget-grid"></div>
     <div class="add-widget-btn" id="add-btn" onclick="openAddPicker()">＋ Add Widget</div>
-    <button class="cta cta-g" id="start-round" onclick="openRoundChoice(() => { const w=document.getElementById('wrap'); w.style.animation='slideOutLeft 0.34s cubic-bezier(0.4,0,0.2,1) forwards'; setTimeout(()=>{ window.location.href='rounds.html?start=1&dir=fwd'; },320); })"
-      style="margin:8px 12px 4px;font-size:14px;flex-shrink:0;">⛳ Start Round</button>
     <div style="height:6px;flex-shrink:0;"></div>
   </div>
+
+  <!-- Start Round — pinned above the tab bar, outside the scroller -->
+  <button class="cta cta-g" id="start-round" onclick="openRoundChoice(() => { const w=document.getElementById('wrap'); w.style.animation='slideOutLeft 0.34s cubic-bezier(0.4,0,0.2,1) forwards'; setTimeout(()=>{ window.location.href='rounds.html?start=1&dir=fwd'; },320); })"
+    style="margin:0 12px 10px;font-size:14px;flex-shrink:0;">⛳ Start Round</button>
 
   <!-- PGA Tour Live Leaderboard — hidden until a real leaderboard feed is wired up -->
   <div class="pga-strip collapsed" id="pga-strip" style="display:none;">
@@ -258,14 +259,10 @@ const SIZE_SLOTS = { small:1, medium:2, large:3 };
 
 /* ══ WIDGET STATE ══
    Each widget: { id, size, slots[] }
-   slots[i] is a stat key (string) or null (empty/unassigned) */
-let widgetConfig = [
-  { id:'w0', size:'large',  slots:['handicap',  'scoring',  'last-round'] },
-  { id:'w1', size:'medium', slots:['fir',       'gir'      ] },
-  { id:'w2', size:'large',  slots:['sg-total',  'sg-ott',   'sg-app'   ] },
-  { id:'w3', size:'small',  slots:['putts'] },
-];
-let nextId   = 4;
+   slots[i] is a stat key (string) or null (empty/unassigned)
+   Starts empty — the user builds their own dashboard via Edit → Add Widget. */
+let widgetConfig = [];
+let nextId   = 0;
 let editMode = false;
 let editSlot = null; // { widgetId, slotIdx } — set when slot picker is open
 

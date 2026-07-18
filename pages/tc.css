@@ -44,9 +44,6 @@ h2 span { color: var(--green); }
   .wrap { border-radius: 0; }
 }
 
-/* ─── STATUS BAR ─── */
-.st { display: flex; justify-content: space-between; padding: 5px 22px 2px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.55); flex-shrink: 0; }
-
 /* ─── SCORE BAR ─── */
 .sb { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .sb-l { display: flex; flex-direction: column; }

@@ -59,7 +59,8 @@
 .chev { color: var(--dim); font-size: 12px; }
 
 /* ── SUB-SCREENS (Golf + Account) ── */
-.sub-screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); z-index: 100; border-radius: 44px; overflow: hidden; }
+/* padding-top clears the notch — previously supplied by the status bar's own padding */
+.sub-screen { position: absolute; inset: 0; padding-top: 32px; background: var(--bg); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); z-index: 100; border-radius: 44px; overflow: hidden; }
 .sub-screen.open { transform: translateX(0); }
 .sub-nav { display: flex; align-items: center; padding: 8px 14px 8px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
 .sub-back { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--green); cursor: pointer; user-select: none; }
@@ -146,7 +147,6 @@
 
 <div class="page" style="overflow-y:hidden;">
 
-  <div class="st"><span>9:41</span><span>●●●</span></div>
 
   <!-- Compact horizontal header -->
   <div class="pf-header">
@@ -345,7 +345,6 @@
 
 <!-- ── GOLF SUB-SCREEN ── -->
 <div class="sub-screen" id="golf-screen">
-  <div class="st" style="padding-top:32px;"><span>9:41</span><span>●●●</span></div>
   <div class="sub-nav" style="position:relative;">
     <div class="sub-back" onclick="closeGolfScreen()">
       <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#2ECC71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -380,7 +379,6 @@
 
 <!-- ── ACCOUNT SUB-SCREEN ── -->
 <div class="sub-screen" id="acct-screen">
-  <div class="st" style="padding-top:32px;"><span>9:41</span><span>●●●</span></div>
   <div class="sub-nav" style="position:relative;">
     <div class="sub-back" onclick="closeAcctScreen()">
       <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#2ECC71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -440,7 +438,6 @@
 
 <!-- ── SCORECARDS SUB-SCREEN ── -->
 <div class="sub-screen" id="sc-screen">
-  <div class="st" style="padding-top:32px;"><span>9:41</span><span>●●●</span></div>
   <div class="sub-nav" style="position:relative;">
     <div class="sub-back" onclick="closeScorecardsScreen()">
       <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#2ECC71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

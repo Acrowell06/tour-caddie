@@ -6,6 +6,9 @@
 <title>Tour Caddie — Scan Scorecard</title>
 <link rel="stylesheet" href="tc.css">
 <style>
+/* Top reserve for the device status bar. Other pages get this from
+   .page { padding-top:28px }; this page has no .page wrapper. */
+.wrap { padding-top:28px; }
 .sc-state { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .sc-state.hidden { display:none; }
 
@@ -65,7 +68,6 @@
 </head>
 <body>
 <div class="wrap" id="wrap" data-page="scan-scorecard">
-  <div class="st"><span>9:41</span><span>●●●</span></div>
 
   <div class="sc-state" id="st-upload">
     <div class="sc-nav">
