@@ -30,6 +30,12 @@ no remove control.
 
 Tapping the panel navigates to the Stats page with the Strokes Gained section open.
 
+`stats.html` currently has no URL-parameter handling; its SG view opens only via
+`openStat('sg')` from a card tap. Delivering this therefore requires one small
+addition to `stats.html`: read a `?stat=<id>` parameter at init and call the existing
+`openStat()` with it. This is the only permitted change to the Stats page — no layout,
+styling, or data logic there may be altered.
+
 ## Layout
 
 Target height ~128px at 320px viewport width.
@@ -116,7 +122,8 @@ to the user as screenshots:
 
 ## Out of scope
 
-- Changes to the Stats page.
+- Changes to the Stats page, except the single `?stat=` deep-link handler described
+  under "Placement and behaviour".
 - Changes to the widget system or stat catalogue.
 - Moving the home screen toward the source mockup's serif/salmon aesthetic. That is a
   larger separate change if ever wanted.
