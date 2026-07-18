@@ -68,11 +68,11 @@
 .wx-strip.show { display:flex; }
 
 /* ─── SG PANEL ─── */
-.sg-panel { flex-shrink:0; margin:4px 12px 0; padding:11px 12px; background:var(--surface); border:1px solid var(--border); border-radius:12px; min-height:106px; box-sizing:border-box; cursor:pointer; }
+.sg-panel { flex-shrink:0; margin:4px 12px 0; padding:11px 12px; background:var(--surface); border:1px solid var(--border); border-radius:12px; min-height:106px; box-sizing:border-box; cursor:pointer; text-align:left; }
 .sg-panel:active { background:rgba(255,255,255,0.03); }
 .sg-panel.inert { cursor:default; }
 .sg-panel.inert:active { background:var(--surface); }
-.sg-row { display:flex; gap:10px; align-items:center; }
+.sgp-row { display:flex; gap:10px; align-items:center; }
 .sg-radar { flex-shrink:0; }
 .sg-info { flex:1; min-width:0; }
 .sg-cap { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -354,7 +354,7 @@ function renderSgPanel(data) {
     : '—';
   const lastVal = data.lastValue == null ? '—' : fmtSg(data.lastValue);
 
-  el.innerHTML = `<div class="sg-row">
+  el.innerHTML = `<div class="sgp-row">
     ${sgRadarSvg(data.cats, data.total >= 0)}
     <div class="sg-info">
       <div class="sg-cap">Your game · ${data.count} round${data.count === 1 ? '' : 's'}</div>
