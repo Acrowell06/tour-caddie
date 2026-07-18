@@ -648,6 +648,7 @@ function initWeatherBanner() {
 
 /* ══ INIT ══ */
 renderWidgets();
+sgPanelMessage('Loading…');
 (async () => {
   const session = await TcAuth.getSession();
   if (!session) return;
@@ -672,23 +673,29 @@ renderWidgets();
     }
   }
 
-  const { data: rounds } = await TcAuth.client
+  const { data: rounds, error: sgError } = await TcAuth.client
     .from('rounds')
-    .select('sg_ott, sg_app, sg_atg, sg_putt, sg_total')
+    .select('sg_ott, sg_app, sg_atg, sg_putt, sg_total, completed_at')
     .eq('user_id', session.user.id)
     .eq('status', 'complete')
     .not('sg_total', 'is', null)
     .order('completed_at', { ascending: false, nullsFirst: false })
     .limit(20);
-  if (rounds && rounds.length > 0) {
-    const avg = key => (rounds.reduce((a, r) => a + (r[key] || 0), 0) / rounds.length);
-    const fmt = v => (v > 0 ? '+' : '') + (Math.round(v * 10) / 10).toFixed(1);
-    STATS['sg-total'].value = fmt(avg('sg_total'));
-    STATS['sg-ott'].value   = fmt(avg('sg_ott'));
-    STATS['sg-app'].value   = fmt(avg('sg_app'));
-    STATS['sg-atg'].value   = fmt(avg('sg_atg'));
-    STATS['sg-putt'].value  = fmt(avg('sg_putt'));
-    renderWidgets();
+
+  if (sgError) {
+    console.error('Home: strokes gained query failed', sgError);
+    renderSgPanel(null);
+  } else {
+    const sgData = deriveSgPanel(rounds);
+    renderSgPanel(sgData);
+    if (sgData) {
+      STATS['sg-total'].value = fmtSg(sgData.total);
+      STATS['sg-ott'].value   = fmtSg(sgData.cats[0].value);
+      STATS['sg-app'].value   = fmtSg(sgData.cats[1].value);
+      STATS['sg-atg'].value   = fmtSg(sgData.cats[2].value);
+      STATS['sg-putt'].value  = fmtSg(sgData.cats[3].value);
+      renderWidgets();
+    }
   }
 })();
 renderLeaderboard();
