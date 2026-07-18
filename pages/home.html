@@ -371,6 +371,11 @@ function renderSgPanel(data) {
   </div>`;
 }
 
+document.getElementById('sg-panel').onclick = () => {
+  if (editMode) return;              // inert while editing
+  window.location.href = 'stats.html?stat=sg';
+};
+
 /* ══ WIDGET STATE ══
    Each widget: { id, size, slots[] }
    slots[i] is a stat key (string) or null (empty/unassigned)
@@ -477,6 +482,7 @@ function toggleEdit() {
   btn.style.borderColor  = editMode ? 'rgba(46,204,113,0.5)'  : 'rgba(46,204,113,0.22)';
   document.getElementById('add-btn').style.display     = editMode ? 'flex' : 'none';
   document.getElementById('start-round').style.display = editMode ? 'none' : '';
+  document.getElementById('sg-panel').classList.toggle('inert', editMode);
   renderWidgets();
 }
 
