@@ -319,7 +319,9 @@ Build probes with the standard fixture, start the server, load the probe page, t
     radarPresent: !!el.querySelector('svg polygon'),
     polygonPoints: el.querySelector('svg polygon').getAttribute('points'),
     showsTotal: txt.includes('-3.10'),
-    showsCount: txt.includes('2 rounds'),
+    // .sg-cap is text-transform:uppercase, so innerText is uppercased —
+    // read textContent for the caption, not innerText.
+    showsCount: el.textContent.includes('2 rounds'),
     showsLast: txt.includes('-2.40') && txt.includes('Jun 28'),
     showsBest: txt.includes('Around grn') && txt.includes('-0.50'),
     showsWorst: txt.includes('Approach') && txt.includes('-1.10'),
@@ -328,7 +330,7 @@ Build probes with the standard fixture, start the server, load the probe page, t
 }
 ```
 
-Expected: `height` between 100 and 135; `width` 296; `radarPresent` true; `polygonPoints` exactly `"70.0,45.0 90.8,70.0 70.0,95.8 47.5,70.0"`; all five `shows*` true; `isAboveWidgets` true.
+Expected: `height` between 100 and 135; `width` 293 (the `.phone` frame's 1.5px border on each side reduces the usable width to 317, less the panel's 24px of horizontal margin); `radarPresent` true; `polygonPoints` exactly `"70.0,45.0 90.8,70.0 70.0,95.8 47.5,70.0"`; all five `shows*` true; `isAboveWidgets` true.
 
 - [ ] **Step 5: Screenshot the panel**
 
