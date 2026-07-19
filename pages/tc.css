@@ -40,23 +40,6 @@
   --good-rgb: 46 204 113;
   --bad-rgb: 231 76 60;
   --danger-rgb: 231 76 60;
-
-  /* Deprecated aliases — every remaining var(--green)/var(--red) call site
-     still resolves while pages are converted one at a time. Task 12 removes
-     these once no references remain. */
-  --green: var(--accent);
-  --red: var(--bad);
-  --white: var(--text);
-  --muted: var(--text-muted);
-  --dim: var(--text-dim);
-
-  /* Extra deprecated alias not listed in the Task 1 brief's token block:
-     the pre-existing :root defined --surface2 (no hyphen) as its own real
-     token, and many pages still reference var(--surface2) directly. Without
-     this alias those sites would resolve to nothing (transparent), breaking
-     zero-visible-change. Same removal path as the aliases above — gone once
-     the pages that use it are converted. */
-  --surface2: var(--surface-2);
 }
 body {
   background: #030305; font-family: 'Inter', sans-serif; color: var(--text);
