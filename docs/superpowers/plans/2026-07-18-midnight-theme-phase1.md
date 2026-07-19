@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Convert all 555 hardcoded colour literals **and all 407 old-alias references** (`var(--green)`, `var(--red)`, `var(--white)`, `var(--muted)`, `var(--dim)`) to the new token set — 962 sites in total — classifying every green and red by meaning, while the app remains pixel-identical.
+**Goal:** Convert all 555 hardcoded colour literals **and all 426 old-alias references** (`var(--green)`, `var(--red)`, `var(--white)`, `var(--muted)`, `var(--dim)`, `var(--surface2)`) to the new token set — 981 sites in total — classifying every green and red by meaning, while the app remains pixel-identical.
 
 **Architecture:** `pages/tc.css` gains a token block: finished colours (`--accent`, `--good`) plus RGB channel triplets (`--accent-rgb`, `--ink-rgb`) so each translucent call site keeps its exact alpha. In Phase 1 every token carries today's colour, so nothing changes visually. Each page is converted in its own task and verified against a computed-style baseline captured before any edits.
 
@@ -243,18 +243,20 @@ git commit -m "refactor: add theme token block with today's colours"
 **There are TWO kinds of site to convert in every file.** Missing the second kind is the most likely way to fail this plan.
 
 1. **List the colour literals:** `grep -noE "#[0-9A-Fa-f]{3,8}\b|rgba?\([^)]*\)" pages/<FILE>`
-2. **List the old-alias references:** `grep -noE "var\(--(green|red|white|muted|dim)\)" pages/<FILE>`
+2. **List the old-alias references:** `grep -noE "var\(--(green|red|white|muted|dim|surface2)\)" pages/<FILE>`
 
    These appear in CSS *and inside JavaScript strings* — e.g. `courses.html` builds `style="color:${… 'var(--green)' … }"` in template literals, and `home.html`'s `sgColor()` returns `'var(--green)'`. A literal-only grep will not surface them, and Task 12 deletes the aliases they depend on. Convert them in the same task as the file they live in.
 
 3. **Convert every site from both lists** using the conversion reference table. Work top to bottom. **Never blind find-and-replace**: greens and reds need individual classification. For each, decide chrome vs performance with the classification rule and record the decision — the reviewer checks the labels, because the hash cannot.
 
-   Alias mapping: `var(--green)` → `var(--accent)` or `var(--good)` (classify); `var(--red)` → `var(--danger)` or `var(--bad)` (classify); `var(--white)` → `var(--text)`; `var(--muted)` → `var(--text-muted)`; `var(--dim)` → `var(--text-dim)`.
+   Alias mapping: `var(--green)` → `var(--accent)` or `var(--good)` (classify); `var(--red)` → `var(--danger)` or `var(--bad)` (classify); `var(--white)` → `var(--text)`; `var(--muted)` → `var(--text-muted)`; `var(--dim)` → `var(--text-dim)`; `var(--surface2)` → `var(--surface-2)`.
+
+   Note `--surface2` has no hyphen in the old name and `--surface-2` does in the new one. 19 references exist across 7 files.
 
 4. **Keep every alpha exactly.** `rgba(46,204,113,0.08)` → `rgb(var(--accent-rgb) / 0.08)`, never `/ 0.1`.
 5. **Confirm none remain — both greps:**
    - `grep -oE "#[0-9A-Fa-f]{3,8}\b|rgba?\([^)]*\)" pages/<FILE> | sort | uniq -c` — every `#2ECC71`, `#E74C3C`, `rgba(255,255,255,…)`, `rgba(46,204,113,…)`, `rgba(231,76,60,…)`, `rgba(0,0,0,…)` gone. Survivors must be deliberate exceptions (one-off blues, map colours, gradient stops).
-   - `grep -cE "var\(--(green|red|white|muted|dim)\)" pages/<FILE>` — expected `0`.
+   - `grep -cE "var\(--(green|red|white|muted|dim|surface2)\)" pages/<FILE>` — expected `0`.
 6. **Verify pixel-identical:** rebuild probes, capture the page, compare `count` and `hash` to its Task 1 baseline. On mismatch, run the rows capture, diff against the stored baseline JSON, fix the element. **Never adjust the baseline.**
 7. **Commit:** clean up probes first, then `git add pages/<FILE>` and commit as `refactor: tokenize colours in <FILE>`.
 
@@ -389,7 +391,7 @@ git commit -m "refactor: add theme token block with today's colours"
 
 ### Task 12: Remove the deprecated aliases
 
-Once every page is converted, no `var(--green)`, `var(--red)`, `var(--white)`, `var(--muted)`, or `var(--dim)` reference should remain.
+Once every page is converted, no `var(--green)`, `var(--red)`, `var(--white)`, `var(--muted)`, `var(--dim)`, or `var(--surface2)` reference should remain.
 
 **Files:**
 - Modify: `pages/tc.css` — delete the alias block
@@ -401,14 +403,14 @@ Once every page is converted, no `var(--green)`, `var(--red)`, `var(--white)`, `
 - [ ] **Step 1: Prove no references remain**
 
 ```bash
-grep -rn "var(--green)\|var(--red)\|var(--white)\|var(--muted)\|var(--dim)" pages/
+grep -rn "var(--green)\|var(--red)\|var(--white)\|var(--muted)\|var(--dim)\|var(--surface2)" pages/
 ```
 
 Expected: no output. If anything matches, that page's conversion task was incomplete — fix it there and re-verify that page before continuing.
 
 - [ ] **Step 2: Delete the alias block**
 
-Remove the five alias lines and their `/* Deprecated aliases … */` comment from the `:root` block in `pages/tc.css`.
+Remove the six alias lines (`--green`, `--red`, `--white`, `--muted`, `--dim`, `--surface2`) and their explanatory comments from the `:root` block in `pages/tc.css`.
 
 - [ ] **Step 3: Verify all 10 pages unchanged**
 
@@ -462,10 +464,10 @@ State: remaining literal count per file, 10/10 hash confirmation, the accent-swa
 ## Definition of Done
 
 - [ ] All 555 literals converted except deliberate, named exceptions.
-- [ ] All 407 old-alias references converted, including those inside JavaScript strings.
+- [ ] All 426 old-alias references converted, including those inside JavaScript strings.
 - [ ] All 10 page hashes identical to their Task 1 baselines.
 - [ ] Every green classified `--accent` or `--good`; every red `--danger` or `--bad`.
-- [ ] No `var(--green)` / `var(--red)` / `var(--white)` / `var(--muted)` / `var(--dim)` references remain.
+- [ ] No `var(--green)` / `var(--red)` / `var(--white)` / `var(--muted)` / `var(--dim)` / `var(--surface2)` references remain.
 - [ ] `hole.html` overlay panels use `--map-surface` / `--map-text`.
 - [ ] The temporary accent swap turns chrome cyan and leaves performance green — then is reverted.
 - [ ] No probe, fixture, baseline, or `.playwright-mcp` files committed; `tour-caddie/` untouched.
