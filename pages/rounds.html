@@ -15,158 +15,158 @@
 .r-hdr-title { font-size:20px; font-weight:900; letter-spacing:-0.5px; }
 
 /* ── START ROUND BUTTON ── */
-.r-start-btn { margin:8px 12px 4px; background:var(--green); border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:800; color:#000; cursor:pointer; width:calc(100% - 24px); font-family:Inter,sans-serif; letter-spacing:-0.2px; flex-shrink:0; }
+.r-start-btn { margin:8px 12px 4px; background:var(--accent); border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:800; color:#000; cursor:pointer; width:calc(100% - 24px); font-family:Inter,sans-serif; letter-spacing:-0.2px; flex-shrink:0; }
 .r-start-btn:active { opacity:0.85; transform:scale(0.98); }
 
 /* ── SCORECARD ACTIONS ── */
 .sc-card { margin:5px 12px 0; display:flex; gap:6px; flex-shrink:0; }
-.sc-btn { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 6px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; font-family:Inter,sans-serif; transition:opacity 0.15s; }
+.sc-btn { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 6px; font-size:11px; font-weight:700; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; font-family:Inter,sans-serif; transition:opacity 0.15s; }
 .sc-btn:active { opacity:0.7; }
-.sc-btn.primary { background:rgba(46,204,113,0.08); border-color:rgba(46,204,113,0.25); color:var(--green); }
+.sc-btn.primary { background:rgb(var(--accent-rgb) / 0.08); border-color:rgb(var(--accent-rgb) / 0.25); color:var(--accent); }
 
 /* ── SEASON STRIP ── */
 .season-strip { margin:10px 12px 0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; gap:0; }
 .ss-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
-.ss-col + .ss-col { border-left:1px solid rgba(255,255,255,0.06); }
+.ss-col + .ss-col { border-left:1px solid rgb(var(--ink-rgb) / 0.06); }
 .ss-val { font-size:18px; font-weight:900; letter-spacing:-0.5px; }
-.ss-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); }
+.ss-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted); }
 
 /* ── SECTION LABEL ── */
-.r-sec { padding:14px 16px 6px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.r-sec { padding:14px 16px 6px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); }
 
 /* ── ROUND CARD ── */
 .round-card { margin:0 12px 6px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; cursor:pointer; }
-.round-card:active { background:var(--surface2); }
-.rc-date { font-size:10px; font-weight:700; color:var(--muted); min-width:38px; }
+.round-card:active { background:var(--surface-2); }
+.rc-date { font-size:10px; font-weight:700; color:var(--text-muted); min-width:38px; }
 .rc-info { flex:1; min-width:0; }
 .rc-course { font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rc-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+.rc-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
 .rc-score { font-size:22px; font-weight:900; letter-spacing:-0.5px; min-width:42px; text-align:right; }
-.rc-score.green { color:var(--green); }
-.rc-score.red { color:var(--red); }
-.rc-score.white { color:#fff; }
+.rc-score.green { color:var(--good); }
+.rc-score.red { color:var(--bad); }
+.rc-score.white { color:var(--text); }
 
 /* ── SETUP SHEET OVERLAY ── */
 .setup-ov { position:absolute; inset:0; z-index:50; pointer-events:none; }
 .setup-ov.open { pointer-events:all; }
-.setup-bd { position:absolute; inset:0; background:rgba(0,0,0,0.6); opacity:0; transition:opacity 0.3s; }
+.setup-bd { position:absolute; inset:0; background:rgb(var(--shadow-rgb) / 0.6); opacity:0; transition:opacity 0.3s; }
 .setup-ov.open .setup-bd { opacity:1; }
 
 /* ── SETUP SHEET ── */
-.setup-sheet { position:absolute; left:0; right:0; bottom:0; top:0; background:#0A0A0F; border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
+.setup-sheet { position:absolute; left:0; right:0; bottom:0; top:0; background:var(--bg); border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
 .setup-ov.open .setup-sheet { transform:translateY(0); }
-.sh-handle { width:36px; height:4px; background:rgba(255,255,255,0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.sh-handle { width:36px; height:4px; background:rgb(var(--ink-rgb) / 0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
 
 /* ── SETUP HEADER ── */
 .setup-hdr { display:flex; align-items:center; padding:10px 14px 0; gap:10px; flex-shrink:0; }
-.setup-back { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.setup-back { background:rgb(var(--ink-rgb) / 0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; font-family:Inter,sans-serif; }
 .setup-back:active { opacity:0.7; }
 .setup-back.hidden { visibility:hidden; }
 .setup-title { flex:1; font-size:15px; font-weight:800; text-align:center; }
-.setup-close { background:none; border:none; font-size:18px; color:var(--muted); cursor:pointer; padding:4px 8px; font-family:Inter,sans-serif; }
+.setup-close { background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer; padding:4px 8px; font-family:Inter,sans-serif; }
 
 /* ── STEP PROGRESS ── */
 .step-dots { display:flex; gap:5px; justify-content:center; padding:10px 0 4px; flex-shrink:0; }
-.sdot { width:6px; height:6px; border-radius:3px; background:rgba(255,255,255,0.15); transition:all 0.2s; }
-.sdot.done { background:rgba(46,204,113,0.5); }
-.sdot.cur  { width:18px; background:var(--green); }
+.sdot { width:6px; height:6px; border-radius:3px; background:rgb(var(--ink-rgb) / 0.15); transition:all 0.2s; }
+.sdot.done { background:rgb(var(--accent-rgb) / 0.5); }
+.sdot.cur  { width:18px; background:var(--accent); }
 
 /* ── SETUP BODY ── */
 .setup-body { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; padding:0 14px; }
 .setup-body::-webkit-scrollbar { display:none; }
 
 .setup-step-title { font-size:18px; font-weight:900; letter-spacing:-0.4px; margin:14px 0 4px; }
-.setup-step-sub   { font-size:12px; color:var(--muted); margin-bottom:14px; }
+.setup-step-sub   { font-size:12px; color:var(--text-muted); margin-bottom:14px; }
 
 /* ── COURSE TABS ── */
 .ctabs { display:flex; gap:4px; margin-bottom:12px; background:var(--surface); border-radius:10px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
-.ctab { flex:1; padding:7px; border-radius:7px; font-size:11px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; transition:all 0.15s; }
-.ctab.on { background:var(--surface2); color:#fff; border:1px solid rgba(255,255,255,0.1); }
+.ctab { flex:1; padding:7px; border-radius:7px; font-size:11px; font-weight:700; color:var(--text-muted); text-align:center; cursor:pointer; transition:all 0.15s; }
+.ctab.on { background:var(--surface-2); color:var(--text); border:1px solid rgb(var(--ink-rgb) / 0.1); }
 
-.course-search-inp { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:13px; color:#fff; font-family:Inter,sans-serif; outline:none; box-sizing:border-box; margin-bottom:8px; }
-.course-search-inp:focus { border-color:rgba(46,204,113,0.4); }
-.course-search-inp::placeholder { color:var(--dim); }
+.course-search-inp { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:13px; color:var(--text); font-family:Inter,sans-serif; outline:none; box-sizing:border-box; margin-bottom:8px; }
+.course-search-inp:focus { border-color:rgb(var(--accent-rgb) / 0.4); }
+.course-search-inp::placeholder { color:var(--text-dim); }
 
 .course-row { display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:6px; cursor:pointer; }
-.course-row:active { background:var(--surface2); border-color:rgba(46,204,113,0.3); }
+.course-row:active { background:var(--surface-2); border-color:rgb(var(--accent-rgb) / 0.3); }
 .cr-icon { font-size:18px; flex-shrink:0; }
 .cr-info { flex:1; min-width:0; }
 .cr-name { font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.cr-sub  { font-size:10px; color:var(--muted); margin-top:2px; }
-.cr-right { font-size:11px; font-weight:700; color:var(--muted); text-align:right; flex-shrink:0; }
+.cr-sub  { font-size:10px; color:var(--text-muted); margin-top:2px; }
+.cr-right { font-size:11px; font-weight:700; color:var(--text-muted); text-align:right; flex-shrink:0; }
 .cr-right.fav { color:var(--gold); }
-.cr-check { color:var(--green); font-size:16px; display:none; }
+.cr-check { color:var(--accent); font-size:16px; display:none; }
 .course-row.selected .cr-check { display:block; }
-.course-row.selected { border-color:rgba(46,204,113,0.4); background:rgba(46,204,113,0.04); }
+.course-row.selected { border-color:rgb(var(--accent-rgb) / 0.4); background:rgb(var(--accent-rgb) / 0.04); }
 
 /* ── GAME TYPE OPTIONS ── */
 .game-opt { display:flex; align-items:flex-start; gap:12px; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:8px; cursor:pointer; transition:all 0.12s; }
-.game-opt:active, .game-opt.selected { background:rgba(46,204,113,0.06); border-color:rgba(46,204,113,0.4); }
+.game-opt:active, .game-opt.selected { background:rgb(var(--accent-rgb) / 0.06); border-color:rgb(var(--accent-rgb) / 0.4); }
 .go-icon { font-size:22px; flex-shrink:0; margin-top:1px; }
 .go-info { flex:1; }
 .go-name { font-size:14px; font-weight:800; }
-.go-sub  { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
-.go-check { color:var(--green); font-size:18px; flex-shrink:0; opacity:0; transition:opacity 0.15s; }
+.go-sub  { font-size:11px; color:var(--text-muted); margin-top:3px; line-height:1.4; }
+.go-check { color:var(--accent); font-size:18px; flex-shrink:0; opacity:0; transition:opacity 0.15s; }
 .game-opt.selected .go-check { opacity:1; }
 
 /* ── RADIO OPTIONS (holes, tee, etc.) ── */
 .radio-opt { display:flex; align-items:center; gap:10px; padding:13px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; margin-bottom:6px; cursor:pointer; transition:all 0.12s; }
-.radio-opt:active, .radio-opt.selected { background:rgba(46,204,113,0.06); border-color:rgba(46,204,113,0.4); }
-.ro-dot { width:16px; height:16px; border-radius:8px; border:2px solid var(--dim); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
-.radio-opt.selected .ro-dot { border-color:var(--green); background:var(--green); }
+.radio-opt:active, .radio-opt.selected { background:rgb(var(--accent-rgb) / 0.06); border-color:rgb(var(--accent-rgb) / 0.4); }
+.ro-dot { width:16px; height:16px; border-radius:8px; border:2px solid var(--text-dim); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+.radio-opt.selected .ro-dot { border-color:var(--accent); background:var(--accent); }
 .ro-dot::after { content:''; width:6px; height:6px; border-radius:3px; background:#000; opacity:0; transition:opacity 0.12s; }
 .radio-opt.selected .ro-dot::after { opacity:1; }
 .ro-info { flex:1; }
 .ro-name { font-size:13px; font-weight:700; }
-.ro-sub  { font-size:10px; color:var(--muted); margin-top:2px; }
-.ro-badge { font-size:10px; font-weight:700; color:var(--muted); background:rgba(255,255,255,0.06); border-radius:5px; padding:2px 7px; flex-shrink:0; }
+.ro-sub  { font-size:10px; color:var(--text-muted); margin-top:2px; }
+.ro-badge { font-size:10px; font-weight:700; color:var(--text-muted); background:rgb(var(--ink-rgb) / 0.06); border-radius:5px; padding:2px 7px; flex-shrink:0; }
 
 /* ── TEE ROWS ── */
 .tee-swatch { width:14px; height:14px; border-radius:7px; flex-shrink:0; }
 
 /* ── CUSTOM HOLES INPUT ── */
 .holes-custom { margin-top:6px; display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; }
-.holes-custom input { background:none; border:none; color:#fff; font-size:18px; font-weight:800; font-family:Inter,sans-serif; width:48px; text-align:center; outline:none; }
-.holes-custom label { font-size:12px; color:var(--muted); }
+.holes-custom input { background:none; border:none; color:var(--text); font-size:18px; font-weight:800; font-family:Inter,sans-serif; width:48px; text-align:center; outline:none; }
+.holes-custom label { font-size:12px; color:var(--text-muted); }
 
 /* ── DATE INPUT ── */
-.date-inp { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:15px; font-weight:700; color:#fff; font-family:Inter,sans-serif; outline:none; box-sizing:border-box; }
-.date-inp:focus { border-color:rgba(46,204,113,0.4); }
+.date-inp { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:15px; font-weight:700; color:var(--text); font-family:Inter,sans-serif; outline:none; box-sizing:border-box; }
+.date-inp:focus { border-color:rgb(var(--accent-rgb) / 0.4); }
 
 /* ── HANDICAP CARD ── */
 .hdcp-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:8px; }
 .hdcp-main { display:flex; align-items:baseline; gap:8px; margin-bottom:6px; }
-.hdcp-val { font-size:36px; font-weight:900; letter-spacing:-1px; color:var(--green); }
-.hdcp-lbl { font-size:11px; font-weight:700; color:var(--muted); }
-.hdcp-sub { font-size:11px; color:var(--muted); line-height:1.5; }
+.hdcp-val { font-size:36px; font-weight:900; letter-spacing:-1px; color:var(--good); }
+.hdcp-lbl { font-size:11px; font-weight:700; color:var(--text-muted); }
+.hdcp-sub { font-size:11px; color:var(--text-muted); line-height:1.5; }
 .hdcp-row { display:flex; gap:8px; margin-top:10px; }
-.hdcp-chip { flex:1; background:rgba(255,255,255,0.04); border-radius:8px; padding:8px; text-align:center; }
+.hdcp-chip { flex:1; background:rgb(var(--ink-rgb) / 0.04); border-radius:8px; padding:8px; text-align:center; }
 .hc-val { font-size:15px; font-weight:800; }
-.hc-lbl { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:0.5px; margin-top:2px; }
+.hc-lbl { font-size:9px; font-weight:700; color:var(--text-muted); letter-spacing:0.5px; margin-top:2px; }
 
 /* ── SUMMARY CARD (Ready step) ── */
-.summary-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+.summary-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgb(var(--ink-rgb) / 0.05); }
 .summary-row:last-child { border-bottom:none; }
-.sum-lbl { font-size:11px; color:var(--muted); font-weight:600; }
+.sum-lbl { font-size:11px; color:var(--text-muted); font-weight:600; }
 .sum-val { font-size:12px; font-weight:800; text-align:right; }
 
 /* ── ROUND DETAILS SECTIONS ── */
-.rd-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; margin-top:4px; }
-.rd-sec-sub { font-size:11px; color:rgba(255,255,255,0.5); margin-bottom:10px; margin-top:-4px; }
+.rd-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; margin-top:4px; }
+.rd-sec-sub { font-size:11px; color:rgb(var(--ink-rgb) / 0.5); margin-bottom:10px; margin-top:-4px; }
 
 /* ── HOLE CHIPS ── */
 .hole-chips { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px; }
 .hole-chips::-webkit-scrollbar { display:none; }
 .hole-chip { flex-shrink:0; width:34px; height:34px; border-radius:8px; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.12s; }
-.hole-chip.selected { background:rgba(46,204,113,0.15); border-color:var(--green); color:var(--green); }
-.hole-chip:active { background:rgba(46,204,113,0.08); }
+.hole-chip.selected { background:rgb(var(--accent-rgb) / 0.15); border-color:var(--accent); color:var(--accent); }
+.hole-chip:active { background:rgb(var(--accent-rgb) / 0.08); }
 
 /* ── SETUP FOOTER ── */
 .setup-footer { padding:10px 14px 14px; flex-shrink:0; }
-.setup-next { width:100%; background:var(--green); border:none; border-radius:12px; padding:15px; font-size:15px; font-weight:800; color:#000; cursor:pointer; font-family:Inter,sans-serif; letter-spacing:-0.2px; }
+.setup-next { width:100%; background:var(--accent); border:none; border-radius:12px; padding:15px; font-size:15px; font-weight:800; color:#000; cursor:pointer; font-family:Inter,sans-serif; letter-spacing:-0.2px; }
 .setup-next:active { opacity:0.85; }
-.setup-next:disabled { background:rgba(255,255,255,0.1); color:var(--dim); cursor:default; }
-.setup-next.play { background:var(--green); font-size:16px; }
+.setup-next:disabled { background:rgb(var(--ink-rgb) / 0.1); color:var(--text-dim); cursor:default; }
+.setup-next.play { background:var(--accent); font-size:16px; }
 </style>
 </head>
 <body data-page="rounds">
@@ -234,7 +234,7 @@
 
     <div class="r-sec">Recent Rounds</div>
 
-    <div style="text-align:center;color:var(--dim);font-size:12px;padding:24px 16px;">No rounds yet — tap Start Round or check the Courses tab once you've played.</div>
+    <div style="text-align:center;color:var(--text-dim);font-size:12px;padding:24px 16px;">No rounds yet — tap Start Round or check the Courses tab once you've played.</div>
 
     <div style="height:8px;"></div>
   </div>
@@ -289,7 +289,7 @@
 </div><!-- /wrap -->
 </div><!-- /phone -->
 
-<p class="pg-note">Tap <strong style="color:var(--green);">Start Round</strong> to walk through the full setup flow</p>
+<p class="pg-note">Tap <strong style="color:var(--accent);">Start Round</strong> to walk through the full setup flow</p>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.0/dist/umd/supabase.js" integrity="sha384-3wY11tldQ5+yWqAvmTN4XtQvnjoTva0cV15O/O/O5NTtp0ivVopSzLOzsVXWZse9" crossorigin="anonymous"></script>
 <script src="tc-auth.js"></script>
@@ -653,16 +653,16 @@ function renderCourseTab(tab) {
       debounce = setTimeout(async () => {
         const list = document.getElementById('course-list');
         if (!list) return;
-        list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--muted);">Searching…</div>';
+        list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-muted);">Searching…</div>';
         try {
           const results = await TcCourse.searchByName(val);
           if (!results.length) {
-            list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">No courses found</div>';
+            list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">No courses found</div>';
           } else {
             renderCourseList(results.map(r => ({ ...r, location: '' })), list);
           }
         } catch {
-          list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">Search unavailable</div>';
+          list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">Search unavailable</div>';
           renderCourseList(COURSES_FAV, list);
         }
       }, 600);
@@ -672,24 +672,24 @@ function renderCourseTab(tab) {
     renderCourseList(COURSES_FAV.filter(c => c.fav), document.getElementById('course-list'));
   } else {
     cont.innerHTML = `
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📍 Detecting nearby courses…</div>
-      <div id="course-list"><div style="padding:12px;font-size:11px;color:var(--dim);">Checking location…</div></div>`;
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">📍 Detecting nearby courses…</div>
+      <div id="course-list"><div style="padding:12px;font-size:11px;color:var(--text-dim);">Checking location…</div></div>`;
     navigator.geolocation?.getCurrentPosition(async pos => {
       const list = document.getElementById('course-list');
       if (!list) return;
       try {
         const courses = await TcCourse.nearbyCourses(pos.coords.latitude, pos.coords.longitude);
         if (!courses.length) {
-          list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">No courses detected nearby</div>';
+          list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">No courses detected nearby</div>';
         } else {
           renderCourseList(courses.map(c => ({ ...c, location: c.dist })), list);
         }
       } catch {
-        list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">Location unavailable</div>';
+        list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">Location unavailable</div>';
       }
     }, () => {
       const list = document.getElementById('course-list');
-      if (list) list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">Location permission denied</div>';
+      if (list) list.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">Location permission denied</div>';
     }, { enableHighAccuracy: false, timeout: 8000 });
   }
 }
@@ -701,7 +701,7 @@ function escHtml(s) {
 function renderCourseList(list, container) {
   container.innerHTML = '';
   if (!list.length) {
-    container.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--dim);">No courses found — try searching by name</div>';
+    container.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-dim);">No courses found — try searching by name</div>';
     return;
   }
   list.forEach(c => {
@@ -851,16 +851,16 @@ function renderTeeList() {
           <input class="date-inp" type="number" step="1" min="4000" max="8000" placeholder="e.g. 6800" id="rd-yds-inp-${t.key}" style="flex:1;padding:4px 8px;font-size:11px;">
           <button class="setup-next-btn" style="padding:4px 10px;font-size:11px;" onclick="saveTeeYardageEntry('${t.key}')">Save</button>
         </div>
-        <div id="rd-yds-err-${t.key}" style="color:#E74C3C;font-size:10px;margin-top:2px;"></div>`;
+        <div id="rd-yds-err-${t.key}" style="color:var(--danger);font-size:10px;margin-top:2px;"></div>`;
     } else if (geoKey) {
-      subHtml = `Yardage unknown <span onclick="event.stopPropagation(); editingTeeYardageKey='${t.key}'; renderTeeList();" style="color:var(--green);cursor:pointer;">Enter yardage</span>`;
+      subHtml = `Yardage unknown <span onclick="event.stopPropagation(); editingTeeYardageKey='${t.key}'; renderTeeList();" style="color:var(--accent);cursor:pointer;">Enter yardage</span>`;
     } else {
       subHtml = 'Yardage unknown';
     }
 
     d.innerHTML = `
       <div class="ro-dot"></div>
-      <div class="tee-swatch" style="background:${t.color};border:1px solid rgba(255,255,255,0.2);"></div>
+      <div class="tee-swatch" style="background:${t.color};border:1px solid rgb(var(--ink-rgb) / 0.2);"></div>
       <div class="ro-info">
         <div class="ro-name">${t.name}</div>
         <div class="ro-sub">${subHtml}</div>
@@ -923,10 +923,10 @@ function reCalcHandicap() {
   hcEl.textContent  = str;
   if (hcDesc) hcDesc.textContent = `Index ${idxLabel} · ${sel.tee.name} tees · Rating ${rating} · Slope ${slope}`;
   if (hcRow)  hcRow.innerHTML = `
-    <div class="hdcp-chip"><div class="hc-val" style="color:var(--green)">${idxLabel}</div><div class="hc-lbl">HCP INDEX</div></div>
+    <div class="hdcp-chip"><div class="hc-val" style="color:var(--good)">${idxLabel}</div><div class="hc-lbl">HCP INDEX</div></div>
     <div class="hdcp-chip"><div class="hc-val">${slope}</div><div class="hc-lbl">SLOPE</div></div>
     <div class="hdcp-chip"><div class="hc-val">${rating}</div><div class="hc-lbl">RATING</div></div>
-    <div class="hdcp-chip"><div class="hc-val" style="color:var(--green)">${str}</div><div class="hc-lbl">PLAYING HCP</div></div>`;
+    <div class="hdcp-chip"><div class="hc-val" style="color:var(--good)">${str}</div><div class="hc-lbl">PLAYING HCP</div></div>`;
 }
 
 function determineWhich9() {
@@ -943,7 +943,7 @@ async function updateRatingSlopePrompt() {
   if (!wrap) return;
   if (!sel.tee) { wrap.innerHTML = ''; sel.ratingSlope = null; sel.which9 = null; return; }
   if (!sel.course?.lat || !sel.course?.lng) {
-    wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--muted);">No location data for this course — handicap tracking unavailable for this round.</div>';
+    wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--text-muted);">No location data for this course — handicap tracking unavailable for this round.</div>';
     sel.ratingSlope = null; sel.which9 = null;
     return;
   }
@@ -951,7 +951,7 @@ async function updateRatingSlopePrompt() {
   const which9 = determineWhich9();
   sel.which9 = which9;
   if (!which9) {
-    wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--muted);">This hole selection isn\'t a standard 9 or 18 — this round won\'t count toward your handicap.</div>';
+    wrap.innerHTML = '<div class="rd-sec-sub" style="color:var(--text-muted);">This hole selection isn\'t a standard 9 or 18 — this round won\'t count toward your handicap.</div>';
     sel.ratingSlope = null;
     return;
   }
@@ -960,7 +960,7 @@ async function updateRatingSlopePrompt() {
   const cached = await TcHandicap.getRatingSlope(geoKey, sel.tee.name, which9);
   if (cached) {
     sel.ratingSlope = cached;
-    wrap.innerHTML = `<div class="rd-sec-sub">Rating ${cached.rating} · Slope ${cached.slope} <span onclick="showRatingSlopeForm()" style="color:var(--green);cursor:pointer;">Edit</span></div>`;
+    wrap.innerHTML = `<div class="rd-sec-sub">Rating ${cached.rating} · Slope ${cached.slope} <span onclick="showRatingSlopeForm()" style="color:var(--accent);cursor:pointer;">Edit</span></div>`;
     reCalcHandicap();
     return;
   }
@@ -982,7 +982,7 @@ function renderRoundDetails(body) {
         <input class="date-inp" type="number" step="0.1" min="60" max="80" placeholder="Rating (e.g. 71.8)" id="rd-rating-inp" style="flex:1;">
         <input class="date-inp" type="number" step="1" min="55" max="155" placeholder="Slope (e.g. 133)" id="rd-slope-inp" style="flex:1;">
       </div>
-      <div id="rd-rating-err" style="color:#E74C3C;font-size:10px;margin-top:4px;"></div>
+      <div id="rd-rating-err" style="color:var(--danger);font-size:10px;margin-top:4px;"></div>
       <button class="setup-next-btn" style="margin-top:8px;padding:8px;font-size:12px;" onclick="saveRatingSlopeEntry()">Save</button>`;
   };
 
@@ -1000,7 +1000,7 @@ function renderRoundDetails(body) {
     await TcHandicap.saveRatingSlope(geoKey, sel.tee.name, sel.which9, { rating, slope }, { source: 'manual', courseName: sel.course?.name });
     sel.ratingSlope = { rating, slope };
     const wrap = document.getElementById('rd-rating-wrap');
-    wrap.innerHTML = `<div class="rd-sec-sub">Rating ${rating} · Slope ${slope} <span onclick="showRatingSlopeForm()" style="color:var(--green);cursor:pointer;">Edit</span></div>`;
+    wrap.innerHTML = `<div class="rd-sec-sub">Rating ${rating} · Slope ${slope} <span onclick="showRatingSlopeForm()" style="color:var(--accent);cursor:pointer;">Edit</span></div>`;
     reCalcHandicap();
     document.getElementById('setup-next-btn').disabled = !canAdvance();
   };
@@ -1015,7 +1015,7 @@ function renderRoundDetails(body) {
 
     <div class="rd-sec" style="margin-top:18px;">Course Rating / Slope</div>
     <div id="rd-rating-wrap"></div>
-    <div style="margin-top:6px;"><span onclick="openScanScorecard()" style="color:var(--green);cursor:pointer;font-size:11px;font-weight:700;">📷 Scan Scorecard instead</span></div>
+    <div style="margin-top:6px;"><span onclick="openScanScorecard()" style="color:var(--accent);cursor:pointer;font-size:11px;font-weight:700;">📷 Scan Scorecard instead</span></div>
 
     <div class="rd-sec" style="margin-top:18px;">Score Type</div>
     <div id="rd-score-type-list"></div>
@@ -1026,13 +1026,13 @@ function renderRoundDetails(body) {
     <div class="rd-sec" style="margin-top:18px;">Course Handicap</div>
     <div class="hdcp-card" style="margin-bottom:4px;">
       <div class="hdcp-main">
-        <div class="hdcp-val" id="rd-hdcp-val" style="color:var(--green);">—</div>
+        <div class="hdcp-val" id="rd-hdcp-val" style="color:var(--good);">—</div>
         <div class="hdcp-lbl">COURSE HANDICAP</div>
       </div>
       <div class="hdcp-sub" id="rd-hdcp-desc">Select tees above to calculate</div>
       <div class="hdcp-row" id="rd-hdcp-row"></div>
     </div>
-    <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:4px;line-height:1.5;">
+    <div style="font-size:10px;color:rgb(var(--ink-rgb) / 0.3);margin-top:4px;line-height:1.5;">
       Formula: (Index × Slope ÷ 113) + (Rating − Par) = Course Handicap
     </div>
     <div style="height:16px;"></div>`;
@@ -1091,7 +1091,7 @@ function renderFriends(body) {
     <div style="margin-top:32px;text-align:center;padding:32px 0;">
       <div style="font-size:40px;margin-bottom:12px;">👥</div>
       <div style="font-size:14px;font-weight:800;margin-bottom:6px;">Coming Soon</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5;">The group play flow will let you search for<br>players, assign handicaps, and track<br>match play scores in real time.</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">The group play flow will let you search for<br>players, assign handicaps, and track<br>match play scores in real time.</div>
     </div>`;
 }
 
