@@ -677,6 +677,10 @@ async function renderHandicap(body) {
 
 /* ══ INIT ══ */
 renderCards();
+
+/* Deep link: home.html links here as stats.html?stat=sg */
+const _statParam = new URLSearchParams(location.search).get('stat');
+if (_statParam && CATS.some(c => c.id === _statParam)) openStat(_statParam);
 </script>
 </body>
 </html>

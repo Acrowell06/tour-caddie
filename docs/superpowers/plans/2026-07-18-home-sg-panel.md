@@ -201,7 +201,7 @@ Renders a fully populated panel from a `deriveSgPanel` result. Still no network 
 **Interfaces:**
 - Consumes: `deriveSgPanel`, `sgRadarPoint`, `fmtSg`, `sgColor`, `SG_RADAR_SCALE` from Task 1.
 - Produces:
-  - `sgRadarSvg(cats, colorHex)` → SVG markup string.
+  - `sgRadarSvg(cats, positive)` → SVG markup string. `positive` is a boolean (total at or above tour average).
   - `renderSgPanel(data)` → void; renders into `#sg-panel`. `null` renders the empty state.
   - `sgPanelMessage(text)` → void; renders a one-line message at full panel height.
 
@@ -246,17 +246,21 @@ Append after the Task 1 functions:
 /* ══ SG PANEL — RENDER ══ */
 const SG_R = { CX:70, CY:70, R0:30, RMAX:55 };
 
-function sgRadarSvg(cats, colorHex) {
-  const pts = cats.map(c => sgRadarPoint(c.value, c.angle, SG_R.CX, SG_R.CY, SG_R.R0, SG_R.RMAX));
+/* var() resolves in SVG presentation attributes, so the theme variables are used
+   directly for stroke. The translucent polygon fills stay literal rgba because no
+   equivalent variable exists in tc.css. */
+function sgRadarSvg(cats, positive) {
+  const stroke = positive ? 'var(--green)' : 'var(--red)';
+  const fill   = positive ? 'rgba(46,204,113,0.22)' : 'rgba(231,76,60,0.22)';
+  const pts  = cats.map(c => sgRadarPoint(c.value, c.angle, SG_R.CX, SG_R.CY, SG_R.R0, SG_R.RMAX));
   const poly = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const dots = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.6" fill="${colorHex}"/>`).join('');
-  const fill = colorHex === '#2ECC71' ? 'rgba(46,204,113,0.22)' : 'rgba(231,76,60,0.22)';
+  const dots = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.6" fill="${stroke}"/>`).join('');
   return `<svg class="sg-radar" width="104" height="104" viewBox="0 0 140 140" aria-hidden="true">
     <circle cx="70" cy="70" r="55" fill="none" stroke="var(--border)" stroke-width="1"/>
     <circle cx="70" cy="70" r="30" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1" stroke-dasharray="3 3"/>
     <line x1="15" y1="70" x2="125" y2="70" stroke="var(--border)"/>
     <line x1="70" y1="15" x2="70" y2="125" stroke="var(--border)"/>
-    <polygon points="${poly}" fill="${fill}" stroke="${colorHex}" stroke-width="1.6"/>
+    <polygon points="${poly}" fill="${fill}" stroke="${stroke}" stroke-width="1.6"/>
     ${dots}
   </svg>`;
 }
@@ -271,14 +275,13 @@ function renderSgPanel(data) {
   if (!el) return;
   if (!data) { sgPanelMessage('No Strokes Gained data yet — play a full round at a mapped course.'); return; }
 
-  const colorHex = data.total >= 0 ? '#2ECC71' : '#E74C3C';
   const dateLbl  = data.lastDate
     ? new Date(data.lastDate).toLocaleDateString('en-US', { month:'short', day:'numeric' })
     : '—';
   const lastVal = data.lastValue == null ? '—' : fmtSg(data.lastValue);
 
   el.innerHTML = `<div class="sg-row">
-    ${sgRadarSvg(data.cats, colorHex)}
+    ${sgRadarSvg(data.cats, data.total >= 0)}
     <div class="sg-info">
       <div class="sg-cap">Your game · ${data.count} round${data.count === 1 ? '' : 's'}</div>
       <div class="sg-total-row">
@@ -316,7 +319,9 @@ Build probes with the standard fixture, start the server, load the probe page, t
     radarPresent: !!el.querySelector('svg polygon'),
     polygonPoints: el.querySelector('svg polygon').getAttribute('points'),
     showsTotal: txt.includes('-3.10'),
-    showsCount: txt.includes('2 rounds'),
+    // .sg-cap is text-transform:uppercase, so innerText is uppercased —
+    // read textContent for the caption, not innerText.
+    showsCount: el.textContent.includes('2 rounds'),
     showsLast: txt.includes('-2.40') && txt.includes('Jun 28'),
     showsBest: txt.includes('Around grn') && txt.includes('-0.50'),
     showsWorst: txt.includes('Approach') && txt.includes('-1.10'),
@@ -325,7 +330,7 @@ Build probes with the standard fixture, start the server, load the probe page, t
 }
 ```
 
-Expected: `height` between 100 and 135; `width` 296; `radarPresent` true; `polygonPoints` exactly `"70.0,45.0 90.8,70.0 70.0,95.8 47.5,70.0"`; all five `shows*` true; `isAboveWidgets` true.
+Expected: `height` between 100 and 135; `width` 293 (the `.phone` frame's 1.5px border on each side reduces the usable width to 317, less the panel's 24px of horizontal margin); `radarPresent` true; `polygonPoints` exactly `"70.0,45.0 90.8,70.0 70.0,95.8 47.5,70.0"`; all five `shows*` true; `isAboveWidgets` true.
 
 - [ ] **Step 5: Screenshot the panel**
 
