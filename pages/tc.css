@@ -3,9 +3,60 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #0A0A0F; --surface: #141420; --surface2: #1C1C2E;
-  --border: #1E1E2E; --green: #2ECC71; --gold: #F1C40F;
-  --white: #FFFFFF; --muted: #8B8BA7; --dim: #5A5A7A; --red: #E74C3C;
+  /* Phase 1: every value is TODAY'S colour. Midnight values land in Phase 2. */
+
+  /* Structure */
+  --bg: #0A0A0F;
+  --surface: #141420;
+  --surface-2: #1C1C2E;
+  --border: #1E1E2E;
+
+  /* Text */
+  --text: #FFFFFF;
+  --text-muted: #8B8BA7;
+  --text-dim: #5A5A7A;
+  --text-on-accent: #0A0A0F;
+
+  /* Accent — UI chrome and interaction */
+  --accent: #2ECC71;
+
+  /* Semantic — meaning, not chrome */
+  --good: #2ECC71;
+  --bad: #E74C3C;
+  --danger: #E74C3C;
+  --gold: #F1C40F;
+
+  /* Map chrome — deliberately does NOT invert in Phase 3 */
+  --map-surface: #141420;
+  --map-text: #FFFFFF;
+
+  /* Channel triplets: let each call site keep its own alpha.
+     Usage: rgb(var(--ink-rgb) / 0.04)
+     Never use color-mix() — it computes to a different string form
+     and breaks the capture comparison. */
+  --ink-rgb: 255 255 255;
+  --shadow-rgb: 0 0 0;
+  --accent-rgb: 46 204 113;
+  --good-rgb: 46 204 113;
+  --bad-rgb: 231 76 60;
+  --danger-rgb: 231 76 60;
+
+  /* Deprecated aliases — every remaining var(--green)/var(--red) call site
+     still resolves while pages are converted one at a time. Task 12 removes
+     these once no references remain. */
+  --green: var(--accent);
+  --red: var(--bad);
+  --white: var(--text);
+  --muted: var(--text-muted);
+  --dim: var(--text-dim);
+
+  /* Extra deprecated alias not listed in the Task 1 brief's token block:
+     the pre-existing :root defined --surface2 (no hyphen) as its own real
+     token, and many pages still reference var(--surface2) directly. Without
+     this alias those sites would resolve to nothing (transparent), breaking
+     zero-visible-change. Same removal path as the aliases above — gone once
+     the pages that use it are converted. */
+  --surface2: var(--surface-2);
 }
 body {
   background: #030305; font-family: 'Inter', sans-serif; color: #fff;
