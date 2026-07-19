@@ -15,88 +15,88 @@
 .ssum-cell { flex:1; padding:10px 8px; text-align:center; border-right:1px solid var(--border); }
 .ssum-cell:last-child { border-right:none; }
 .ssum-val { font-size:16px; font-weight:900; letter-spacing:-0.5px; }
-.ssum-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+.ssum-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted); margin-top:3px; }
 
 /* ── FILTER DROPDOWNS ── */
 .filter-row { display:flex; gap:8px; padding:0 12px 10px; flex-shrink:0; }
 .filter-select {
   flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px;
-  color:#fff; font-size:11px; font-weight:700; padding:7px 10px;
+  color:var(--text); font-size:11px; font-weight:700; padding:7px 10px;
   cursor:pointer; font-family:Inter,sans-serif; appearance:none; -webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A5A7A'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 10px center;
   padding-right:28px;
 }
-.filter-select:focus { outline:none; border-color:rgba(46,204,113,0.4); }
+.filter-select:focus { outline:none; border-color:rgb(var(--accent-rgb) / 0.4); }
 
 /* ── ROUND CARDS ── */
 .round-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin:0 12px 8px; cursor:pointer; overflow:hidden; transition:background 0.12s; }
-.round-card:active { background:rgba(255,255,255,0.03); }
+.round-card:active { background:rgb(var(--ink-rgb) / 0.03); }
 
 .rc-top { display:flex; align-items:center; gap:10px; padding:11px 14px 8px; }
 .rc-date-col { min-width:40px; }
-.rc-date { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; }
-.rc-month { font-size:9px; color:var(--dim); margin-top:1px; }
+.rc-date { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; }
+.rc-month { font-size:9px; color:var(--text-dim); margin-top:1px; }
 .rc-course { flex:1; min-width:0; }
 .rc-name { font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rc-tee { font-size:10px; color:var(--muted); margin-top:2px; }
+.rc-tee { font-size:10px; color:var(--text-muted); margin-top:2px; }
 .rc-score-col { text-align:right; }
 .rc-score { font-size:22px; font-weight:900; letter-spacing:-1px; line-height:1; }
-.rc-gross { font-size:9px; font-weight:700; color:var(--muted); margin-top:2px; letter-spacing:0.5px; }
+.rc-gross { font-size:9px; font-weight:700; color:var(--text-muted); margin-top:2px; letter-spacing:0.5px; }
 
 .rc-chips { display:flex; gap:5px; padding:0 14px 10px; }
-.rc-chip { font-size:10px; font-weight:600; color:var(--muted); background:rgba(255,255,255,0.04); border-radius:4px; padding:3px 7px; white-space:nowrap; }
+.rc-chip { font-size:10px; font-weight:600; color:var(--text-muted); background:rgb(var(--ink-rgb) / 0.04); border-radius:4px; padding:3px 7px; white-space:nowrap; }
 
 /* ── COURSE INSIGHTS BAR ── */
 .ci-bar { display:flex; gap:8px; margin:0 12px 10px; flex-shrink:0; }
 .ci-card { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 12px; }
-.ci-tag { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); margin-bottom:4px; }
+.ci-tag { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
 .ci-course { font-size:12px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ci-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+.ci-sub { font-size:10px; color:var(--text-muted); margin-top:2px; }
 
 /* ── SPARKLINE ── */
 .sparkline-wrap { margin:0 12px 10px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 12px; flex-shrink:0; }
 .spark-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-.spark-label { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); }
+.spark-label { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); }
 .spark-legend { display:flex; gap:8px; }
-.spark-leg-item { font-size:8px; color:var(--dim); }
+.spark-leg-item { font-size:8px; color:var(--text-dim); }
 
 /* ── TYPE FILTER ── */
 .type-filter-row { display:flex; gap:6px; padding:0 12px 10px; flex-shrink:0; }
 .tf-pill {
   flex:1; text-align:center; padding:7px 4px; border-radius:8px;
   font-size:10px; font-weight:800; letter-spacing:0.3px;
-  color:#4A4A6A; background:#141420; border:1.5px solid #222238;
+  color:#4A4A6A; background:var(--surface); border:1.5px solid #222238;
   cursor:pointer; user-select:none;
 }
 .tf-pill.on {
-  color:#2ECC71; background:#0D2B1A; border-color:#2ECC71;
+  color:var(--accent); background:#0D2B1A; border-color:var(--accent);
 }
 
 /* ── MONTH DIVIDERS ── */
-.month-label { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); padding:4px 14px 6px; }
+.month-label { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); padding:4px 14px 6px; }
 
 /* ── DETAIL OVERLAY ── */
 .rd-ov { position:absolute; inset:0; z-index:60; pointer-events:none; }
 .rd-ov.open { pointer-events:all; }
-.rd-bd { position:absolute; inset:0; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.3s; }
+.rd-bd { position:absolute; inset:0; background:rgb(var(--shadow-rgb) / 0.55); opacity:0; transition:opacity 0.3s; }
 .rd-ov.open .rd-bd { opacity:1; }
-.rd-sheet { position:absolute; left:0; right:0; bottom:0; height:93%; background:#0A0A0F; border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
+.rd-sheet { position:absolute; left:0; right:0; bottom:0; height:93%; background:var(--bg); border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
 .rd-ov.open .rd-sheet { transform:translateY(0); }
 
 /* ── DETAIL HEADER ── */
-.rd-handle { width:36px; height:4px; background:rgba(255,255,255,0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.rd-handle { width:36px; height:4px; background:rgb(var(--ink-rgb) / 0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
 .rd-hdr { display:flex; align-items:center; padding:10px 14px 0; gap:10px; flex-shrink:0; }
-.rd-close { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.rd-close { background:rgb(var(--ink-rgb) / 0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; font-family:Inter,sans-serif; }
 .rd-title { flex:1; text-align:center; }
 .rd-title-name { font-size:14px; font-weight:900; }
-.rd-title-date { font-size:10px; color:var(--muted); margin-top:1px; }
+.rd-title-date { font-size:10px; color:var(--text-muted); margin-top:1px; }
 .rd-spacer { width:52px; }
 
 /* ── DETAIL TAB PILLS ── */
 .rd-tabs { display:flex; gap:4px; margin:10px 14px 0; background:var(--surface); border-radius:8px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
-.rdtab { flex:1; padding:6px; border-radius:5px; font-size:11px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; }
-.rdtab.on { background:var(--surface2); color:#fff; }
+.rdtab { flex:1; padding:6px; border-radius:5px; font-size:11px; font-weight:700; color:var(--text-muted); text-align:center; cursor:pointer; }
+.rdtab.on { background:var(--surface-2); color:var(--text); }
 
 /* ── DETAIL BODY ── */
 .rd-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:14px; }
@@ -106,7 +106,7 @@
 .score-hero { display:flex; align-items:center; justify-content:center; gap:18px; padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:14px; }
 .sh-main { text-align:center; }
 .sh-val { font-size:46px; font-weight:900; letter-spacing:-2px; line-height:1; }
-.sh-lbl { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+.sh-lbl { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-top:4px; }
 .sh-divider { width:1px; height:40px; background:var(--border); }
 
 /* ── SCORECARD GRID ── */
@@ -114,14 +114,14 @@
 .sc-row { display:flex; }
 .sc-row + .sc-row { border-top:1px solid var(--border); }
 .sc-cell { flex:1; padding:6px 2px; text-align:center; font-size:10px; font-weight:700; min-width:0; }
-.sc-cell.lbl { color:var(--muted); font-size:8px; letter-spacing:0.5px; background:rgba(255,255,255,0.02); }
-.sc-cell.hdr { font-size:9px; color:var(--dim); font-weight:700; }
+.sc-cell.lbl { color:var(--text-muted); font-size:8px; letter-spacing:0.5px; background:rgb(var(--ink-rgb) / 0.02); }
+.sc-cell.hdr { font-size:9px; color:var(--text-dim); font-weight:700; }
 .sc-cell.ttl { font-size:11px; font-weight:900; }
 .score-e  { color:var(--gold); }
-.score-b  { color:var(--green); }
-.score-p  { color:rgba(255,255,255,0.7); }
+.score-b  { color:var(--good); }
+.score-p  { color:rgb(var(--ink-rgb) / 0.7); }
 .score-bo { color:#E67E22; }
-.score-d  { color:var(--red); }
+.score-d  { color:var(--bad); }
 .score-t  { color:#8B0000; }
 
 /* ── STAT ROW ── */
@@ -129,7 +129,7 @@
 .rs-icon { font-size:16px; width:22px; text-align:center; flex-shrink:0; }
 .rs-label { flex:1; font-size:12px; font-weight:700; }
 .rs-val { font-size:14px; font-weight:900; }
-.rs-sub { font-size:10px; color:var(--muted); text-align:right; }
+.rs-sub { font-size:10px; color:var(--text-muted); text-align:right; }
 
 /* ── KPI GRID (reused) ── */
 .rd-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px; }
@@ -137,19 +137,19 @@
 .rd-kpi-grid.c4 { grid-template-columns:1fr 1fr 1fr 1fr; }
 .rd-kpi { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
 .rk-val { font-size:18px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
-.rk-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+.rk-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted); margin-top:4px; }
 
 /* ── SG BARS ── */
 .sg-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
 .sg-lbl { font-size:11px; font-weight:600; min-width:100px; }
-.sg-track { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; position:relative; }
-.sg-center { position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; background:rgba(255,255,255,0.22); border-radius:1px; }
+.sg-track { flex:1; height:8px; background:rgb(var(--ink-rgb) / 0.06); border-radius:4px; position:relative; }
+.sg-center { position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; background:rgb(var(--ink-rgb) / 0.22); border-radius:1px; }
 .sg-fill-pos { position:absolute; left:50%; top:0; height:8px; border-radius:0 4px 4px 0; }
 .sg-fill-neg { position:absolute; right:50%; top:0; height:8px; border-radius:4px 0 0 4px; }
 .sg-val { font-size:12px; font-weight:800; min-width:38px; text-align:right; }
 
 /* ── SEC LABEL ── */
-.rd-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; margin-top:14px; }
+.rd-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; margin-top:14px; }
 </style>
 </head>
 <body data-page="courses">
@@ -173,21 +173,21 @@
   <!-- Header -->
   <div style="padding:6px 16px 10px; flex-shrink:0;">
     <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px;">My Courses</div>
-    <div style="font-size:11px; color:var(--muted); margin-top:1px;" id="hdr-sub">2026 Season · 12 rounds</div>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:1px;" id="hdr-sub">2026 Season · 12 rounds</div>
   </div>
 
   <!-- Season summary -->
   <div class="ssummary">
     <div class="ssum-cell">
-      <div class="ssum-val" id="ssum-rounds" style="color:var(--green);">—</div>
+      <div class="ssum-val" id="ssum-rounds" style="color:var(--accent);">—</div>
       <div class="ssum-lbl">Rounds</div>
     </div>
     <div class="ssum-cell">
-      <div class="ssum-val" id="ssum-scravg" style="color:var(--green);">—</div>
+      <div class="ssum-val" id="ssum-scravg" style="color:var(--accent);">—</div>
       <div class="ssum-lbl">Scr Avg</div>
     </div>
     <div class="ssum-cell">
-      <div class="ssum-val" id="ssum-hcp" style="color:var(--green);">—</div>
+      <div class="ssum-val" id="ssum-hcp" style="color:var(--accent);">—</div>
       <div class="ssum-lbl">Handicap</div>
     </div>
     <div class="ssum-cell">
@@ -201,7 +201,7 @@
     <div class="spark-hdr">
       <div class="spark-label">Season Trend · Avg Score to Par</div>
       <div class="spark-legend">
-        <div class="spark-leg-item"><span style="color:#2ECC71;">■</span> Under par</div>
+        <div class="spark-leg-item"><span style="color:var(--good);">■</span> Under par</div>
         <div class="spark-leg-item"><span style="color:#E67E22;">■</span> Over par</div>
       </div>
     </div>
@@ -424,7 +424,7 @@ function renderRounds(filterYear = '2026', filterMonth = '') {
   });
 
   if (filtered.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;">No rounds found</div>';
+    list.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:13px;">No rounds found</div>';
     document.getElementById('hdr-sub').textContent = 'No rounds for this period';
     renderSparkline([]);
     return;
@@ -465,7 +465,7 @@ function renderRounds(filterYear = '2026', filterMonth = '') {
       </div>
       <div class="rc-chips">
         ${r.chips.map(ch => `<div class="rc-chip">${escHtml(ch)}</div>`).join('')}
-        <div class="rc-chip" style="color:${r.diff == null ? 'var(--muted)' : parseFloat(r.diff) <= 1 ? 'var(--green)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--red)'}">Diff ${r.diff == null ? '—' : escHtml(String(r.diff))}</div>
+        <div class="rc-chip" style="color:${r.diff == null ? 'var(--text-muted)' : parseFloat(r.diff) <= 1 ? 'var(--good)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--bad)'}">Diff ${r.diff == null ? '—' : escHtml(String(r.diff))}</div>
       </div>`;
     list.appendChild(card);
   });
@@ -517,8 +517,8 @@ function renderSparkline(rounds) {
     const y   = toY(t);
     const lbl = t === 0 ? 'E' : t < 0 ? '' + t : '+' + t;
     const isE = t === 0;
-    html += `<line x1="${AX}" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="${isE ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}" stroke-width="${isE ? 1.5 : 1}"/>`;
-    html += `<text x="${AX - 4}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="8" font-weight="700" font-family="Inter,sans-serif" fill="${isE ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.22)'}">${lbl}</text>`;
+    html += `<line x1="${AX}" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="${isE ? 'rgb(var(--ink-rgb) / 0.15)' : 'rgb(var(--ink-rgb) / 0.05)'}" stroke-width="${isE ? 1.5 : 1}"/>`;
+    html += `<text x="${AX - 4}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="8" font-weight="700" font-family="Inter,sans-serif" fill="${isE ? 'rgb(var(--ink-rgb) / 0.5)' : 'rgb(var(--ink-rgb) / 0.22)'}">${lbl}</text>`;
   }
 
   // Bars + month labels
@@ -526,7 +526,7 @@ function renderSparkline(rounds) {
   const slotW = plotW / n;
   const barW  = Math.min(slotW * 0.55, 32);
 
-  const barCol = avg => avg <= -2 ? '#F1C40F' : avg < 0 ? '#2ECC71' : avg === 0 ? 'rgba(255,255,255,0.35)' : avg <= 1 ? '#E67E22' : '#E74C3C';
+  const barCol = avg => avg <= -2 ? 'var(--gold)' : avg < 0 ? 'var(--good)' : avg === 0 ? 'rgb(var(--ink-rgb) / 0.35)' : avg <= 1 ? '#E67E22' : 'var(--bad)';
 
   months.forEach((m, i) => {
     const cx  = AX + (i + 0.5) * slotW;
@@ -540,7 +540,7 @@ function renderSparkline(rounds) {
     html += `<rect x="${bx.toFixed(1)}" y="${ry.toFixed(1)}" width="${barW.toFixed(1)}" height="${rh.toFixed(1)}" fill="${col}" rx="2"/>`;
 
     // Month label
-    html += `<text x="${cx.toFixed(1)}" y="${H - 3}" text-anchor="middle" font-size="8" font-weight="700" font-family="Inter,sans-serif" fill="rgba(255,255,255,0.3)">${m.label}</text>`;
+    html += `<text x="${cx.toFixed(1)}" y="${H - 3}" text-anchor="middle" font-size="8" font-weight="700" font-family="Inter,sans-serif" fill="rgb(var(--ink-rgb) / 0.3)">${m.label}</text>`;
   });
 
   svg.innerHTML = html;
@@ -596,7 +596,7 @@ function renderScorecard(body) {
       </div>
       <div class="sh-divider"></div>
       <div class="sh-main">
-        <div class="sh-val" style="color:${r.diff == null ? 'var(--muted)' : parseFloat(r.diff) <= 1 ? 'var(--green)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--red)'};">${r.diff == null ? '—' : r.diff}</div>
+        <div class="sh-val" style="color:${r.diff == null ? 'var(--text-muted)' : parseFloat(r.diff) <= 1 ? 'var(--good)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--bad)'};">${r.diff == null ? '—' : r.diff}</div>
         <div class="sh-lbl">DIFF</div>
       </div>
     </div>`;
@@ -653,11 +653,11 @@ function renderScorecard(body) {
   // Score legend
   const legendHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding:2px 0 14px;">
-      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:var(--gold);font-weight:800;">-2</span> Eagle+</div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:var(--green);font-weight:800;">-1</span> Birdie</div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:rgba(255,255,255,0.5);font-weight:800;">E</span> Par</div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:#E67E22;font-weight:800;">+1</span> Bogey</div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted);"><span style="color:var(--red);font-weight:800;">+2</span> Double</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--gold);font-weight:800;">-2</span> Eagle+</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--good);font-weight:800;">-1</span> Birdie</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:rgb(var(--ink-rgb) / 0.5);font-weight:800;">E</span> Par</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:#E67E22;font-weight:800;">+1</span> Bogey</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--bad);font-weight:800;">+2</span> Double</div>
     </div>`;
 
   body.innerHTML = heroHTML + cardHTML + legendHTML + '<div style="height:8px;"></div>';
@@ -668,20 +668,20 @@ function renderRdStats(body) {
   const r = activeRound;
   function kpi4(items) {
     return `<div class="rd-kpi-grid c4">${items.map(k =>
-      `<div class="rd-kpi"><div class="rk-val" style="color:${k.c||'#fff'}">${k.v}</div><div class="rk-lbl">${k.l}</div></div>`
+      `<div class="rd-kpi"><div class="rk-val" style="color:${k.c||'var(--text)'}">${k.v}</div><div class="rk-lbl">${k.l}</div></div>`
     ).join('')}</div>`;
   }
   function kpi2(items) {
     return `<div class="rd-kpi-grid">${items.map(k =>
-      `<div class="rd-kpi"><div class="rk-val" style="color:${k.c||'#fff'}">${k.v}</div><div class="rk-lbl">${k.l}</div></div>`
+      `<div class="rd-kpi"><div class="rk-val" style="color:${k.c||'var(--text)'}">${k.v}</div><div class="rk-lbl">${k.l}</div></div>`
     ).join('')}</div>`;
   }
   function sec(t) { return `<div class="rd-sec">${t}</div>`; }
 
-  const firC  = r.fir >= 70 ? 'var(--green)' : r.fir >= 55 ? '#F1C40F' : 'var(--red)';
-  const girC  = r.gir >= 70 ? 'var(--green)' : r.gir >= 55 ? '#F1C40F' : 'var(--red)';
-  const puttC = r.putts <= 27 ? 'var(--green)' : r.putts <= 30 ? '#F1C40F' : 'var(--red)';
-  const udC   = r.up_down >= 65 ? 'var(--green)' : r.up_down >= 45 ? '#F1C40F' : 'var(--red)';
+  const firC  = r.fir >= 70 ? 'var(--good)' : r.fir >= 55 ? 'var(--gold)' : 'var(--bad)';
+  const girC  = r.gir >= 70 ? 'var(--good)' : r.gir >= 55 ? 'var(--gold)' : 'var(--bad)';
+  const puttC = r.putts <= 27 ? 'var(--good)' : r.putts <= 30 ? 'var(--gold)' : 'var(--bad)';
+  const udC   = r.up_down >= 65 ? 'var(--good)' : r.up_down >= 45 ? 'var(--gold)' : 'var(--bad)';
 
   body.innerHTML =
     sec('Tee to Green') +
@@ -694,10 +694,10 @@ function renderRdStats(body) {
 
     sec('Par Breakdown') +
     kpi4([
-      { v: r.holes.filter((s,i)=>s<r.pars[i]).length,  l: 'BIRDIES+', c: 'var(--green)' },
-      { v: r.holes.filter((s,i)=>s===r.pars[i]).length, l: 'PARS',    c: '#fff' },
+      { v: r.holes.filter((s,i)=>s<r.pars[i]).length,  l: 'BIRDIES+', c: 'var(--good)' },
+      { v: r.holes.filter((s,i)=>s===r.pars[i]).length, l: 'PARS',    c: 'var(--text)' },
       { v: r.holes.filter((s,i)=>s===r.pars[i]+1).length, l: 'BOGEYS', c: '#E67E22' },
-      { v: r.holes.filter((s,i)=>s>=r.pars[i]+2).length, l: 'DOUBLES+', c: 'var(--red)' },
+      { v: r.holes.filter((s,i)=>s>=r.pars[i]+2).length, l: 'DOUBLES+', c: 'var(--bad)' },
     ]) +
 
     sec('Nine-Hole Split') +
@@ -706,12 +706,12 @@ function renderRdStats(body) {
           ? '+' + (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0))
           : '' + (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)),
         l: 'FRONT 9',
-        c: (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--green)' : '#E67E22' },
+        c: (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--good)' : '#E67E22' },
       { v: r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0) >= 0
           ? '+' + (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0))
           : '' + (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)),
         l: 'BACK 9',
-        c: (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--green)' : '#E67E22' },
+        c: (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--good)' : '#E67E22' },
     ]) +
     '<div style="height:8px;"></div>';
 }
@@ -723,7 +723,7 @@ function renderRdSG(body) {
 
   if (!sg) {
     body.innerHTML = `
-      <div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">
+      <div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">
         Strokes Gained isn't available yet for this round.<br>Coming in a future update.
       </div>`;
     return;
@@ -733,7 +733,7 @@ function renderRdSG(body) {
     const maxAbs = 1.0;
     const pct = Math.min(Math.abs(val) / maxAbs * 50, 50);
     const pos = val >= 0;
-    const color = pos ? 'var(--green)' : 'var(--red)';
+    const color = pos ? 'var(--good)' : 'var(--bad)';
     const str = (val > 0 ? '+' : '') + val.toFixed(1);
     return `<div class="sg-row">
       <div class="sg-lbl">${lbl}</div>
@@ -745,13 +745,13 @@ function renderRdSG(body) {
     </div>`;
   }
 
-  const totalColor = sg.total >= 0 ? 'var(--green)' : 'var(--red)';
+  const totalColor = sg.total >= 0 ? 'var(--good)' : 'var(--bad)';
   const totalStr   = (sg.total > 0 ? '+' : '') + sg.total.toFixed(1);
 
   body.innerHTML = `
     <div style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;">
       <div style="font-size:42px;font-weight:900;color:${totalColor};letter-spacing:-2px;line-height:1;">${totalStr}</div>
-      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">SG TOTAL · THIS ROUND (vs. estimated baseline for your handicap)</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">SG TOTAL · THIS ROUND (vs. estimated baseline for your handicap)</div>
     </div>
     <div class="rd-sec">Strokes Gained by Category</div>` +
     sgBar('SG: Off the Tee',   sg.ott)  +
@@ -767,7 +767,7 @@ function renderInsights() {
     document.getElementById('ci-most-course').textContent = '—';
     document.getElementById('ci-most-sub').textContent    = 'No rounds yet';
     document.getElementById('ci-best-course').textContent = '—';
-    document.getElementById('ci-best-sub').innerHTML      = '<span style="color:var(--muted);">—</span>';
+    document.getElementById('ci-best-sub').innerHTML      = '<span style="color:var(--text-muted);">—</span>';
     return;
   }
 
@@ -783,7 +783,7 @@ function renderInsights() {
   document.getElementById('ci-most-sub').textContent    = mostCourse[1] + ' rounds played';
 
   const sp = scoreToPar(best.score);
-  const spColor = best.score < 0 ? 'var(--green)' : best.score === 0 ? '#fff' : '#E67E22';
+  const spColor = best.score < 0 ? 'var(--good)' : best.score === 0 ? 'var(--text)' : '#E67E22';
   document.getElementById('ci-best-course').textContent = best.course;
   document.getElementById('ci-best-sub').innerHTML      =
     `<span style="color:${spColor};font-weight:800;">${sp.str}</span> · ${best.date}`;
