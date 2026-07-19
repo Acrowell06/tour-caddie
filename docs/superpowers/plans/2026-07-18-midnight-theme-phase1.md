@@ -17,7 +17,7 @@
 - Edit `pages/` at the repo root. **Never edit `tour-caddie/`** — an untracked duplicate copy whose edits never reach the repo.
 - Windows/Git Bash. Use `python`, never `python3`.
 - Never commit `pages/__probe-*.html`, `pages/__fixture.json`, `.playwright-mcp/`, or baseline JSON files.
-- Branch: work on `feat/midnight-phase1`, branched from `master` at `7ce904c`.
+- Branch: work on `feat/midnight-phase1`, branched from `master` at `22eb945` (the plan commit).
 
 ## The classification rule
 
@@ -54,7 +54,7 @@ const _q={select:()=>_q,eq:()=>_q,neq:()=>_q,not:()=>_q,order:()=>_q,limit:()=>_
 window.TcAuth={requireAuth:async()=>({user:{id:'u1',email:'a@b.c'}}),getSession:async()=>({user:{id:'u1',email:'a@b.c'}}),
   client:{from:()=>_q,auth:{updateUser:async()=>({})}},signOut:async()=>{},onAuth:()=>{}};
 </script>'''
-for f in ['home','stats','courses','rounds','profile','hole','scorecard','scanner','scan-scorecard','login','index']:
+for f in ['home','stats','courses','rounds','profile','hole','scorecard','scanner','scan-scorecard','login']:
     src = open(f+'.html', encoding='utf-8').read()
     src = re.sub(r'<script src="https://cdn\.jsdelivr\.net/npm/@supabase[^>]*></script>', stub, src)
     src = src.replace('<script src="tc-auth.js"></script>','')
@@ -158,7 +158,7 @@ Defines the tokens and records what every page looks like *before* any conversio
 
 - [ ] **Step 1: Capture baselines BEFORE touching anything**
 
-Build probes and start the server per the harness section. For each of the 11 pages, navigate and run the full-rows capture expression, saving the returned array to `.superpowers/theme-baseline/<page>.json`. Also record each page's `{count, hash}` in `.superpowers/theme-baseline/hashes.json` as `{"home": {"count": 104, "hash": "2815f1e3"}, …}`.
+Build probes and start the server per the harness section. For each of the 10 pages, navigate and run the full-rows capture expression, saving the returned array to `.superpowers/theme-baseline/<page>.json`. Also record each page's `{count, hash}` in `.superpowers/theme-baseline/hashes.json` as `{"home": {"count": 104, "hash": "2815f1e3"}, …}`.
 
 The hashes are the contract for every later task. If this step is done after any conversion, the entire plan's verification is worthless.
 
@@ -221,9 +221,9 @@ The aliases matter: pages are converted one per task, so unconverted pages must 
 
 - [ ] **Step 3: Verify nothing changed**
 
-Rebuild probes (tc.css is loaded fresh) and re-capture all 11 pages. Every hash must equal its baseline in `hashes.json`.
+Rebuild probes (tc.css is loaded fresh) and re-capture all 10 pages. Every hash must equal its baseline in `hashes.json`.
 
-Expected: 11 of 11 match. If any differs, the token block changed a value — find it with the rows diff and fix before committing.
+Expected: 10 of 10 match. If any differs, the token block changed a value — find it with the rows diff and fix before committing.
 
 - [ ] **Step 4: Commit**
 
@@ -258,7 +258,7 @@ git commit -m "refactor: add theme token block with today's colours"
 6. **Verify pixel-identical:** rebuild probes, capture the page, compare `count` and `hash` to its Task 1 baseline. On mismatch, run the rows capture, diff against the stored baseline JSON, fix the element. **Never adjust the baseline.**
 7. **Commit:** clean up probes first, then `git add pages/<FILE>` and commit as `refactor: tokenize colours in <FILE>`.
 
-`pages/index.html` has zero literals and needs no task.
+`pages/index.html` is a 9-line redirect stub (`location.replace('login.html')`), loads no stylesheet, has an empty body, and contains zero literals. It is excluded entirely — no task, no baseline, no capture.
 
 ---
 
@@ -270,8 +270,8 @@ git commit -m "refactor: add theme token block with today's colours"
 **Interfaces:** Consumes the tokens from Task 1. Produces nothing new.
 
 - [ ] **Step 1:** Apply the Conversion Procedure to `pages/tc.css`.
-- [ ] **Step 2:** Capture **all 11 pages** and compare every hash to its Task 1 baseline — not just one page, because this file styles all of them.
-- [ ] **Step 3:** Expected: 11 of 11 hashes identical. Commit.
+- [ ] **Step 2:** Capture **all 10 pages** and compare every hash to its Task 1 baseline — not just one page, because this file styles all of them.
+- [ ] **Step 3:** Expected: 10 of 10 hashes identical. Commit.
 
 ---
 
@@ -410,11 +410,11 @@ Expected: no output. If anything matches, that page's conversion task was incomp
 
 Remove the five alias lines and their `/* Deprecated aliases … */` comment from the `:root` block in `pages/tc.css`.
 
-- [ ] **Step 3: Verify all 11 pages unchanged**
+- [ ] **Step 3: Verify all 10 pages unchanged**
 
-Rebuild probes and capture every page. All 11 hashes must still equal their Task 1 baselines.
+Rebuild probes and capture every page. All 10 hashes must still equal their Task 1 baselines.
 
-Expected: 11 of 11 match. A mismatch means something still referenced an alias and has now fallen back to an unset variable.
+Expected: 10 of 10 match. A mismatch means something still referenced an alias and has now fallen back to an unset variable.
 
 - [ ] **Step 4: Commit**
 
@@ -441,11 +441,11 @@ Report the remaining count per file and what each survivor is. Every survivor mu
 
 - [ ] **Step 2: Full capture sweep**
 
-All 11 pages, hashes compared to Task 1 baselines. Expected: 11 of 11 identical.
+All 10 pages, hashes compared to Task 1 baselines. Expected: 10 of 10 identical.
 
 - [ ] **Step 3: Screenshot every page at 390×844**
 
-Capture all 11 and inspect them. The harness compares colours, not layout — a malformed `rgb(var(…) / A)` that failed to parse could leave an element transparent in a way the hash catches, but a broken *rule* could also drop a declaration entirely. Eyes on each page confirms nothing collapsed.
+Capture all 10 and inspect them. The harness compares colours, not layout — a malformed `rgb(var(…) / A)` that failed to parse could leave an element transparent in a way the hash catches, but a broken *rule* could also drop a declaration entirely. Eyes on each page confirms nothing collapsed.
 
 - [ ] **Step 4: Prove Phase 2 is now a one-line job**
 
@@ -455,7 +455,7 @@ This is the proof that the classification was done correctly — it is the only 
 
 - [ ] **Step 5: Report**
 
-State: remaining literal count per file, 11/11 hash confirmation, the accent-swap result, and any survivor literals. No commit — this task changes nothing.
+State: remaining literal count per file, 10/10 hash confirmation, the accent-swap result, and any survivor literals. No commit — this task changes nothing.
 
 ---
 
@@ -463,7 +463,7 @@ State: remaining literal count per file, 11/11 hash confirmation, the accent-swa
 
 - [ ] All 555 literals converted except deliberate, named exceptions.
 - [ ] All 407 old-alias references converted, including those inside JavaScript strings.
-- [ ] All 11 page hashes identical to their Task 1 baselines.
+- [ ] All 10 page hashes identical to their Task 1 baselines.
 - [ ] Every green classified `--accent` or `--good`; every red `--danger` or `--bad`.
 - [ ] No `var(--green)` / `var(--red)` / `var(--white)` / `var(--muted)` / `var(--dim)` references remain.
 - [ ] `hole.html` overlay panels use `--map-surface` / `--map-text`.
