@@ -7,10 +7,26 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* This page is deliberately self-contained (no <link> to tc.css — the
+   printable card must render standalone). Tokens are duplicated here
+   with the exact Phase 1 values from tc.css's :root so var() calls
+   resolve; keep in sync with pages/tc.css. */
+:root {
+  --bg: #0A0A0F;
+  --surface: #141420;
+  --text: #FFFFFF;
+  --text-muted: #8B8BA7;
+  --text-on-accent: #0A0A0F;
+  --accent: #2ECC71;
+  --good: #2ECC71;
+  --ink-rgb: 255 255 255;
+  --shadow-rgb: 0 0 0;
+}
+
 /* ─── Screen shell ─── */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Arial, sans-serif;
-  background: #0A0A0F;
+  background: var(--bg);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -18,19 +34,19 @@ body {
   padding: 36px 24px 56px;
   gap: 18px;
 }
-.pg-logo  { font-size: 11px; font-weight: 900; color: #2ECC71; letter-spacing: 2.5px; text-transform: uppercase; }
-.pg-title { font-size: 26px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
-.pg-sub   { font-size: 12px; color: #8B8BA7; text-align: center; line-height: 1.6; }
+.pg-logo  { font-size: 11px; font-weight: 900; color: var(--accent); letter-spacing: 2.5px; text-transform: uppercase; }
+.pg-title { font-size: 26px; font-weight: 900; color: var(--text); letter-spacing: -0.5px; }
+.pg-sub   { font-size: 12px; color: var(--text-muted); text-align: center; line-height: 1.6; }
 
-.toggle { display: flex; background: #141420; border-radius: 8px; padding: 3px; }
+.toggle { display: flex; background: var(--surface); border-radius: 8px; padding: 3px; }
 .toggle-btn {
   padding: 7px 22px; border-radius: 6px; font-size: 13px; font-weight: 700;
-  color: #8B8BA7; cursor: pointer; user-select: none; transition: all 0.15s;
+  color: var(--text-muted); cursor: pointer; user-select: none; transition: all 0.15s;
 }
-.toggle-btn.on { background: #2ECC71; color: #0A0A0F; }
+.toggle-btn.on { background: var(--accent); color: var(--text-on-accent); }
 
 .print-btn {
-  background: #2ECC71; color: #0A0A0F; border: none; border-radius: 8px;
+  background: var(--accent); color: var(--text-on-accent); border: none; border-radius: 8px;
   padding: 11px 28px; font-size: 13px; font-weight: 800;
   cursor: pointer; letter-spacing: 0.3px; transition: opacity 0.15s;
 }
@@ -38,8 +54,8 @@ body {
 
 /* ─── Card ─── */
 .card {
-  width: 10.5in; background: #fff; border-radius: 8px; overflow: hidden;
-  box-shadow: 0 12px 56px rgba(0,0,0,0.7);
+  width: 10.5in; background: var(--text); border-radius: 8px; overflow: hidden;
+  box-shadow: 0 12px 56px rgb(var(--shadow-rgb) / 0.7);
 }
 .card.hidden { display: none; }
 
@@ -49,18 +65,18 @@ body {
   justify-content: space-between; padding: 5px 12px; gap: 14px;
 }
 .c-logo {
-  font-size: 8.5pt; font-weight: 900; color: #2ECC71;
+  font-size: 8.5pt; font-weight: 900; color: var(--accent);
   letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
 }
 .c-fields { display: flex; gap: 10px; flex: 1; align-items: center; }
 .c-field {
   display: flex; align-items: flex-end; gap: 4px;
-  font-size: 5.5pt; font-weight: 600; color: rgba(255,255,255,0.4);
+  font-size: 5.5pt; font-weight: 600; color: rgb(var(--ink-rgb) / 0.4);
   letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap;
 }
-.c-line { display: inline-block; border-bottom: 0.6px solid rgba(255,255,255,0.28); height: 12px; }
+.c-line { display: inline-block; border-bottom: 0.6px solid rgb(var(--ink-rgb) / 0.28); height: 12px; }
 .c-nine {
-  font-size: 7pt; font-weight: 800; color: #2ECC71;
+  font-size: 7pt; font-weight: 800; color: var(--good);
   letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
 }
 
@@ -87,7 +103,7 @@ body {
 /* OUT / IN */
 .sc td.out {
   background: #f6f6f6; font-weight: 800; font-size: 7.5pt;
-  border-left: 1.5px solid #2ECC71 !important; border-right: none; width: 0.56in;
+  border-left: 1.5px solid var(--accent) !important; border-right: none; width: 0.56in;
 }
 
 /* TOTAL */
@@ -99,10 +115,10 @@ body {
 /* ── Row types ── */
 
 /* Hole number — dark header */
-.r-hole td           { height: 0.26in; background: #111; color: #fff; font-weight: 900; font-size: 9pt; border-color: #333 !important; }
-.r-hole td.lbl       { background: #111; color: #2ECC71; font-size: 5.5pt; letter-spacing: 0.8px; }
-.r-hole td.out       { background: #1a1a22; color: #2ECC71; border-color: #2ECC71 !important; }
-.r-hole td.tot       { background: #0d0d14; color: #fff; border-color: #444 !important; }
+.r-hole td           { height: 0.26in; background: #111; color: var(--text); font-weight: 900; font-size: 9pt; border-color: #333 !important; }
+.r-hole td.lbl       { background: #111; color: var(--good); font-size: 5.5pt; letter-spacing: 0.8px; }
+.r-hole td.out       { background: #1a1a22; color: var(--good); border-color: var(--good) !important; }
+.r-hole td.tot       { background: #0d0d14; color: var(--text); border-color: #444 !important; }
 
 /* Course info (par/yards/SI) */
 .r-info td           { height: 0.21in; background: #f7f7f7; font-size: 6.5pt; color: #444; }
@@ -111,7 +127,7 @@ body {
 .r-info td.tot       { background: #f0f0f0; }
 
 /* Green section divider */
-.r-div td            { height: 3px; background: #2ECC71; border: none !important; padding: 0; }
+.r-div td            { height: 3px; background: var(--accent); border: none !important; padding: 0; }
 
 /* Light section separator */
 .r-sep td            { height: 1px; background: #e4e4e4; border: none !important; padding: 0; }
@@ -126,7 +142,7 @@ body {
 .r-grp td.tot        { background: #ebebeb !important; }
 
 /* Club rows */
-.r-clb td            { height: 0.255in; background: #fff; font-size: 7pt; }
+.r-clb td            { height: 0.255in; background: var(--text); font-size: 7pt; }
 .r-clb td.lbl        { font-size: 5.2pt; color: #666; font-weight: 800; }
 
 /* Yardage / distance rows */
@@ -158,7 +174,7 @@ body {
 .r-dir td.tot        { background: #efefef; }
 
 /* Putt distance rows */
-.r-pft td            { height: 0.245in; background: #fff; font-size: 7pt; }
+.r-pft td            { height: 0.245in; background: var(--text); font-size: 7pt; }
 .r-pft td.lbl        { font-size: 5.2pt; color: #666; font-weight: 800; }
 .r-pft.p1 td:not(.lbl):not(.out):not(.tot) { background: #f5f5ff; }
 
@@ -169,10 +185,10 @@ body {
 .r-putts td.tot      { background: #efefef; }
 
 /* Score — inverted */
-.r-score td          { height: 0.34in; background: #111; color: #fff; font-size: 10.5pt; font-weight: 900; border-color: #333 !important; }
-.r-score td.lbl      { background: #111; color: rgba(255,255,255,0.45); font-size: 5.2pt; }
-.r-score td.out      { background: #1a1a22; color: #2ECC71; font-size: 11.5pt; border-left-color: #2ECC71 !important; }
-.r-score td.tot      { background: #0d0d14; color: #fff; font-size: 12.5pt; border-left-color: #555 !important; }
+.r-score td          { height: 0.34in; background: #111; color: var(--text); font-size: 10.5pt; font-weight: 900; border-color: #333 !important; }
+.r-score td.lbl      { background: #111; color: rgb(var(--ink-rgb) / 0.45); font-size: 5.2pt; }
+.r-score td.out      { background: #1a1a22; color: var(--good); font-size: 11.5pt; border-left-color: var(--good) !important; }
+.r-score td.tot      { background: #0d0d14; color: var(--text); font-size: 12.5pt; border-left-color: #555 !important; }
 
 /* Net */
 .r-net td            { height: 0.18in; background: #fafafa; font-size: 5.5pt; color: #aaa; }
@@ -186,12 +202,12 @@ body {
 }
 .c-legend { font-size: 5pt; color: #888; line-height: 1.8; }
 .c-legend b { color: #555; }
-.c-scan { font-size: 5.5pt; font-weight: 800; color: #2ECC71; letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; }
+.c-scan { font-size: 5.5pt; font-weight: 800; color: var(--accent); letter-spacing: 0.3px; white-space: nowrap; flex-shrink: 0; }
 
 /* ─── Print ─── */
 @media print {
   @page { size: 11in 8.5in landscape; margin: 0.15in 0.2in; }
-  body { background: #fff; padding: 0; gap: 0.18in; display: block; }
+  body { background: var(--text); padding: 0; gap: 0.18in; display: block; }
   .pg-logo, .pg-title, .pg-sub, .toggle, .print-btn { display: none !important; }
   .card { width: 100%; box-shadow: none; border-radius: 0; border: 0.5px solid #ccc; page-break-after: always; }
   .card:last-of-type { page-break-after: auto; }

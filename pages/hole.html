@@ -9,76 +9,76 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ── Hole nav header ── */
-.hole-nav { display:flex; align-items:center; justify-content:space-between; padding:5px 12px 4px; flex-shrink:0; background:var(--surface); border-bottom:1px solid var(--border); }
-.hn-arr { padding:5px 10px; border-radius:7px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; }
+.hole-nav { display:flex; align-items:center; justify-content:space-between; padding:5px 12px 4px; flex-shrink:0; background:var(--map-surface); color:var(--map-text); border-bottom:1px solid var(--border); }
+.hn-arr { padding:5px 10px; border-radius:7px; background:rgb(var(--ink-rgb) / 0.05); border:1px solid var(--border); font-size:11px; font-weight:700; color:var(--text-muted); cursor:pointer; }
 .hn-center { text-align:center; flex:1; padding:0 8px; }
 .hn-course { font-size:11px; font-weight:800; }
-.hn-info { font-size:9px; color:var(--dim); margin-top:1px; }
-.hn-card-btn { padding:5px 9px; border-radius:7px; background:rgba(255,255,255,0.05); border:1px solid var(--border); font-size:14px; cursor:pointer; line-height:1; }
+.hn-info { font-size:9px; color:var(--text-dim); margin-top:1px; }
+.hn-card-btn { padding:5px 9px; border-radius:7px; background:rgb(var(--ink-rgb) / 0.05); border:1px solid var(--border); font-size:14px; cursor:pointer; line-height:1; }
 
 /* ── F/C/B distance strip ── */
-.fcb-strip { display:flex; background:var(--surface2); border-bottom:1px solid var(--border); flex-shrink:0; }
+.fcb-strip { display:flex; background:var(--surface-2); border-bottom:1px solid var(--border); flex-shrink:0; }
 .fcb-cell { flex:1; padding:5px 4px; text-align:center; border-right:1px solid var(--border); }
 .fcb-cell:last-child { border-right:none; }
-.fcb-lbl { font-size:7px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); }
+.fcb-lbl { font-size:7px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); }
 .fcb-val { font-size:13px; font-weight:900; line-height:1.3; }
-.fcb-cell.ctr .fcb-val { color:var(--green); }
-.fcb-cell.my .fcb-val { font-size:11px; color:var(--muted); }
+.fcb-cell.ctr .fcb-val { color:var(--accent); }
+.fcb-cell.my .fcb-val { font-size:11px; color:var(--text-muted); }
 
 /* ── Shot log ── */
 .shot-log { display:flex; gap:5px; padding:5px 12px; overflow-x:auto; flex-shrink:0; min-height:30px; scrollbar-width:none; align-items:center; }
 .shot-log::-webkit-scrollbar { display:none; }
-.shot-log-empty { font-size:10px; color:var(--dim); }
-.sl-chip { flex-shrink:0; font-size:10px; font-weight:700; white-space:nowrap; background:rgba(46,204,113,0.07); border:1px solid rgba(46,204,113,0.25); border-radius:5px; padding:3px 8px; color:var(--green); }
+.shot-log-empty { font-size:10px; color:var(--text-dim); }
+.sl-chip { flex-shrink:0; font-size:10px; font-weight:700; white-space:nowrap; background:rgb(var(--accent-rgb) / 0.07); border:1px solid rgb(var(--accent-rgb) / 0.25); border-radius:5px; padding:3px 8px; color:var(--accent); }
 
 /* ── Club picker overlay ── */
 .club-ov { position:absolute; inset:0; z-index:80; pointer-events:none; }
 .club-ov.open { pointer-events:all; }
-.club-bd { position:absolute; inset:0; background:rgba(0,0,0,0); transition:background 0.25s; }
-.club-ov.open .club-bd { background:rgba(0,0,0,0.55); }
+.club-bd { position:absolute; inset:0; background:rgb(var(--shadow-rgb) / 0); transition:background 0.25s; }
+.club-ov.open .club-bd { background:rgb(var(--shadow-rgb) / 0.55); }
 .club-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--bg); border-radius:18px 18px 0 0; border-top:1px solid var(--border); transform:translateY(100%); transition:transform 0.32s cubic-bezier(0.4,0,0.2,1); padding-bottom:22px; }
 .club-ov.open .club-sheet { transform:translateY(0); }
-.club-handle { width:36px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; margin:10px auto 0; }
+.club-handle { width:36px; height:4px; background:rgb(var(--ink-rgb) / 0.15); border-radius:2px; margin:10px auto 0; }
 .club-ttl-row { display:flex; align-items:baseline; justify-content:space-between; padding:8px 14px 10px; }
 .club-ttl { font-size:13px; font-weight:800; }
-.club-sub { font-size:10px; color:var(--muted); }
-.club-skip-btn { font-size:11px; font-weight:700; color:var(--dim); padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid var(--border); cursor:pointer; }
+.club-sub { font-size:10px; color:var(--text-muted); }
+.club-skip-btn { font-size:11px; font-weight:700; color:var(--text-dim); padding:3px 8px; border-radius:6px; background:rgb(var(--ink-rgb) / 0.04); border:1px solid var(--border); cursor:pointer; }
 .club-grp { padding:0 12px 7px; }
-.club-grp-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--dim); margin-bottom:5px; }
+.club-grp-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); margin-bottom:5px; }
 .club-btns { display:flex; gap:5px; flex-wrap:wrap; }
-.cbtn { padding:7px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; font-size:11px; font-weight:700; color:rgba(255,255,255,0.7); cursor:pointer; }
-.cbtn.sel { background:rgba(46,204,113,0.12); border-color:#2ECC71; color:#2ECC71; }
+.cbtn { padding:7px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; font-size:11px; font-weight:700; color:rgb(var(--ink-rgb) / 0.7); cursor:pointer; }
+.cbtn.sel { background:rgb(var(--accent-rgb) / 0.12); border-color:var(--accent); color:var(--accent); }
 .cbtn:active { transform:scale(0.93); }
-.club-skip-full { margin:6px 12px 0; padding:9px; text-align:center; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:9px; font-size:11px; font-weight:700; color:var(--dim); cursor:pointer; }
+.club-skip-full { margin:6px 12px 0; padding:9px; text-align:center; background:rgb(var(--ink-rgb) / 0.02); border:1px solid var(--border); border-radius:9px; font-size:11px; font-weight:700; color:var(--text-dim); cursor:pointer; }
 
 /* ── Lift dpill above the Mark Shot button ── */
 #h-dpill { bottom: 48px; }
 
 /* ── Wind overlay (HTML, not SVG — never moves) ── */
 .wind-ov { position:absolute; top:44px; left:10px; display:flex; flex-direction:column; align-items:center; gap:2px; pointer-events:none; z-index:20; }
-.wind-spd { font-size:9px; font-weight:800; color:var(--gold); letter-spacing:0.3px; text-shadow:0 1px 3px rgba(0,0,0,0.9); }
+.wind-spd { font-size:9px; font-weight:800; color:var(--gold); letter-spacing:0.3px; text-shadow:0 1px 3px rgb(var(--shadow-rgb) / 0.9); }
 
 /* ── Scorecard overlay ── */
 .scov { position:absolute; inset:0; z-index:90; background:var(--bg); display:flex; flex-direction:column; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); }
 .scov.open { transform:translateY(0); }
 .scov-hdr { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
-.scov-back { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.scov-back { background:rgb(var(--ink-rgb) / 0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; font-family:Inter,sans-serif; }
 .scov-ttl { font-size:13px; font-weight:800; flex:1; }
-.scov-score { font-size:13px; font-weight:900; color:var(--green); }
+.scov-score { font-size:13px; font-weight:900; color:var(--accent); }
 .scov-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:10px 12px 16px; }
 .scov-body::-webkit-scrollbar { display:none; }
-.scov-sec { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); padding:8px 0 5px; }
+.scov-sec { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); padding:8px 0 5px; }
 .sct { width:100%; border-collapse:collapse; }
-.sct th { font-size:8px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--dim); padding:4px 6px; text-align:center; border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02); }
-.sct td { font-size:11px; font-weight:700; padding:7px 6px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.03); }
-.sct tr.now td { background:rgba(46,204,113,0.08); }
-.sct tr.now td:first-child { border-left:2px solid var(--green); }
-.sct tr.tot td { font-weight:900; border-top:1px solid var(--border); background:rgba(255,255,255,0.03); }
-.sc-bd { color:var(--green); }
-.sc-par { color:rgba(255,255,255,0.65); }
+.sct th { font-size:8px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-dim); padding:4px 6px; text-align:center; border-bottom:1px solid var(--border); background:rgb(var(--ink-rgb) / 0.02); }
+.sct td { font-size:11px; font-weight:700; padding:7px 6px; text-align:center; border-bottom:1px solid rgb(var(--ink-rgb) / 0.03); }
+.sct tr.now td { background:rgb(var(--accent-rgb) / 0.08); }
+.sct tr.now td:first-child { border-left:2px solid var(--accent); }
+.sct tr.tot td { font-weight:900; border-top:1px solid var(--border); background:rgb(var(--ink-rgb) / 0.03); }
+.sc-bd { color:var(--good); }
+.sc-par { color:rgb(var(--ink-rgb) / 0.65); }
 .sc-bo { color:#E67E22; }
-.sc-db { color:var(--red); }
-.sc-na { color:rgba(255,255,255,0.2); }
+.sc-db { color:var(--bad); }
+.sc-na { color:rgb(var(--ink-rgb) / 0.2); }
 /* ── Hole summary sheet ── */
 .sum-map-wrap { padding:6px 10px 4px; }
 .sum-map-wrap #sum-leaflet { width:100%; height:130px; border-radius:10px; overflow:hidden; }
@@ -89,9 +89,9 @@
 .sum-score-row { display:flex; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:0; }
 .sum-score-cell { flex:1; padding:8px 4px; text-align:center; border-right:1px solid var(--border); }
 .sum-score-cell:last-child { border-right:none; }
-.sum-score-lbl { font-size:7px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+.sum-score-lbl { font-size:7px; font-weight:700; letter-spacing:0.9px; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; }
 .sum-score-val { font-size:18px; font-weight:900; }
-.chip-y { background:rgba(241,196,15,0.1); border-color:rgba(241,196,15,0.35); color:#F1C40F; }
+.chip-y { background:rgba(241,196,15,0.1); border-color:rgba(241,196,15,0.35); color:var(--gold); }
 </style>
 </head>
 <body data-page="hole">
@@ -130,7 +130,7 @@
     <div class="sdv"></div>
     <div class="sb-r">
       <div class="shl" id="h-hole-info">HOLE 7 · PAR 4 · 412 YDS</div>
-      <div class="shd">Shot <span id="h-shot-num" style="color:var(--green);font-weight:800;">1</span></div>
+      <div class="shd">Shot <span id="h-shot-num" style="color:var(--accent);font-weight:800;">1</span></div>
     </div>
   </div>
 
@@ -156,19 +156,19 @@
     <div class="mchips normal-tracking-ui">
       <div class="mc"><div class="mc-lbl">HOLE</div><div class="mc-val" id="mc-hole-num">—</div></div>
       <div class="mc"><div class="mc-lbl">PAR</div><div class="mc-val" id="mc-par-num">—</div></div>
-      <div class="mc"><div class="mc-lbl">SHOT</div><div class="mc-val" id="h-shot-chip" style="color:var(--green)">1</div></div>
+      <div class="mc"><div class="mc-lbl">SHOT</div><div class="mc-val" id="h-shot-chip" style="color:var(--accent)">1</div></div>
     </div>
     <!-- Wind indicator (HTML overlay — stays fixed, not in SVG). Hidden by
          default; initWindDial() reveals it once live wind data resolves. -->
     <div class="wind-ov normal-tracking-ui" id="h-wind-ov" style="display:none;">
       <svg width="34" height="34" viewBox="-17 -17 34 34" style="display:block;">
         <!-- Dial background -->
-        <circle r="16" fill="rgba(10,10,15,0.88)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <circle r="16" fill="rgba(10,10,15,0.88)" stroke="rgb(var(--ink-rgb) / 0.12)" stroke-width="1"/>
         <!-- 90-degree tick marks (relative-to-hole dial has no cardinal labels) -->
-        <line x1="0" y1="-16" x2="0" y2="-13" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <line x1="16"  y1="0" x2="13"  y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <line x1="0"  y1="16" x2="0"  y2="13" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <line x1="-16" y1="0" x2="-13" y2="0" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <line x1="0" y1="-16" x2="0" y2="-13" stroke="rgb(var(--ink-rgb) / 0.2)" stroke-width="1"/>
+        <line x1="16"  y1="0" x2="13"  y2="0" stroke="rgb(var(--ink-rgb) / 0.2)" stroke-width="1"/>
+        <line x1="0"  y1="16" x2="0"  y2="13" stroke="rgb(var(--ink-rgb) / 0.2)" stroke-width="1"/>
+        <line x1="-16" y1="0" x2="-13" y2="0" stroke="rgb(var(--ink-rgb) / 0.2)" stroke-width="1"/>
         <!-- Wind arrow — rotation set by initWindDial() to the live relative angle -->
         <g id="h-wind-arrow" transform="rotate(0)">
           <line x1="0" y1="5" x2="0" y2="-8" stroke="rgba(241,196,15,0.95)" stroke-width="2" stroke-linecap="round"/>
@@ -186,12 +186,12 @@
   <div id="mark-hole-panel" style="display:none;flex-direction:column;flex:1;">
     <div style="padding:14px 16px 4px;">
       <div id="mh-step-title" style="font-size:16px;font-weight:900;">Mark the Tee</div>
-      <div id="mh-step-sub" style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4;">Drag the pin to where you're standing.</div>
+      <div id="mh-step-sub" style="font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.4;">Drag the pin to where you're standing.</div>
     </div>
     <div class="spacer"></div>
     <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
       <button class="cta cta-gold" id="mh-confirm-btn" onclick="mhConfirmStep()">Confirm Tee</button>
-      <div style="text-align:center;font-size:12px;color:var(--dim);cursor:pointer;" onclick="mhSkip()">Skip — just track shots</div>
+      <div style="text-align:center;font-size:12px;color:var(--text-dim);cursor:pointer;" onclick="mhSkip()">Skip — just track shots</div>
     </div>
   </div>
 
@@ -568,12 +568,12 @@ function mhPlacePin(ll) {
   markMarker = L.marker([ll.lat, ll.lng], {
     icon: L.divIcon({
       html: `<svg width="34" height="34" viewBox="0 0 34 34" style="display:block;overflow:visible;">
-        <line x1="17" y1="1"  x2="17" y2="12" stroke="#F1C40F" stroke-width="2.5"/>
-        <line x1="17" y1="22" x2="17" y2="33" stroke="#F1C40F" stroke-width="2.5"/>
-        <line x1="1"  y1="17" x2="12" y2="17" stroke="#F1C40F" stroke-width="2.5"/>
-        <line x1="22" y1="17" x2="33" y2="17" stroke="#F1C40F" stroke-width="2.5"/>
-        <circle cx="17" cy="17" r="6" fill="rgba(241,196,15,0.15)" stroke="#F1C40F" stroke-width="2"/>
-        <circle cx="17" cy="17" r="1.5" fill="#F1C40F"/>
+        <line x1="17" y1="1"  x2="17" y2="12" stroke="var(--gold)" stroke-width="2.5"/>
+        <line x1="17" y1="22" x2="17" y2="33" stroke="var(--gold)" stroke-width="2.5"/>
+        <line x1="1"  y1="17" x2="12" y2="17" stroke="var(--gold)" stroke-width="2.5"/>
+        <line x1="22" y1="17" x2="33" y2="17" stroke="var(--gold)" stroke-width="2.5"/>
+        <circle cx="17" cy="17" r="6" fill="rgba(241,196,15,0.15)" stroke="var(--gold)" stroke-width="2"/>
+        <circle cx="17" cy="17" r="1.5" fill="var(--gold)"/>
       </svg>`,
       iconSize: [34, 34], iconAnchor: [17, 17], className: ''
     }),
@@ -677,7 +677,7 @@ function mhFinish() {
 // Static tee marker
 const hTeeMarker = L.marker([TEE_LL.lat, TEE_LL.lng], {
   icon: L.divIcon({
-    html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
+    html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgb(var(--ink-rgb) / 0.4);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:rgb(var(--ink-rgb) / 0.7);font-family:Inter,sans-serif;">T</div>',
     iconSize: [20, 20], iconAnchor: [10, 10], className: ''
   }),
   interactive: false
@@ -688,7 +688,7 @@ const hTeeMarker = L.marker([TEE_LL.lat, TEE_LL.lng], {
 // like a real (but wrong) green location rather than "we don't know".
 const hFlagMarker = DEGRADED ? null : L.marker([GREEN_CTR.lat, GREEN_CTR.lng], {
   icon: L.divIcon({
-    html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgba(255,255,255,0.9);"></div><div style="background:#E74C3C;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:white;white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
+    html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgb(var(--ink-rgb) / 0.9);"></div><div style="background:var(--danger);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:var(--text);white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
     iconSize: [80, 40], iconAnchor: [1, 0], className: ''
   })
 }).addTo(lmap);
@@ -704,7 +704,7 @@ if (!DEGRADED) {
   [10, 20].forEach(ft => {
     L.circle([GREEN_CTR.lat, GREEN_CTR.lng], {
       radius: ft * FT_TO_M,
-      color: 'rgba(255,255,255,0.35)', weight: 1, dashArray: '3,3',
+      color: 'rgb(var(--ink-rgb) / 0.35)', weight: 1, dashArray: '3,3',
       fill: false, interactive: false
     }).addTo(lmap);
   });
@@ -712,8 +712,8 @@ if (!DEGRADED) {
 
 // Shot marker icon
 function makeShotIcon(num, holed) {
-  const bg = holed ? 'rgba(241,196,15,0.3)' : 'rgba(46,204,113,0.2)';
-  const bd = holed ? 'rgba(241,196,15,0.9)' : 'rgba(46,204,113,0.7)';
+  const bg = holed ? 'rgba(241,196,15,0.3)' : 'rgb(var(--accent-rgb) / 0.2)';
+  const bd = holed ? 'rgba(241,196,15,0.9)' : 'rgb(var(--accent-rgb) / 0.7)';
   return L.divIcon({
     html: `<div style="background:${bg};border:2px solid ${bd};width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${holed?'11':'10'}px;font-weight:800;color:white;font-family:Inter,sans-serif;">${holed ? '⛳' : num}</div>`,
     iconSize: [22, 22], iconAnchor: [11, 11], className: ''
@@ -739,7 +739,7 @@ if (NO_TEE_DATA && navigator.geolocation) {
 
 function makePendingIcon(num) {
   return L.divIcon({
-    html: `<div style="background:rgba(241,196,15,0.2);border:2px solid #F1C40F;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;font-family:Inter,sans-serif;">${num}</div>`,
+    html: `<div style="background:rgba(241,196,15,0.2);border:2px solid var(--gold);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;font-family:Inter,sans-serif;">${num}</div>`,
     iconSize: [26, 26], iconAnchor: [13, 13], className: ''
   });
 }
@@ -855,7 +855,7 @@ function hConfirmGPS() {
   const ydsLabel = yds >= 10 ? `${yds} yds` : `${Math.round(yds * 3)} ft`;
 
   const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [ll.lat, ll.lng]],
-    { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+    { color: 'rgb(var(--ink-rgb) / 0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
   const leafletMarker = L.marker([ll.lat, ll.lng],
     { icon: makeShotIcon(hShotCount, false) }).addTo(lmap);
 
@@ -917,9 +917,9 @@ function undoLastHole() {
   hShotCount--;
 
   const snum = document.getElementById('h-shot-num');
-  if (snum) { snum.textContent = hShotCount + 1; snum.style.color = hShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+  if (snum) { snum.textContent = hShotCount + 1; snum.style.color = hShotCount === 0 ? 'var(--accent)' : 'var(--gold)'; }
   const chip = document.getElementById('h-shot-chip');
-  if (chip) { chip.textContent = hShotCount + 1; chip.style.color = hShotCount === 0 ? 'var(--green)' : 'var(--gold)'; }
+  if (chip) { chip.textContent = hShotCount + 1; chip.style.color = hShotCount === 0 ? 'var(--accent)' : 'var(--gold)'; }
 
   const noShots = hLoggedShots.length === 0;
   document.getElementById('h-undo-ctx').innerHTML = noShots
@@ -1072,7 +1072,7 @@ function renderShotLog() {
   }
   el.innerHTML = hShotLog.map(s => {
     const holedStyle = s.holed
-      ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:#F1C40F;'
+      ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:var(--gold);'
       : '';
     return `<div class="sl-chip" style="${holedStyle}">${s.num} · ${s.club || '?'} · ${s.yds}</div>`;
   }).join('');
@@ -1091,7 +1091,7 @@ function hHoleOutFromMap() {
   const fromLL = prev.latlng ?? TEE_LL;
 
   const leafletLine = L.polyline([[fromLL.lat, fromLL.lng], [GREEN_CTR.lat, GREEN_CTR.lng]],
-    { color: 'rgba(255,255,255,0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
+    { color: 'rgb(var(--ink-rgb) / 0.5)', weight: 2, dashArray: '5,4' }).addTo(lmap);
   const leafletMarker = L.marker([GREEN_CTR.lat, GREEN_CTR.lng],
     { icon: makeShotIcon(hShotCount, true) }).addTo(lmap);
 
@@ -1105,9 +1105,9 @@ function hHoleOutFromMap() {
   renderShotLog();
 
   const snum = document.getElementById('h-shot-num');
-  if (snum) { snum.textContent = '✓'; snum.style.color = 'var(--green)'; }
+  if (snum) { snum.textContent = '✓'; snum.style.color = 'var(--accent)'; }
   const chip = document.getElementById('h-shot-chip');
-  if (chip) { chip.textContent = '✓'; chip.style.color = 'var(--green)'; }
+  if (chip) { chip.textContent = '✓'; chip.style.color = 'var(--accent)'; }
 
   document.getElementById('h-undo-ctx').innerHTML = `<strong>Holed out — Shot ${hShotCount}</strong>`;
   document.getElementById('h-undo-btn').classList.remove('dim');
@@ -1157,7 +1157,7 @@ function buildSummaryMap() {
   // Static tee marker — shown immediately, never animated.
   L.marker([TEE_LL.lat, TEE_LL.lng], {
     icon: L.divIcon({
-      html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgba(255,255,255,0.4);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;">T</div>',
+      html: '<div style="background:rgba(10,10,15,0.85);border:1.5px solid rgb(var(--ink-rgb) / 0.4);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:rgb(var(--ink-rgb) / 0.7);font-family:Inter,sans-serif;">T</div>',
       iconSize: [16, 16], iconAnchor: [8, 8], className: ''
     }),
     interactive: false
@@ -1168,7 +1168,7 @@ function buildSummaryMap() {
   if (!DEGRADED) {
     L.marker([GREEN_CTR.lat, GREEN_CTR.lng], {
       icon: L.divIcon({
-        html: '<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:2px;height:14px;background:rgba(255,255,255,0.9);"></div><div style="background:#E74C3C;border-radius:3px;padding:1px 5px;font-size:9px;">⛳</div></div>',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:2px;height:14px;background:rgb(var(--ink-rgb) / 0.9);"></div><div style="background:var(--danger);border-radius:3px;padding:1px 5px;font-size:9px;">⛳</div></div>',
         iconSize: [24, 30], iconAnchor: [1, 30], className: ''
       }),
       interactive: false
@@ -1205,7 +1205,7 @@ function buildSummaryMap() {
   shotsEl.innerHTML = hShotLog.length === 0
     ? '<span class="shot-log-empty" style="padding:6px 0;font-size:11px;">No shots logged</span>'
     : hShotLog.map(s => {
-        const st = s.holed ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:#F1C40F;' : '';
+        const st = s.holed ? 'background:rgba(241,196,15,0.1);border-color:rgba(241,196,15,0.4);color:var(--gold);' : '';
         return `<div class="sl-chip" style="${st}">${s.num} · ${s.club || '?'} · ${s.yds}</div>`;
       }).join('');
 
@@ -1216,7 +1216,7 @@ function buildSummaryMap() {
   const diff = score - PAR;
   const diffEl = document.getElementById('sum-diff');
   diffEl.textContent = score ? (diff === 0 ? 'E' : (diff > 0 ? '+' + diff : diff)) : '—';
-  diffEl.style.color = diff < 0 ? 'var(--green)' : diff > 0 ? '#E74C3C' : 'var(--muted)';
+  diffEl.style.color = diff < 0 ? 'var(--good)' : diff > 0 ? 'var(--bad)' : 'var(--text-muted)';
 
   // Auto-count putts
   putts = Math.max(0, hShotLog.filter(s => s.club === 'Putter' || s.holed).length);
@@ -1238,7 +1238,7 @@ function buildSummaryMap() {
   let html = '';
   if (firSt) html += chipHtml(firLabels[firSt.idx] ?? 'FIR', firSt.color);
   if (girSt) html += chipHtml(greenLabels[girSt.idx] ?? 'GIR', girSt.color);
-  chipsEl.innerHTML = html || '<span style="font-size:11px;color:var(--muted);">No stats detected yet</span>';
+  chipsEl.innerHTML = html || '<span style="font-size:11px;color:var(--text-muted);">No stats detected yet</span>';
 }
 
 function showSheet() {
@@ -1284,7 +1284,7 @@ function buildScorecard() {
       let scoreCell = `<span class="sc-na">—</span>`;
       let diffCell  = `<span class="sc-na">—</span>`;
       if (h.active) {
-        scoreCell = `<span style="color:var(--green);font-size:9px;font-weight:800;">NOW</span>`;
+        scoreCell = `<span style="color:var(--accent);font-size:9px;font-weight:800;">NOW</span>`;
         diffCell  = `<span class="sc-na">·</span>`;
       } else if (diff != null) {
         const cls = diff < -1 ? 'sc-bd' : diff === -1 ? 'sc-bd' : diff === 0 ? 'sc-par' : diff === 1 ? 'sc-bo' : 'sc-db';
@@ -1293,7 +1293,7 @@ function buildScorecard() {
         diffCell  = `<span class="${cls}">${str}</span>`;
       }
       const rc = h.active ? ' class="now"' : '';
-      return `<tr${rc}><td>${h.h}</td><td style="color:var(--muted)">${h.par}</td><td style="color:var(--dim);font-size:9px">${h.hdcp}</td><td>${scoreCell}</td><td>${diffCell}</td></tr>`;
+      return `<tr${rc}><td>${h.h}</td><td style="color:var(--text-muted)">${h.par}</td><td style="color:var(--text-dim);font-size:9px">${h.hdcp}</td><td>${scoreCell}</td><td>${diffCell}</td></tr>`;
     }).join('');
   }
 
@@ -1309,12 +1309,12 @@ function buildScorecard() {
 
   document.getElementById('scov-front').innerHTML =
     makeRows(front) +
-    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">OUT</td><td></td><td style="color:var(--muted)">${frontDone.length ? frontScore : '—'}</td><td style="color:var(--green)">${frontDone.length ? fmtDiff(frontDiff) : '—'}</td></tr>`;
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">OUT</td><td></td><td style="color:var(--text-muted)">${frontDone.length ? frontScore : '—'}</td><td style="color:var(--accent)">${frontDone.length ? fmtDiff(frontDiff) : '—'}</td></tr>`;
 
   document.getElementById('scov-back').innerHTML =
     makeRows(back) +
-    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">IN</td><td></td><td style="color:var(--muted)">${backDone.length ? backScore : '—'}</td><td style="color:var(--green)">${backDone.length ? fmtDiff(backDiff) : '—'}</td></tr>` +
-    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">TOT</td><td></td><td style="color:var(--muted)">${(frontDone.length || backDone.length) ? frontScore + backScore : '—'}</td><td style="color:var(--green)">${(frontDone.length || backDone.length) ? fmtDiff(frontDiff + backDiff) : '—'}</td></tr>`;
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">IN</td><td></td><td style="color:var(--text-muted)">${backDone.length ? backScore : '—'}</td><td style="color:var(--accent)">${backDone.length ? fmtDiff(backDiff) : '—'}</td></tr>` +
+    `<tr class="tot"><td colspan="2" style="text-align:left;padding-left:6px">TOT</td><td></td><td style="color:var(--text-muted)">${(frontDone.length || backDone.length) ? frontScore + backScore : '—'}</td><td style="color:var(--accent)">${(frontDone.length || backDone.length) ? fmtDiff(frontDiff + backDiff) : '—'}</td></tr>`;
 
   const totalEl = document.getElementById('scov-total-diff');
   if (totalEl) totalEl.textContent = (frontDone.length || backDone.length) ? fmtDiff(frontDiff + backDiff) : 'E';
