@@ -12,45 +12,45 @@
 
 /* ── PERIOD TABS ── */
 .period-tabs { display:flex; gap:4px; margin:0 12px 10px; background:var(--surface); border-radius:10px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
-.ptab { flex:1; padding:7px; border-radius:7px; font-size:10px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; transition:all 0.15s; }
-.ptab.on { background:var(--surface2); color:#fff; border:1px solid rgba(255,255,255,0.1); }
+.ptab { flex:1; padding:7px; border-radius:7px; font-size:10px; font-weight:700; color:var(--text-muted); text-align:center; cursor:pointer; transition:all 0.15s; }
+.ptab.on { background:var(--surface-2); color:var(--text); border:1px solid rgb(var(--ink-rgb) / 0.1); }
 
 /* ── STAT CARDS ── */
 .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin:0 12px 8px; overflow:hidden; cursor:pointer; transition:background 0.12s; }
-.stat-card:active { background:rgba(255,255,255,0.03); }
+.stat-card:active { background:rgb(var(--ink-rgb) / 0.03); }
 .sc-main { display:flex; align-items:center; gap:10px; padding:12px 14px 8px; }
 .sc-accent { width:3px; align-self:stretch; border-radius:2px; flex-shrink:0; }
 .sc-icon { font-size:20px; flex-shrink:0; width:26px; text-align:center; }
 .sc-info { flex:1; min-width:0; }
 .sc-name { font-size:13px; font-weight:800; }
-.sc-desc { font-size:10px; color:var(--muted); margin-top:2px; }
+.sc-desc { font-size:10px; color:var(--text-muted); margin-top:2px; }
 .sc-right { text-align:right; flex-shrink:0; }
 .sc-val { font-size:22px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
-.sc-lbl { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+.sc-lbl { font-size:8px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-top:2px; }
 .sc-trend { font-size:9px; font-weight:700; margin-top:2px; }
 .sc-chips { display:flex; gap:5px; padding:0 14px 10px 50px; }
-.sc-chip { font-size:10px; font-weight:600; color:var(--muted); background:rgba(255,255,255,0.04); border-radius:4px; padding:3px 7px; white-space:nowrap; }
+.sc-chip { font-size:10px; font-weight:600; color:var(--text-muted); background:rgb(var(--ink-rgb) / 0.04); border-radius:4px; padding:3px 7px; white-space:nowrap; }
 
 /* ── DRILL-DOWN OVERLAY ── */
 .stat-ov { position:absolute; inset:0; z-index:60; pointer-events:none; }
 .stat-ov.open { pointer-events:all; }
-.stat-bd { position:absolute; inset:0; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.3s; }
+.stat-bd { position:absolute; inset:0; background:rgb(var(--shadow-rgb) / 0.55); opacity:0; transition:opacity 0.3s; }
 .stat-ov.open .stat-bd { opacity:1; }
-.stat-sheet { position:absolute; left:0; right:0; bottom:0; height:92%; background:#0A0A0F; border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
+.stat-sheet { position:absolute; left:0; right:0; bottom:0; height:92%; background:var(--bg); border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform 0.38s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column; }
 .stat-ov.open .stat-sheet { transform:translateY(0); }
 
 /* ── DRILL-DOWN HEADER ── */
-.ds-handle { width:36px; height:4px; background:rgba(255,255,255,0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.ds-handle { width:36px; height:4px; background:rgb(var(--ink-rgb) / 0.18); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
 .ds-hdr { display:flex; align-items:center; padding:10px 14px 0; gap:10px; flex-shrink:0; }
-.ds-close { background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
+.ds-close { background:rgb(var(--ink-rgb) / 0.07); border:none; border-radius:8px; padding:5px 11px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; font-family:Inter,sans-serif; }
 .ds-close:active { opacity:0.7; }
 .ds-title { flex:1; font-size:16px; font-weight:900; text-align:center; letter-spacing:-0.3px; }
 .ds-spacer { width:60px; }
 
 /* ── PERIOD IN DRILL-DOWN ── */
 .ds-period { display:flex; gap:4px; margin:10px 14px 0; background:var(--surface); border-radius:8px; padding:3px; border:1px solid var(--border); flex-shrink:0; }
-.ds-ptab { flex:1; padding:6px; border-radius:5px; font-size:10px; font-weight:700; color:var(--muted); text-align:center; cursor:pointer; }
-.ds-ptab.on { background:var(--surface2); color:#fff; }
+.ds-ptab { flex:1; padding:6px; border-radius:5px; font-size:10px; font-weight:700; color:var(--text-muted); text-align:center; cursor:pointer; }
+.ds-ptab.on { background:var(--surface-2); color:var(--text); }
 
 /* ── DRILL-DOWN BODY ── */
 .ds-body { flex:1; overflow-y:auto; scrollbar-width:none; padding:14px; }
@@ -62,58 +62,58 @@
 .ds-kpi-grid.c4 { grid-template-columns:1fr 1fr 1fr 1fr; }
 .ds-kpi { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
 .dk-val { font-size:20px; font-weight:900; letter-spacing:-0.5px; line-height:1; }
-.dk-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+.dk-lbl { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-muted); margin-top:4px; }
 
 /* ── SECTION LABELS ── */
-.ds-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; margin-top:16px; }
+.ds-sec { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:8px; margin-top:16px; }
 
 /* ── HORIZONTAL BARS ── */
 .bar-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
-.br-lbl { font-size:11px; font-weight:600; min-width:76px; color:rgba(255,255,255,0.8); white-space:nowrap; }
-.br-track { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+.br-lbl { font-size:11px; font-weight:600; min-width:76px; color:rgb(var(--ink-rgb) / 0.8); white-space:nowrap; }
+.br-track { flex:1; height:6px; background:rgb(var(--ink-rgb) / 0.07); border-radius:3px; overflow:hidden; }
 .br-fill { height:6px; border-radius:3px; }
 .br-val { font-size:11px; font-weight:700; min-width:36px; text-align:right; }
 
 /* ── SG CENTERED BARS ── */
 .sg-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
 .sg-lbl { font-size:11px; font-weight:600; min-width:100px; }
-.sg-track { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; position:relative; }
-.sg-center { position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; background:rgba(255,255,255,0.22); border-radius:1px; }
+.sg-track { flex:1; height:8px; background:rgb(var(--ink-rgb) / 0.06); border-radius:4px; position:relative; }
+.sg-center { position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; background:rgb(var(--ink-rgb) / 0.22); border-radius:1px; }
 .sg-fill-pos { position:absolute; left:50%; top:0; height:8px; border-radius:0 4px 4px 0; }
 .sg-fill-neg { position:absolute; right:50%; top:0; height:8px; border-radius:4px 0 0 4px; }
 .sg-val { font-size:12px; font-weight:800; min-width:38px; text-align:right; }
 
 /* ── SCORE DISTRIBUTION ── */
 .sd-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-.sd-lbl { font-size:11px; min-width:64px; color:rgba(255,255,255,0.75); }
-.sd-track { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.sd-lbl { font-size:11px; min-width:64px; color:rgb(var(--ink-rgb) / 0.75); }
+.sd-track { flex:1; height:8px; background:rgb(var(--ink-rgb) / 0.06); border-radius:4px; overflow:hidden; }
 .sd-fill { height:8px; border-radius:4px; }
 .sd-count { font-size:11px; font-weight:700; min-width:24px; text-align:right; }
-.sd-pct { font-size:10px; color:var(--muted); min-width:34px; text-align:right; }
+.sd-pct { font-size:10px; color:var(--text-muted); min-width:34px; text-align:right; }
 
 /* ── PUTTING DISTANCE ── */
 .pd-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
-.pd-lbl { font-size:11px; min-width:60px; color:rgba(255,255,255,0.8); }
-.pd-track { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+.pd-lbl { font-size:11px; min-width:60px; color:rgb(var(--ink-rgb) / 0.8); }
+.pd-track { flex:1; height:6px; background:rgb(var(--ink-rgb) / 0.07); border-radius:3px; overflow:hidden; }
 .pd-fill { height:6px; border-radius:3px; }
 .pd-val { font-size:11px; font-weight:700; min-width:32px; text-align:right; }
-.pd-att { font-size:10px; color:var(--muted); min-width:38px; text-align:right; }
+.pd-att { font-size:10px; color:var(--text-muted); min-width:38px; text-align:right; }
 
 /* ── HANDICAP DIFFS ── */
 .diff-row { display:flex; align-items:center; gap:8px; padding:9px 10px; background:var(--surface); border:1px solid var(--border); border-radius:8px; margin-bottom:5px; }
-.diff-date { font-size:10px; color:var(--muted); min-width:40px; }
+.diff-date { font-size:10px; color:var(--text-muted); min-width:40px; }
 .diff-course { flex:1; font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.diff-score { font-size:11px; color:var(--muted); min-width:22px; text-align:right; }
+.diff-score { font-size:11px; color:var(--text-muted); min-width:22px; text-align:right; }
 .diff-val { font-size:13px; font-weight:900; min-width:36px; text-align:right; }
 .diff-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 
 /* ── EDIT MODE ── */
-.edit-btn { background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:12px; font-weight:700; color:#fff; cursor:pointer; font-family:Inter,sans-serif; }
-.edit-btn.active { background:rgba(46,204,113,0.12); color:var(--green); border-color:rgba(46,204,113,0.3); }
-.drag-handle { width:36px; min-height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:grab; color:var(--muted); font-size:18px; touch-action:none; user-select:none; letter-spacing:-2px; -webkit-user-select:none; }
+.edit-btn { background:rgb(var(--ink-rgb) / 0.07); border:1px solid var(--border); border-radius:8px; padding:5px 14px; font-size:12px; font-weight:700; color:var(--text); cursor:pointer; font-family:Inter,sans-serif; }
+.edit-btn.active { background:rgb(var(--accent-rgb) / 0.12); color:var(--accent); border-color:rgb(var(--accent-rgb) / 0.3); }
+.drag-handle { width:36px; min-height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:grab; color:var(--text-muted); font-size:18px; touch-action:none; user-select:none; letter-spacing:-2px; -webkit-user-select:none; }
 .stat-card.is-dragging { opacity:0.12; border-color:var(--border) !important; }
-.stat-card.drop-target { border-color:rgba(46,204,113,0.55) !important; background:rgba(46,204,113,0.05); }
-.edit-hint { text-align:center; font-size:10px; font-weight:600; color:var(--dim); padding:0 0 6px; flex-shrink:0; display:none; }
+.stat-card.drop-target { border-color:rgb(var(--accent-rgb) / 0.55) !important; background:rgb(var(--accent-rgb) / 0.05); }
+.edit-hint { text-align:center; font-size:10px; font-weight:600; color:var(--text-dim); padding:0 0 6px; flex-shrink:0; display:none; }
 </style>
 </head>
 <body data-page="stats">
@@ -140,7 +140,7 @@
   <div style="padding:6px 16px 8px; flex-shrink:0; display:flex; align-items:center;">
     <div style="flex:1;">
       <div style="font-size:20px; font-weight:900; letter-spacing:-0.5px;">Stats</div>
-      <div style="font-size:11px; color:var(--muted); margin-top:1px;">2026 Season</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:1px;">2026 Season</div>
     </div>
     <button class="edit-btn" id="edit-btn" onclick="toggleEdit()">Edit</button>
   </div>
@@ -244,56 +244,56 @@ function toggleEdit() {
 const CATS = [
   {
     id:'scoring',
-    name:'Scoring', icon:'📊', color:'#2ECC71',
+    name:'Scoring', icon:'📊', color:'var(--good)',
     val:'—', lbl:'SCR AVG', trend:null, tc:'g',
     desc:'Scoring average',
     chips:[],
   },
   {
     id:'ott',
-    name:'Off the Tee', icon:'🏌️', color:'#2ECC71',
+    name:'Off the Tee', icon:'🏌️', color:'var(--good)',
     val:'—', lbl:'FIR %', trend:null, tc:'g',
     desc:'Fairways in regulation',
     chips:[],
   },
   {
     id:'approach',
-    name:'Approach', icon:'🎯', color:'#E74C3C',
+    name:'Approach', icon:'🎯', color:'var(--bad)',
     val:'—', lbl:'GIR %', trend:null, tc:'r',
     desc:'Greens in regulation',
     chips:[],
   },
   {
     id:'atg',
-    name:'Around the Green', icon:'🌿', color:'#2ECC71',
+    name:'Around the Green', icon:'🌿', color:'var(--good)',
     val:'—', lbl:'SCRAMBLE', trend:null, tc:'g',
     desc:'Scrambling & short game',
     chips:[],
   },
   {
     id:'putting',
-    name:'Putting', icon:'⛳', color:'#E74C3C',
+    name:'Putting', icon:'⛳', color:'var(--bad)',
     val:'—', lbl:'PUTTS/GIR', trend:null, tc:'r',
     desc:'Putts per greens in regulation',
     chips:[],
   },
   {
     id:'sg',
-    name:'Strokes Gained', icon:'📈', color:'#2ECC71',
+    name:'Strokes Gained', icon:'📈', color:'var(--good)',
     val:'—', lbl:'SG TOTAL', trend:null, tc:'g',
     desc:'vs. estimated baseline for your handicap',
     chips:[],
   },
   {
     id:'conditions',
-    name:'Course & Conditions', icon:'🌤️', color:'#8B8BA7',
+    name:'Course & Conditions', icon:'🌤️', color:'var(--text-muted)',
     val:'—', lbl:'HOME AVG', trend:null, tc:'n',
     desc:'Performance by round type & conditions',
     chips:[],
   },
   {
     id:'handicap',
-    name:'Handicap', icon:'🏅', color:'#2ECC71',
+    name:'Handicap', icon:'🏅', color:'var(--good)',
     val:'—', lbl:'WHS INDEX', trend:null, tc:'g',
     desc:'WHS Handicap Index',
     chips:[],
@@ -306,8 +306,8 @@ function renderCards() {
   grid.innerHTML = '';
   catOrder.forEach((ci, pos) => {
     const c = CATS[ci];
-    const vc = c.tc === 'g' ? 'var(--green)' : c.tc === 'r' ? 'var(--red)' : '#fff';
-    const tc = c.tc === 'g' ? 'var(--green)' : c.tc === 'r' ? 'var(--red)' : 'var(--muted)';
+    const vc = c.tc === 'g' ? 'var(--good)' : c.tc === 'r' ? 'var(--bad)' : 'var(--text)';
+    const tc = c.tc === 'g' ? 'var(--good)' : c.tc === 'r' ? 'var(--bad)' : 'var(--text-muted)';
     const card = document.createElement('div');
     card.className = 'stat-card';
     card.dataset.pos = pos;
@@ -372,9 +372,9 @@ function startDrag(e, pos) {
   ghost.style.cssText = `
     position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;
     z-index:9999;pointer-events:none;opacity:0.96;
-    box-shadow:0 16px 48px rgba(0,0,0,0.8);
-    border:1.5px solid rgba(46,204,113,0.55);border-radius:12px;
-    background:#1C1C2E;transform:scale(1.028);transition:none;`;
+    box-shadow:0 16px 48px rgb(var(--shadow-rgb) / 0.8);
+    border:1.5px solid rgb(var(--accent-rgb) / 0.55);border-radius:12px;
+    background:var(--surface-2);transform:scale(1.028);transition:none;`;
   document.body.appendChild(ghost);
   card.classList.add('is-dragging');
 
@@ -482,14 +482,14 @@ function closeStat() { document.getElementById('stat-ov').classList.remove('open
 function kpi(items, cols) {
   const cls = cols === 4 ? 'c4' : cols === 3 ? 'c3' : '';
   return `<div class="ds-kpi-grid ${cls}">${items.map(k =>
-    `<div class="ds-kpi"><div class="dk-val" style="color:${k.c||'#fff'}">${k.v}</div><div class="dk-lbl">${k.l}</div></div>`
+    `<div class="ds-kpi"><div class="dk-val" style="color:${k.c||'var(--text)'}">${k.v}</div><div class="dk-lbl">${k.l}</div></div>`
   ).join('')}</div>`;
 }
 
 function sgBar(lbl, val, maxAbs) {
   const pct = Math.abs(val) / maxAbs * 50;
   const pos = val >= 0;
-  const color = pos ? 'var(--green)' : 'var(--red)';
+  const color = pos ? 'var(--good)' : 'var(--bad)';
   const str = (val > 0 ? '+' : '') + val.toFixed(1);
   return `<div class="sg-row">
     <div class="sg-lbl">${lbl}</div>
@@ -505,7 +505,7 @@ function sec(title) { return `<div class="ds-sec">${title}</div>`; }
 
 /* ══ EMPTY-STATE HELPER (used by categories with no real computation wired up yet) ══ */
 function noDataMsg(msg) {
-  return `<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">${msg}</div>`;
+  return `<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">${msg}</div>`;
 }
 
 /* ══ 1. SCORING ══ */
@@ -535,10 +535,10 @@ function renderPutting(body) {
 
 /* ══ 6. STROKES GAINED ══ */
 async function renderSG(body) {
-  body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Loading…</div>';
+  body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">Loading…</div>';
 
   const session = await TcAuth.getSession();
-  if (!session) { body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Sign in to see your Strokes Gained.</div>'; return; }
+  if (!session) { body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">Sign in to see your Strokes Gained.</div>'; return; }
 
   const { data: rounds, error } = await TcAuth.client
     .from('rounds')
@@ -550,19 +550,19 @@ async function renderSG(body) {
     .limit(20);
 
   if (error || !rounds || rounds.length === 0) {
-    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">No Strokes Gained data yet — play a full round at a well-mapped course to see it here.</div>';
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">No Strokes Gained data yet — play a full round at a well-mapped course to see it here.</div>';
     return;
   }
 
   const avg = key => Math.round((rounds.reduce((a, r) => a + (r[key] || 0), 0) / rounds.length) * 100) / 100;
   const totals = { ott: avg('sg_ott'), app: avg('sg_app'), atg: avg('sg_atg'), putt: avg('sg_putt'), total: avg('sg_total') };
   const fmt = v => (v > 0 ? '+' : '') + v.toFixed(1);
-  const totalColor = totals.total >= 0 ? 'var(--green)' : 'var(--red)';
+  const totalColor = totals.total >= 0 ? 'var(--good)' : 'var(--bad)';
 
   body.innerHTML = `
     <div style="text-align:center;margin-bottom:16px;">
       <div style="font-size:42px;font-weight:900;color:${totalColor};letter-spacing:-2px;line-height:1;">${fmt(totals.total)}</div>
-      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">SG TOTAL vs. ESTIMATED BASELINE (avg. of last ${rounds.length})</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">SG TOTAL vs. ESTIMATED BASELINE (avg. of last ${rounds.length})</div>
     </div>` +
 
     sec('Strokes Gained by Category') +
@@ -572,13 +572,13 @@ async function renderSG(body) {
     sgBar('SG: Around Green', totals.atg,  1.0) +
 
     kpi([
-      {v:fmt(totals.ott),  l:'SG OTT', c: totals.ott  >= 0 ? 'var(--green)' : 'var(--red)'},
-      {v:fmt(totals.app),  l:'SG APP', c: totals.app  >= 0 ? 'var(--green)' : 'var(--red)'},
-      {v:fmt(totals.atg),  l:'SG ATG', c: totals.atg  >= 0 ? 'var(--green)' : 'var(--red)'},
-      {v:fmt(totals.putt), l:'SG PUTT',c: totals.putt >= 0 ? 'var(--green)' : 'var(--red)'},
+      {v:fmt(totals.ott),  l:'SG OTT', c: totals.ott  >= 0 ? 'var(--good)' : 'var(--bad)'},
+      {v:fmt(totals.app),  l:'SG APP', c: totals.app  >= 0 ? 'var(--good)' : 'var(--bad)'},
+      {v:fmt(totals.atg),  l:'SG ATG', c: totals.atg  >= 0 ? 'var(--good)' : 'var(--bad)'},
+      {v:fmt(totals.putt), l:'SG PUTT',c: totals.putt >= 0 ? 'var(--good)' : 'var(--bad)'},
     ], 4) +
 
-    `<div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+    `<div style="font-size:10px;color:var(--text-muted);line-height:1.5;margin-top:4px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
       Baseline is an approximate reference curve for your handicap level, not official Tour data.
     </div>
     <div style="height:12px;"></div>`;
@@ -595,11 +595,11 @@ function escHtmlStats(s) {
 }
 
 async function renderHandicap(body) {
-  body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Loading…</div>';
+  body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">Loading…</div>';
 
   try {
     const session = await TcAuth.getSession();
-    if (!session) { body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Sign in to see your handicap.</div>'; return; }
+    if (!session) { body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">Sign in to see your handicap.</div>'; return; }
 
     const { data: profile } = await TcAuth.client.from('profiles').select('handicap_index').eq('id', session.user.id).single();
     const currentIndex = profile?.handicap_index ?? null;
@@ -614,7 +614,7 @@ async function renderHandicap(body) {
       .limit(50);
 
     if (error || !rounds || rounds.length === 0) {
-      body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">No handicap-eligible rounds yet.</div>';
+      body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">No handicap-eligible rounds yet.</div>';
       return;
     }
 
@@ -638,40 +638,40 @@ async function renderHandicap(body) {
 
     body.innerHTML = `
       <div style="text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;">
-        <div style="font-size:46px;font-weight:900;color:var(--green);letter-spacing:-2px;line-height:1;">${indexLabel}</div>
-        <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:4px;">WHS HANDICAP INDEX</div>
+        <div style="font-size:46px;font-weight:900;color:var(--good);letter-spacing:-2px;line-height:1;">${indexLabel}</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">WHS HANDICAP INDEX</div>
       </div>` +
 
       kpi([
-        {v:fmtSigned(low),  l:'LOW (365 DAY)', c:'var(--green)'},
-        {v:indexLabel,      l:'CURRENT',       c:'var(--green)'},
-        {v:fmtSigned(high), l:'HIGH (365 DAY)',c:'var(--muted)'},
-        {v:String(trackedCount), l:'DIFFS TRACKED', c:'#fff'},
+        {v:fmtSigned(low),  l:'LOW (365 DAY)', c:'var(--good)'},
+        {v:indexLabel,      l:'CURRENT',       c:'var(--good)'},
+        {v:fmtSigned(high), l:'HIGH (365 DAY)',c:'var(--text-muted)'},
+        {v:String(trackedCount), l:'DIFFS TRACKED', c:'var(--text)'},
       ], 4) +
 
       `<div class="ds-sec">Recent Differentials</div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-        <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;"></span> used in index &nbsp;
-        <span style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.15);display:inline-block;"></span> excluded / pending
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;"></span> used in index &nbsp;
+        <span style="width:7px;height:7px;border-radius:50%;background:rgb(var(--ink-rgb) / 0.15);display:inline-block;"></span> excluded / pending
       </div>` +
 
       rounds.map(r => {
         const dateObj = new Date(r.played_at);
         const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const vc = r.differential < 0 ? 'var(--green)' : r.differential > 2 ? 'var(--red)' : '#fff';
+        const vc = r.differential < 0 ? 'var(--good)' : r.differential > 2 ? 'var(--bad)' : 'var(--text)';
         const used = usedRoundIds.has(r.id);
         return `<div class="diff-row">
           <div class="diff-date">${dateLabel}</div>
           <div class="diff-course">${escHtmlStats(r.course_name)}${r.hole_count === 9 ? ' (9)' : ''}</div>
           <div class="diff-score">${r.gross_score ?? '—'}</div>
           <div class="diff-val" style="color:${vc}">${fmtSigned(r.differential)}</div>
-          <div class="diff-dot" style="background:${used ? 'var(--green)' : 'rgba(255,255,255,0.15)'};"></div>
+          <div class="diff-dot" style="background:${used ? 'var(--good)' : 'rgb(var(--ink-rgb) / 0.15)'};"></div>
         </div>`;
       }).join('') +
       '<div style="height:12px;"></div>';
   } catch (e) {
     console.error('TcStats: renderHandicap threw', e);
-    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--muted);font-size:12px;">Unable to load handicap data.</div>';
+    body.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text-muted);font-size:12px;">Unable to load handicap data.</div>';
   }
 }
 
