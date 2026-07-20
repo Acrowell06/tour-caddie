@@ -28,19 +28,19 @@ function openRoundChoice(onInApp) {
   ov.style.cssText = 'position:absolute;inset:0;z-index:500;';
   ov.innerHTML = `
     <div id="rco-bd" style="position:absolute;inset:0;background:rgba(0,0,0,0);transition:background 0.3s;"></div>
-    <div id="rco-sheet" style="position:absolute;left:0;right:0;bottom:0;background:#0A0A0F;border-radius:20px 20px 0 0;border-top:1px solid #1E1E2E;padding:0 0 30px;transform:translateY(100%);transition:transform 0.34s cubic-bezier(0.4,0,0.2,1);">
-      <div style="width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 14px;"></div>
+    <div id="rco-sheet" style="position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:0 0 30px;transform:translateY(100%);transition:transform 0.34s cubic-bezier(0.4,0,0.2,1);">
+      <div style="width:36px;height:4px;background:rgb(var(--ink-rgb) / 0.15);border-radius:2px;margin:10px auto 14px;"></div>
       <div style="font-size:16px;font-weight:900;padding:0 16px 14px;letter-spacing:-0.3px;">Start a Round</div>
       <div style="padding:0 12px;display:flex;flex-direction:column;gap:8px;">
-        <button id="rco-inapp" style="width:100%;background:#2ECC71;border:none;border-radius:12px;padding:15px 16px;font-size:14px;font-weight:900;color:#000;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;box-sizing:border-box;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        <button id="rco-inapp" style="width:100%;background:var(--accent);border:none;border-radius:12px;padding:15px 16px;font-size:14px;font-weight:900;color:var(--text-on-accent);cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;box-sizing:border-box;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-on-accent)" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
           <div style="text-align:left;">
             <div>Play In-App</div>
             <div style="font-size:10px;font-weight:600;opacity:0.55;margin-top:2px;">Log shots hole-by-hole with GPS</div>
           </div>
         </button>
-        <button id="rco-scan" style="width:100%;background:#141420;border:1px solid #1E1E2E;border-radius:12px;padding:15px 16px;font-size:14px;font-weight:900;color:#fff;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;box-sizing:border-box;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <button id="rco-scan" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;font-size:14px;font-weight:900;color:var(--text);cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;box-sizing:border-box;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--ink-rgb) / 0.7)" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <div style="text-align:left;">
             <div>Scan Scorecard</div>
             <div style="font-size:10px;font-weight:600;opacity:0.4;margin-top:2px;">Photo of paper card → auto-import</div>
@@ -50,7 +50,7 @@ function openRoundChoice(onInApp) {
     </div>`;
   wrap.appendChild(ov);
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.getElementById('rco-bd').style.background = 'rgba(0,0,0,0.65)';
+    document.getElementById('rco-bd').style.background = 'rgb(var(--shadow-rgb) / 0.65)';
     document.getElementById('rco-sheet').style.transform = 'translateY(0)';
   }));
   function close(cb) {
