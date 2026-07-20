@@ -233,7 +233,7 @@ h2 span { color: var(--accent); }
 .lg-con { position: relative; z-index: 2; display: flex; flex-direction: column; padding: 0 24px 18px; height: 100%; }
 .lg-logo { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-bottom: 6px; }
 .lg-badge { background: rgb(var(--accent-rgb) / 0.1); border: 1px solid rgb(var(--accent-rgb) / 0.2); border-radius: 50px; padding: 4px 12px; font-size: 10px; color: var(--accent); font-weight: 600; margin-bottom: 14px; }
-.lg-icon { width: 62px; height: 62px; background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.2), rgba(39,174,96,0.08)); border: 1px solid rgb(var(--accent-rgb) / 0.3); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px; box-shadow: 0 8px 24px rgb(var(--accent-rgb) / 0.15); }
+.lg-icon { width: 62px; height: 62px; background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.2), rgb(var(--accent-rgb) / 0.08)); border: 1px solid rgb(var(--accent-rgb) / 0.3); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px; box-shadow: 0 8px 24px rgb(var(--accent-rgb) / 0.15); }
 .lg-ttl { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; }
 .lg-sub { font-size: 13px; color: var(--text-muted); }
 .lg-form { display: flex; flex-direction: column; gap: 9px; }
