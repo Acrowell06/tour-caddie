@@ -3,32 +3,47 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  /* Phase 1: every value is TODAY'S colour. Midnight values land in Phase 2. */
+  /* Midnight palette — dark theme. Light theme values land in Phase 3. */
 
   /* Structure */
-  --bg: #0A0A0F;
-  --surface: #141420;
-  --surface-2: #1C1C2E;
-  --border: #1E1E2E;
+  --bg: #080C14;
+  --surface: #101827;
+  --surface-2: #18202F;
+  --border: #1D2839;
 
   /* Text */
-  --text: #FFFFFF;
-  --text-muted: #8B8BA7;
-  --text-dim: #5A5A7A;
-  --text-on-accent: #0A0A0F;
+  --text: #E8EDF5;
+  --text-muted: #8492A6;
+  --text-dim: #4A5568;
+  --text-on-accent: #04080F;
 
   /* Accent — UI chrome and interaction */
-  --accent: #2ECC71;
+  --accent: #38BDD0;
 
   /* Semantic — meaning, not chrome */
-  --good: #2ECC71;
-  --bad: #E74C3C;
-  --danger: #E74C3C;
+  --good: #4ADE80;
+  --bad: #EF6262;
+  --danger: #EF6262;
   --gold: #F1C40F;
 
+  /* Notices: alerts and validation that are neither destructive nor score-related.
+     Kept separate from --danger so a mistyped password does not shout as loudly
+     as deleting an account. */
+  --notice: #E8836A;
+
+  /* Mid tier of the three-tier performance scale (good / middling / poor). */
+  --warn: #E8A33D;
+
+  /* PGA leaderboard uses the TV broadcast convention: red = under par = GOOD.
+     That inverts this app's green=good/red=bad scheme, so these are deliberately
+     decoupled from --good/--bad. Do not "fix" them to match. */
+  --pga-under: #EF6262;
+  --pga-over: #4A90D9;
+
   /* Map chrome — deliberately does NOT invert in Phase 3 */
-  --map-surface: #141420;
-  --map-text: #FFFFFF;
+  --map-surface: #101827;
+  --map-text: #E8EDF5;
+  --map-surface-2: #18202F;
 
   /* Channel triplets: let each call site keep its own alpha.
      Usage: rgb(var(--ink-rgb) / 0.04)
@@ -36,10 +51,13 @@
      and breaks the capture comparison. */
   --ink-rgb: 255 255 255;
   --shadow-rgb: 0 0 0;
-  --accent-rgb: 46 204 113;
-  --good-rgb: 46 204 113;
-  --bad-rgb: 231 76 60;
-  --danger-rgb: 231 76 60;
+  --accent-rgb: 56 189 208;
+  --good-rgb: 74 222 128;
+  --bad-rgb: 239 98 98;
+  --danger-rgb: 239 98 98;
+  --notice-rgb: 232 131 106;
+  --warn-rgb: 232 163 61;
+  --gold-rgb: 241 196 15;
 }
 body {
   background: #030305; font-family: 'Inter', sans-serif; color: var(--text);
@@ -82,6 +100,8 @@ h2 span { color: var(--accent); }
 .sb { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .sb-l { display: flex; flex-direction: column; }
 .stp { font-size: 22px; font-weight: 900; line-height: 1; }
+/* Golf scoring: a NEGATIVE score is under par, so .neg is --good and .pos is --bad.
+   This inversion is correct — do not "fix" it. */
 .neg { color: var(--good); } .pos { color: var(--bad); } .evn { color: var(--text); }
 .sth { font-size: 10px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.5px; margin-top: 1px; }
 .sdv { width: 1px; height: 36px; background: var(--border); }
@@ -102,7 +122,7 @@ h2 span { color: var(--accent); }
 .undo-btn.dim { opacity: 0.25; pointer-events: none; }
 
 /* ─── MAP ─── */
-.map { position: relative; overflow: hidden; flex-shrink: 0; background: #0B1210; }
+.map { position: relative; overflow: hidden; flex-shrink: 0; background: rgb(var(--accent-rgb) / 0.06); }
 .map svg { display: block; width: 100%; }
 .dpill { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(10,10,15,0.88); border: 1px solid var(--accent); border-radius: 50px; padding: 5px 14px; font-size: 11px; font-weight: 700; color: var(--accent); white-space: nowrap; backdrop-filter: blur(8px); transition: all 0.2s; }
 .dpill-w { border-color: rgb(var(--ink-rgb) / 0.25); color: var(--text); }
@@ -164,7 +184,7 @@ h2 span { color: var(--accent); }
 .cta-dim { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); pointer-events: none; }
 
 /* ─── TOAST ─── */
-.toast { position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%); background: rgba(20,20,32,0.96); border: 1px solid rgb(var(--danger-rgb) / 0.3); border-radius: 10px; padding: 8px 14px; font-size: 11px; font-weight: 600; color: rgb(var(--ink-rgb) / 0.9); white-space: nowrap; z-index: 150; backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.toast { position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%); background: rgba(20,20,32,0.96); border: 1px solid rgb(var(--notice-rgb) / 0.3); border-radius: 10px; padding: 8px 14px; font-size: 11px; font-weight: 600; color: rgb(var(--ink-rgb) / 0.9); white-space: nowrap; z-index: 150; backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .toast.show { opacity: 1; }
 
 /* ─── GREEN SUMMARY SHEET ─── */
@@ -177,10 +197,10 @@ h2 span { color: var(--accent); }
 .sh-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 12px; }
 .sh-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
 .sh-ttl { font-size: 14px; font-weight: 800; }
-.sh-undo { display: flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 7px; background: rgb(var(--danger-rgb) / 0.08); border: 1px solid rgb(var(--danger-rgb) / 0.3); font-size: 10px; font-weight: 700; color: var(--danger); cursor: pointer; }
+.sh-undo { display: flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 7px; background: rgb(var(--notice-rgb) / 0.08); border: 1px solid rgb(var(--notice-rgb) / 0.3); font-size: 10px; font-weight: 700; color: var(--notice); cursor: pointer; }
 .sh-undo:active { transform: scale(0.95); }
 .sh-sub { font-size: 10px; color: var(--text-muted); margin-bottom: 10px; }
-.gmap { height: 132px; background: #0C160C; border-radius: 10px; position: relative; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--border); }
+.gmap { height: 132px; background: rgb(var(--accent-rgb) / 0.08); border-radius: 10px; position: relative; overflow: hidden; margin-bottom: 10px; border: 1px solid var(--border); }
 .gmap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .pcrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .pclbl { font-size: 9px; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
@@ -213,7 +233,7 @@ h2 span { color: var(--accent); }
 .lg-con { position: relative; z-index: 2; display: flex; flex-direction: column; padding: 0 24px 18px; height: 100%; }
 .lg-logo { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-bottom: 6px; }
 .lg-badge { background: rgb(var(--accent-rgb) / 0.1); border: 1px solid rgb(var(--accent-rgb) / 0.2); border-radius: 50px; padding: 4px 12px; font-size: 10px; color: var(--accent); font-weight: 600; margin-bottom: 14px; }
-.lg-icon { width: 62px; height: 62px; background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.2), rgba(39,174,96,0.08)); border: 1px solid rgb(var(--accent-rgb) / 0.3); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px; box-shadow: 0 8px 24px rgb(var(--accent-rgb) / 0.15); }
+.lg-icon { width: 62px; height: 62px; background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.2), rgb(var(--accent-rgb) / 0.08)); border: 1px solid rgb(var(--accent-rgb) / 0.3); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px; box-shadow: 0 8px 24px rgb(var(--accent-rgb) / 0.15); }
 .lg-ttl { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; }
 .lg-sub { font-size: 13px; color: var(--text-muted); }
 .lg-form { display: flex; flex-direction: column; gap: 9px; }
@@ -266,9 +286,9 @@ h2 span { color: var(--accent); }
 
 /* ── No-course degraded banner ── */
 .no-course-banner {
-  background: rgb(var(--danger-rgb) / 0.07);
-  border-bottom: 1px solid rgb(var(--danger-rgb) / 0.2);
-  color: rgb(var(--danger-rgb) / 0.7);
+  background: rgb(var(--notice-rgb) / 0.07);
+  border-bottom: 1px solid rgb(var(--notice-rgb) / 0.2);
+  color: rgb(var(--notice-rgb) / 0.7);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3px;
