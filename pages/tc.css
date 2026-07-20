@@ -26,9 +26,24 @@
   --danger: #E74C3C;
   --gold: #F1C40F;
 
+  /* Notices: alerts and validation that are neither destructive nor score-related.
+     Kept separate from --danger so a mistyped password does not shout as loudly
+     as deleting an account. */
+  --notice: #E74C3C;
+
+  /* Mid tier of the three-tier performance scale (good / middling / poor). */
+  --warn: #E67E22;
+
+  /* PGA leaderboard uses the TV broadcast convention: red = under par = GOOD.
+     That inverts this app's green=good/red=bad scheme, so these are deliberately
+     decoupled from --good/--bad. Do not "fix" them to match. */
+  --pga-under: #E74C3C;
+  --pga-over: #4A90D9;
+
   /* Map chrome — deliberately does NOT invert in Phase 3 */
   --map-surface: #141420;
   --map-text: #FFFFFF;
+  --map-surface-2: #1C1C2E;
 
   /* Channel triplets: let each call site keep its own alpha.
      Usage: rgb(var(--ink-rgb) / 0.04)
@@ -40,6 +55,9 @@
   --good-rgb: 46 204 113;
   --bad-rgb: 231 76 60;
   --danger-rgb: 231 76 60;
+  --notice-rgb: 231 76 60;
+  --warn-rgb: 230 126 34;
+  --gold-rgb: 241 196 15;
 }
 body {
   background: #030305; font-family: 'Inter', sans-serif; color: var(--text);
@@ -82,6 +100,8 @@ h2 span { color: var(--accent); }
 .sb { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .sb-l { display: flex; flex-direction: column; }
 .stp { font-size: 22px; font-weight: 900; line-height: 1; }
+/* Golf scoring: a NEGATIVE score is under par, so .neg is --good and .pos is --bad.
+   This inversion is correct — do not "fix" it. */
 .neg { color: var(--good); } .pos { color: var(--bad); } .evn { color: var(--text); }
 .sth { font-size: 10px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.5px; margin-top: 1px; }
 .sdv { width: 1px; height: 36px; background: var(--border); }
