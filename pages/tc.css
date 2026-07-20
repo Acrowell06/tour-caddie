@@ -3,47 +3,47 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  /* Phase 1: every value is TODAY'S colour. Midnight values land in Phase 2. */
+  /* Midnight palette — dark theme. Light theme values land in Phase 3. */
 
   /* Structure */
-  --bg: #0A0A0F;
-  --surface: #141420;
-  --surface-2: #1C1C2E;
-  --border: #1E1E2E;
+  --bg: #080C14;
+  --surface: #101827;
+  --surface-2: #18202F;
+  --border: #1D2839;
 
   /* Text */
-  --text: #FFFFFF;
-  --text-muted: #8B8BA7;
-  --text-dim: #5A5A7A;
-  --text-on-accent: #0A0A0F;
+  --text: #E8EDF5;
+  --text-muted: #7A8699;
+  --text-dim: #4A5568;
+  --text-on-accent: #04080F;
 
   /* Accent — UI chrome and interaction */
-  --accent: #2ECC71;
+  --accent: #38BDD0;
 
   /* Semantic — meaning, not chrome */
-  --good: #2ECC71;
-  --bad: #E74C3C;
-  --danger: #E74C3C;
+  --good: #4ADE80;
+  --bad: #EF6262;
+  --danger: #EF6262;
   --gold: #F1C40F;
 
   /* Notices: alerts and validation that are neither destructive nor score-related.
      Kept separate from --danger so a mistyped password does not shout as loudly
      as deleting an account. */
-  --notice: #E74C3C;
+  --notice: #E8836A;
 
   /* Mid tier of the three-tier performance scale (good / middling / poor). */
-  --warn: #E67E22;
+  --warn: #E8A33D;
 
   /* PGA leaderboard uses the TV broadcast convention: red = under par = GOOD.
      That inverts this app's green=good/red=bad scheme, so these are deliberately
      decoupled from --good/--bad. Do not "fix" them to match. */
-  --pga-under: #E74C3C;
+  --pga-under: #EF6262;
   --pga-over: #4A90D9;
 
   /* Map chrome — deliberately does NOT invert in Phase 3 */
-  --map-surface: #141420;
-  --map-text: #FFFFFF;
-  --map-surface-2: #1C1C2E;
+  --map-surface: #101827;
+  --map-text: #E8EDF5;
+  --map-surface-2: #18202F;
 
   /* Channel triplets: let each call site keep its own alpha.
      Usage: rgb(var(--ink-rgb) / 0.04)
@@ -51,12 +51,12 @@
      and breaks the capture comparison. */
   --ink-rgb: 255 255 255;
   --shadow-rgb: 0 0 0;
-  --accent-rgb: 46 204 113;
-  --good-rgb: 46 204 113;
-  --bad-rgb: 231 76 60;
-  --danger-rgb: 231 76 60;
-  --notice-rgb: 231 76 60;
-  --warn-rgb: 230 126 34;
+  --accent-rgb: 56 189 208;
+  --good-rgb: 74 222 128;
+  --bad-rgb: 239 98 98;
+  --danger-rgb: 239 98 98;
+  --notice-rgb: 232 131 106;
+  --warn-rgb: 232 163 61;
   --gold-rgb: 241 196 15;
 }
 body {
