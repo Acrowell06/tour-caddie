@@ -120,7 +120,7 @@
 .score-e  { color:var(--gold); }
 .score-b  { color:var(--good); }
 .score-p  { color:rgb(var(--ink-rgb) / 0.7); }
-.score-bo { color:#E67E22; }
+.score-bo { color:var(--warn); }
 .score-d  { color:var(--bad); }
 .score-t  { color:#8B0000; }
 
@@ -202,7 +202,7 @@
       <div class="spark-label">Season Trend · Avg Score to Par</div>
       <div class="spark-legend">
         <div class="spark-leg-item"><span style="color:var(--good);">■</span> Under par</div>
-        <div class="spark-leg-item"><span style="color:#E67E22;">■</span> Over par</div>
+        <div class="spark-leg-item"><span style="color:var(--warn);">■</span> Over par</div>
       </div>
     </div>
     <svg id="sparkline-svg" style="width:100%;height:100px;display:block;"></svg>
@@ -465,7 +465,7 @@ function renderRounds(filterYear = '2026', filterMonth = '') {
       </div>
       <div class="rc-chips">
         ${r.chips.map(ch => `<div class="rc-chip">${escHtml(ch)}</div>`).join('')}
-        <div class="rc-chip" style="color:${r.diff == null ? 'var(--text-muted)' : parseFloat(r.diff) <= 1 ? 'var(--good)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--bad)'}">Diff ${r.diff == null ? '—' : escHtml(String(r.diff))}</div>
+        <div class="rc-chip" style="color:${r.diff == null ? 'var(--text-muted)' : parseFloat(r.diff) <= 1 ? 'var(--good)' : parseFloat(r.diff) <= 2 ? 'var(--warn)' : 'var(--bad)'}">Diff ${r.diff == null ? '—' : escHtml(String(r.diff))}</div>
       </div>`;
     list.appendChild(card);
   });
@@ -526,7 +526,7 @@ function renderSparkline(rounds) {
   const slotW = plotW / n;
   const barW  = Math.min(slotW * 0.55, 32);
 
-  const barCol = avg => avg <= -2 ? 'var(--gold)' : avg < 0 ? 'var(--good)' : avg === 0 ? 'rgb(var(--ink-rgb) / 0.35)' : avg <= 1 ? '#E67E22' : 'var(--bad)';
+  const barCol = avg => avg <= -2 ? 'var(--gold)' : avg < 0 ? 'var(--good)' : avg === 0 ? 'rgb(var(--ink-rgb) / 0.35)' : avg <= 1 ? 'var(--warn)' : 'var(--bad)';
 
   months.forEach((m, i) => {
     const cx  = AX + (i + 0.5) * slotW;
@@ -596,7 +596,7 @@ function renderScorecard(body) {
       </div>
       <div class="sh-divider"></div>
       <div class="sh-main">
-        <div class="sh-val" style="color:${r.diff == null ? 'var(--text-muted)' : parseFloat(r.diff) <= 1 ? 'var(--good)' : parseFloat(r.diff) <= 2 ? '#E67E22' : 'var(--bad)'};">${r.diff == null ? '—' : r.diff}</div>
+        <div class="sh-val" style="color:${r.diff == null ? 'var(--text-muted)' : parseFloat(r.diff) <= 1 ? 'var(--good)' : parseFloat(r.diff) <= 2 ? 'var(--warn)' : 'var(--bad)'};">${r.diff == null ? '—' : r.diff}</div>
         <div class="sh-lbl">DIFF</div>
       </div>
     </div>`;
@@ -656,7 +656,7 @@ function renderScorecard(body) {
       <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--gold);font-weight:800;">-2</span> Eagle+</div>
       <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--good);font-weight:800;">-1</span> Birdie</div>
       <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:rgb(var(--ink-rgb) / 0.5);font-weight:800;">E</span> Par</div>
-      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:#E67E22;font-weight:800;">+1</span> Bogey</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--warn);font-weight:800;">+1</span> Bogey</div>
       <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:var(--text-muted);"><span style="color:var(--bad);font-weight:800;">+2</span> Double</div>
     </div>`;
 
@@ -678,10 +678,10 @@ function renderRdStats(body) {
   }
   function sec(t) { return `<div class="rd-sec">${t}</div>`; }
 
-  const firC  = r.fir >= 70 ? 'var(--good)' : r.fir >= 55 ? 'var(--gold)' : 'var(--bad)';
-  const girC  = r.gir >= 70 ? 'var(--good)' : r.gir >= 55 ? 'var(--gold)' : 'var(--bad)';
-  const puttC = r.putts <= 27 ? 'var(--good)' : r.putts <= 30 ? 'var(--gold)' : 'var(--bad)';
-  const udC   = r.up_down >= 65 ? 'var(--good)' : r.up_down >= 45 ? 'var(--gold)' : 'var(--bad)';
+  const firC  = r.fir >= 70 ? 'var(--good)' : r.fir >= 55 ? 'var(--warn)' : 'var(--bad)';
+  const girC  = r.gir >= 70 ? 'var(--good)' : r.gir >= 55 ? 'var(--warn)' : 'var(--bad)';
+  const puttC = r.putts <= 27 ? 'var(--good)' : r.putts <= 30 ? 'var(--warn)' : 'var(--bad)';
+  const udC   = r.up_down >= 65 ? 'var(--good)' : r.up_down >= 45 ? 'var(--warn)' : 'var(--bad)';
 
   body.innerHTML =
     sec('Tee to Green') +
@@ -696,7 +696,7 @@ function renderRdStats(body) {
     kpi4([
       { v: r.holes.filter((s,i)=>s<r.pars[i]).length,  l: 'BIRDIES+', c: 'var(--good)' },
       { v: r.holes.filter((s,i)=>s===r.pars[i]).length, l: 'PARS',    c: 'var(--text)' },
-      { v: r.holes.filter((s,i)=>s===r.pars[i]+1).length, l: 'BOGEYS', c: '#E67E22' },
+      { v: r.holes.filter((s,i)=>s===r.pars[i]+1).length, l: 'BOGEYS', c: 'var(--warn)' },
       { v: r.holes.filter((s,i)=>s>=r.pars[i]+2).length, l: 'DOUBLES+', c: 'var(--bad)' },
     ]) +
 
@@ -706,12 +706,12 @@ function renderRdStats(body) {
           ? '+' + (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0))
           : '' + (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)),
         l: 'FRONT 9',
-        c: (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--good)' : '#E67E22' },
+        c: (r.holes.slice(0,9).reduce((a,b)=>a+b,0) - r.pars.slice(0,9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--good)' : 'var(--warn)' },
       { v: r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0) >= 0
           ? '+' + (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0))
           : '' + (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)),
         l: 'BACK 9',
-        c: (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--good)' : '#E67E22' },
+        c: (r.holes.slice(9).reduce((a,b)=>a+b,0) - r.pars.slice(9).reduce((a,b)=>a+b,0)) <= 0 ? 'var(--good)' : 'var(--warn)' },
     ]) +
     '<div style="height:8px;"></div>';
 }
@@ -783,7 +783,7 @@ function renderInsights() {
   document.getElementById('ci-most-sub').textContent    = mostCourse[1] + ' rounds played';
 
   const sp = scoreToPar(best.score);
-  const spColor = best.score < 0 ? 'var(--good)' : best.score === 0 ? 'var(--text)' : '#E67E22';
+  const spColor = best.score < 0 ? 'var(--good)' : best.score === 0 ? 'var(--text)' : 'var(--warn)';
   document.getElementById('ci-best-course').textContent = best.course;
   document.getElementById('ci-best-sub').innerHTML      =
     `<span style="color:${spColor};font-weight:800;">${sp.str}</span> · ${best.date}`;

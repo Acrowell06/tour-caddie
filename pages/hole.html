@@ -17,7 +17,7 @@
 .hn-card-btn { padding:5px 9px; border-radius:7px; background:rgb(var(--ink-rgb) / 0.05); border:1px solid var(--border); font-size:14px; cursor:pointer; line-height:1; }
 
 /* ── F/C/B distance strip ── */
-.fcb-strip { display:flex; background:var(--surface-2); border-bottom:1px solid var(--border); flex-shrink:0; }
+.fcb-strip { display:flex; background:var(--map-surface-2); border-bottom:1px solid var(--border); flex-shrink:0; }
 .fcb-cell { flex:1; padding:5px 4px; text-align:center; border-right:1px solid var(--border); }
 .fcb-cell:last-child { border-right:none; }
 .fcb-lbl { font-size:7px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); }
@@ -688,7 +688,7 @@ const hTeeMarker = L.marker([TEE_LL.lat, TEE_LL.lng], {
 // like a real (but wrong) green location rather than "we don't know".
 const hFlagMarker = DEGRADED ? null : L.marker([GREEN_CTR.lat, GREEN_CTR.lng], {
   icon: L.divIcon({
-    html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgb(var(--ink-rgb) / 0.9);"></div><div style="background:var(--danger);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:var(--text);white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
+    html: '<div style="display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;"><div style="width:2px;height:18px;background:rgb(var(--ink-rgb) / 0.9);"></div><div style="background:var(--notice);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:800;color:var(--text);white-space:nowrap;cursor:pointer;margin-top:2px;">⛳ Hole Out</div></div>',
     iconSize: [80, 40], iconAnchor: [1, 0], className: ''
   })
 }).addTo(lmap);
@@ -1168,7 +1168,7 @@ function buildSummaryMap() {
   if (!DEGRADED) {
     L.marker([GREEN_CTR.lat, GREEN_CTR.lng], {
       icon: L.divIcon({
-        html: '<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:2px;height:14px;background:rgb(var(--ink-rgb) / 0.9);"></div><div style="background:var(--danger);border-radius:3px;padding:1px 5px;font-size:9px;">⛳</div></div>',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;"><div style="width:2px;height:14px;background:rgb(var(--ink-rgb) / 0.9);"></div><div style="background:var(--notice);border-radius:3px;padding:1px 5px;font-size:9px;">⛳</div></div>',
         iconSize: [24, 30], iconAnchor: [1, 30], className: ''
       }),
       interactive: false
