@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **This project has NO test framework.** `package.json` has an empty `scripts` block. Do not create one. Do not run `npm test`.
-- **Tasks 1, 2 and 3 must be pixel-identical** — their capture hashes must equal the Phase 1 baselines in `.superpowers/theme-baseline/hashes.json`. Tasks 4 onward change appearance deliberately.
+- **Tasks 1 and 2 must be pixel-identical** — their capture hashes must equal the Phase 1 baselines in `.superpowers/theme-baseline/hashes.json`. **Tasks 3 onward change appearance deliberately**, and each states exactly which elements are allowed to move; anything else moving is a defect.
 - **Never use `color-mix()`.** It computes to `color(srgb …)` rather than `rgb(…)` and breaks the capture comparison.
 - **`--accent` and `--accent-rgb` must always carry the same colour.** Changing one without the other leaves translucent tints green while solid accents turn cyan. The same pairing applies to `--good`/`--good-rgb`, `--bad`/`--bad-rgb`, `--danger`/`--danger-rgb`, `--notice`/`--notice-rgb`, `--warn`/`--warn-rgb`, `--gold`/`--gold-rgb`.
 - **`pages/scorecard.html` does not load `tc.css`.** It is a standalone print template carrying its own duplicate `:root`. Any token value change must be applied there too or it silently keeps the old palette.
